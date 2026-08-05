@@ -3042,7 +3042,7 @@ function HPProductGuide() {
     cat: 'wire',
     num: 3,
     title: 'สายไฟ',
-    img: 'assets/สายไฟ (1).png',
+    img: 'assets/สายไฟ.jpg',
     intro: 'สายไฟเป็นตัวนำกระแสไฟฟ้าจากแหล่งจ่ายไปยังจุดใช้งานต่างๆ ทำจากทองแดงแท้หุ้มด้วยฉนวน PVC การเลือกขนาดสายไฟ (ตารางมิลลิเมตร) ให้เหมาะสมกับปริมาณกระแสไฟที่ใช้งานเป็นสิ่งสำคัญ เพราะหากใช้สายไฟขนาดเล็กเกินไปอาจทำให้สายร้อนจัดจนเกิดอัคคีภัยได้'
   }, {
     cat: 'panel',
@@ -5870,8 +5870,8 @@ function HPCatalogPage() {
   }, {
     name: 'สายไฟ',
     color: '#374151',
-    img: 'assets/สายไฟ (1).png',
-    product: 'assets/สายไฟ (1).png',
+    img: 'assets/สายไฟ.jpg',
+    product: 'assets/สายไฟ.jpg',
     hideLogoBar: true
   }, {
     name: 'Nano LED',

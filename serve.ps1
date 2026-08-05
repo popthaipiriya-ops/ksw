@@ -228,6 +228,14 @@ while ($listener.IsListening) {
         Send-Json $res @{ products=(Read-Json $fProds @()) } 200; continue
       }
 
+      # เครื่องมือ build (build.html) — ใช้เฉพาะตอนพัฒนาในเครื่อง ไม่เกี่ยวกับระบบหลังบ้าน จึงไม่ต้องล็อกอิน
+      if ($ep -eq '/build' -and $method -eq 'POST') {
+        $sr = New-Object System.IO.StreamReader($req.InputStream, [System.Text.Encoding]::UTF8)
+        $body = $sr.ReadToEnd(); $sr.Close()
+        [System.IO.File]::WriteAllText((Join-Path $root "app.js"), $body, $UTF8)
+        Send-Json $res @{ ok=$true; chars=$body.Length } 200; continue
+      }
+
       $me = Current-User $req
 
       if ($ep -eq '/auth/me') {
@@ -337,14 +345,6 @@ while ($listener.IsListening) {
           Send-Json $res @{ quotes=$next } 200; continue
         }
         Send-Json $res @{ error='คำสั่งไม่ถูกต้อง' } 400; continue
-      }
-
-      # ---------- build (เฉพาะเครื่องพัฒนา) ----------
-      if ($ep -eq '/build' -and $method -eq 'POST') {
-        $sr = New-Object System.IO.StreamReader($req.InputStream, [System.Text.Encoding]::UTF8)
-        $body = $sr.ReadToEnd(); $sr.Close()
-        [System.IO.File]::WriteAllText((Join-Path $root "app.js"), $body, $UTF8)
-        Send-Json $res @{ ok=$true; chars=$body.Length } 200; continue
       }
 
       Send-Json $res @{ error='ไม่พบปลายทางที่เรียก' } 404; continue

@@ -894,7 +894,7 @@ function HPProductGuide() {
       intro:'หลอดไฟ LED เป็นอุปกรณ์ให้แสงสว่างที่ได้รับความนิยมสูงสุดในปัจจุบัน เนื่องจากใช้พลังงานน้อยกว่าหลอดไส้หรือหลอดฟลูออเรสเซนต์แบบเดิมมาก แต่ให้ความสว่างเทียบเท่าหรือมากกว่า อีกทั้งยังไม่มีสารปรอทเจือปนและมีอายุการใช้งานยาวนานกว่า 15,000–25,000 ชั่วโมง' },
     { cat:'breaker', num:2, title:'เบรกเกอร์', img:'assets/เบรกเกอร์.png',
       intro:'เบรกเกอร์ทำหน้าที่เหมือนหัวใจของระบบไฟฟ้าในบ้าน เป็นอุปกรณ์ที่ตัดกระแสไฟฟ้าโดยอัตโนมัติเมื่อเกิดกระแสไฟเกินหรือไฟฟ้าลัดวงจร ช่วยป้องกันอัคคีภัยและความเสียหายต่อเครื่องใช้ไฟฟ้า การเลือกขนาดเบรกเกอร์ (แอมป์) ให้เหมาะสมกับโหลดการใช้งานจึงเป็นเรื่องสำคัญมาก' },
-    { cat:'wire', num:3, title:'สายไฟ', img:'assets/สายไฟ (1).png',
+    { cat:'wire', num:3, title:'สายไฟ', img:'assets/สายไฟ.jpg',
       intro:'สายไฟเป็นตัวนำกระแสไฟฟ้าจากแหล่งจ่ายไปยังจุดใช้งานต่างๆ ทำจากทองแดงแท้หุ้มด้วยฉนวน PVC การเลือกขนาดสายไฟ (ตารางมิลลิเมตร) ให้เหมาะสมกับปริมาณกระแสไฟที่ใช้งานเป็นสิ่งสำคัญ เพราะหากใช้สายไฟขนาดเล็กเกินไปอาจทำให้สายร้อนจัดจนเกิดอัคคีภัยได้' },
     { cat:'panel', num:4, title:'ตู้ไฟ', img:'assets/ตู้คอนซูมเมอร์ยูนิต.png',
       intro:'ตู้ไฟหรือตู้คอนซูมเมอร์ยูนิต ทำหน้าที่เป็นศูนย์กลางควบคุมวงจรไฟฟ้าทั้งหมดภายในบ้าน ภายในติดตั้งเบรกเกอร์ย่อยแยกตามวงจรการใช้งาน ช่วยให้สามารถตัดไฟเฉพาะจุดได้สะดวกเวลาเกิดปัญหาหรือซ่อมบำรุง' },
@@ -1688,7 +1688,7 @@ function HPCatalogPage() {
     { name:'Lucky Misu', color:'#f59e0b', img:'assets/lucky misu.jpg',      product:'assets/lucky misu.jpg', hideLogoBar:true },
     { name:'iwachi',     color:'#3b5bdb', img:'assets/iwachi.jpg',          product:'assets/iwachi.jpg', hideLogoBar:true },
     { name:'Thongthai Bakelite', color:'#f97316', img:'assets/thongthai bikelite.png', product:'assets/thongthai bikelite.png', hideLogoBar:true },
-    { name:'สายไฟ',      color:'#374151', img:'assets/สายไฟ (1).png',       product:'assets/สายไฟ (1).png', hideLogoBar:true },
+    { name:'สายไฟ',      color:'#374151', img:'assets/สายไฟ.jpg',       product:'assets/สายไฟ.jpg', hideLogoBar:true },
     { name:'Nano LED',   color:'#8bc83f', img:'assets/nano led.png',        product:'assets/nano led.png', hideLogoBar:true },
   ];
   const [page, setPage] = useState(0);
