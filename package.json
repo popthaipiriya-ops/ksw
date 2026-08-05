@@ -1,0 +1,10 @@
+{
+  "name": "kird-saeng-sawang",
+  "version": "1.0.0",
+  "private": true,
+  "description": "เว็บไซต์ บริษัท เกิดแสงสว่าง จำกัด — ระบบหลังบ้านตรวจสิทธิ์ฝั่งเซิร์ฟเวอร์",
+  "type": "module",
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  }
+}

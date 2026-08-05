@@ -1,0 +1,85 @@
+# เว็บสแตติก ไม่มี build step — ไฟล์ app.js คอมไพล์ไว้แล้วจาก app.jsx (ผ่าน build.html)
+[build]
+  publish = "."
+  command = ""
+
+# ระบบหลังบ้าน: ตรวจสอบสิทธิ์ฝั่งเซิร์ฟเวอร์ (netlify/functions/api.mjs)
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# ไม่ให้แคชคำตอบของ API เด็ดขาด
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Cache-Control = "no-store"
+
+# ── แคช ──
+# รูปภาพ/ฟอนต์: ชื่อไฟล์คงที่และแทบไม่เปลี่ยน เก็บแคชยาวได้
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# ไฟล์โค้ดและข้อมูลสินค้า: เปลี่ยนทุกครั้งที่ deploy ต้องให้เบราว์เซอร์เช็คใหม่เสมอ
+# (ชื่อไฟล์ไม่มี hash ถ้าแคชยาวจะได้ของเก่าค้าง)
+[[headers]]
+  for = "/app.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/brand-products.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# ── ความปลอดภัยพื้นฐาน ──
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "SAMEORIGIN"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"
+
+# ── กันไฟล์ที่ไม่ควรขึ้นเว็บจริง ──
+# ซอร์ส JSX, หน้า build, สคริปต์เซิร์ฟเวอร์ และไฟล์สำรอง — ตอบ 404
+[[redirects]]
+  from = "/app.jsx"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/build.html"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/serve.ps1"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/*.bak"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/.data/*"
+  to = "/404.html"
+  status = 404
+  force = true

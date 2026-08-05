@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:api.anthropic.com)",
+      "mcp__Claude_Preview__preview_start",
+      "PowerShell(Get-Command dotnet -ErrorAction SilentlyContinue)",
+      "PowerShell(dotnet --version 2>$null)",
+      "mcp__Claude_in_Chrome__list_connected_browsers",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "mcp__Claude_in_Chrome__navigate",
+      "mcp__Claude_in_Chrome__computer",
+      "Bash(python -c \"import PIL; print\\(PIL.__version__\\)\")",
+      "Bash(python3 -c \"import PIL; print\\('PIL ok', PIL.__version__\\)\")",
+      "Bash(python3 -c \"import PIL; print\\('PIL', PIL.__version__\\)\")",
+      "Bash(python3 -m pip install pillow)",
+      "Bash(python3 -c \"import PIL; print\\('OK PIL', PIL.__version__\\)\")",
+      "Bash(echo \"exit=$?\")",
+      "Bash(ls -lat ~/Downloads 2>/dev/null | head -5)",
+      "Bash(ls -lat ~/Downloads 2>/dev/null | head -8; echo \"---temp---\"; ls -lat /c/Users/KENT/AppData/Local/Temp 2>/dev/null | head -8; echo \"---pictures---\"; ls -lat ~/Pictures 2>/dev/null | head -8)",
+      "Bash(cp \"/c/Users/KENT/Downloads/thaipiriya.trcloud.co_3.png\" \"/d/Claude Code/Company Web/assets/logo-kss.png\" && ls -la \"/d/Claude Code/Company Web/assets/\" | grep logo)",
+      "Bash(grep -oE '#[0-9a-fA-F]{3,6}' \"/d/Claude Code/Company Web/index.html\")",
+      "Bash(sed -i \"s/#1a3d1a/#0f4c2a/g\" index.html)",
+      "Bash(sed -i \"s/#2e6b2e/#1a7a42/g\" index.html)",
+      "Bash(sed -i \"s/#f7f7f7/#f9fafb/g\" index.html)",
+      "Bash(sed -i \"s/#eef7ee/#ecfdf5/g\" index.html)",
+      "Bash(sed -i \"s/#9dd09d/#6ee7b7/g\" index.html)",
+      "Bash(awk '{print $5, $6, $7, $8, $9}')",
+      "Bash(identify /c/Users/KENT/AppData/Local/Temp/5b0da9b2-a55b-4d54-9e44-e1d8e4761709.tmp)",
+      "Bash(cp \"/c/Users/KENT/AppData/Local/Temp/5b0da9b2-a55b-4d54-9e44-e1d8e4761709.tmp\" \"/d/Claude Code/Company Web/assets/line-qr.png\" && echo \"copied\")",
+      "WebFetch(domain:www.advice.co.th)",
+      "Bash(sed -i \"s/fontFamily:'Mitr, Sarabun, sans-serif'/fontFamily:'Prompt, Sarabun, sans-serif'/g\" \"D:/Claude Code/Company Web/index.html\")",
+      "Bash(sed -i \"s/fontFamily:'Sarabun, sans-serif'/fontFamily:'Prompt, Sarabun, sans-serif'/g\" \"D:/Claude Code/Company Web/index.html\")",
+      "WebFetch(domain:maps.app.goo.gl)",
+      "WebFetch(domain:www.google.com)",
+      "Bash(grep -iE \"\\\\.\\(png|jpg|jpeg\\)$\")",
+      "WebFetch(domain:www.pcelectrica.com)",
+      "WebFetch(domain:www.electric.co.th)",
+      "PowerShell(Add-Type -AssemblyName System.Drawing; $img=[System.Drawing.Image]::FromFile\\(\"D:\\\\Claude Code\\\\Company Web\\\\assets\\\\hiring-banner.png\"\\); \"$\\($img.Width\\) x $\\($img.Height\\)\")",
+      "Bash(dir /b)",
+      "Bash(findstr /i \"banner thaipiriya service\")"
+    ]
+  }
+}

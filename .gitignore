@@ -1,0 +1,14 @@
+# ข้อมูลลับ/ข้อมูลรันไทม์ของระบบหลังบ้าน (serve.ps1) — ห้ามขึ้น git เด็ดขาด
+.data/
+
+# ไฟล์สำรองที่ทำระหว่างพัฒนา
+*.bak
+*.bak2
+
+# เครื่องมือ/แพ็กเกจ (Netlify จะติดตั้งเองตอน build จาก package.json)
+node_modules/
+
+# ไฟล์ระบบของ Windows/Netlify CLI
+Thumbs.db
+desktop.ini
+.netlify/

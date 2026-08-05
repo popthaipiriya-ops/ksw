@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la \"D:/Claude Code/Company Web\" 2>&1 | head -50)",
+      "Bash(netstat -ano)",
+      "PowerShell(Set-Location \"D:\\\\Claude Code\\\\Company Web\"; Start-Process powershell -ArgumentList \"-NoExit\",\"-File\",\".\\\\serve.ps1\" -WindowStyle Hidden)",
+      "mcp__claude-in-chrome__list_connected_browsers",
+      "Bash(ls -la \"/c/Users/KENT/AppData/Local/Google/Chrome/User Data/\" 2>&1 | head -20; echo \"---EDGE---\"; ls -la \"/c/Users/KENT/AppData/Local/Microsoft/Edge/User Data/\" 2>&1 | head -20)",
+      "PowerShell(Stop-Process -Id 424 -Force; Start-Sleep -Milliseconds 500; Set-Location \"D:\\\\Claude Code\\\\Company Web\"; Start-Process powershell -ArgumentList \"-NoExit\",\"-File\",\".\\\\serve.ps1\" -WindowStyle Hidden)",
+      "Bash(where ffmpeg *)",
+      "Bash(where python *)",
+      "Bash(python -c \"import cv2; print\\('cv2 ok'\\)\")",
+      "Bash(cp \"/c/Users/KENT/Downloads/806314514.291601.mp4\" \"/d/Claude Code/Company Web/assets/recovery-clip.mp4\" && ls -la \"/d/Claude Code/Company Web/assets/recovery-clip.mp4\")"
+    ]
+  }
+}

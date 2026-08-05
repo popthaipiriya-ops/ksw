@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Build — คอมไพล์ app.jsx เป็น app.js</title>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+  <style>
+    * { box-sizing:border-box; }
+    body { font-family:'Segoe UI','Noto Sans Thai',Arial,sans-serif; background:#f6f8f7; color:#0f2e28;
+           margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+    .card { background:#fff; border-radius:16px; box-shadow:0 8px 30px rgba(0,0,0,0.10); padding:32px; width:100%; max-width:600px; }
+    h1 { font-size:20px; margin:0 0 6px; }
+    p.sub { margin:0 0 22px; color:#6b7d76; font-size:14px; line-height:1.6; }
+    button { width:100%; padding:14px; font-size:16px; font-weight:700; color:#fff; background:#12866b;
+             border:none; border-radius:10px; cursor:pointer; font-family:inherit; }
+    button:hover:not(:disabled) { background:#0e6d56; }
+    button:disabled { background:#9db8b0; cursor:not-allowed; }
+    #log { margin-top:20px; font-family:Consolas,monospace; font-size:13px; line-height:1.7;
+           white-space:pre-wrap; word-break:break-word; max-height:340px; overflow:auto; }
+    .ok   { color:#12866b; }
+    .err  { color:#c02b2b; }
+    .dim  { color:#7a8a82; }
+    .stat { display:flex; justify-content:space-between; gap:12px; padding:8px 12px; background:#f2f7f5;
+            border-radius:8px; margin-top:8px; font-size:13px; }
+    .stat b { font-variant-numeric:tabular-nums; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>คอมไพล์ app.jsx → app.js</h1>
+    <p class="sub">
+      แก้โค้ดใน <b>app.jsx</b> เสร็จแล้วให้กดปุ่มนี้หนึ่งครั้ง เพื่อแปลง JSX เป็น JavaScript ธรรมดา
+      แล้วเขียนทับไฟล์ <b>app.js</b> ที่หน้าเว็บจริงใช้งาน<br>
+      ต้องเปิดผ่าน <b>serve.ps1</b> (http://localhost:4321/build.html) เท่านั้น เพราะต้องใช้ endpoint เขียนไฟล์
+    </p>
+    <button id="go">เริ่มคอมไพล์</button>
+    <div id="log"></div>
+  </div>
+
+<script>
+const logEl = document.getElementById('log');
+const btn = document.getElementById('go');
+const say = (msg, cls) => {
+  const d = document.createElement('div');
+  if (cls) d.className = cls;
+  d.textContent = msg;
+  logEl.appendChild(d);
+  logEl.scrollTop = logEl.scrollHeight;
+};
+const stat = (label, value) => {
+  const d = document.createElement('div');
+  d.className = 'stat';
+  d.innerHTML = '<span>' + label + '</span><b>' + value + '</b>';
+  logEl.appendChild(d);
+};
+
+btn.addEventListener('click', async () => {
+  btn.disabled = true;
+  logEl.innerHTML = '';
+  try {
+    say('กำลังอ่าน app.jsx ...', 'dim');
+    const res = await fetch('app.jsx?cb=' + Date.now());
+    if (!res.ok) throw new Error('อ่าน app.jsx ไม่ได้ (HTTP ' + res.status + ')');
+    const source = await res.text();
+    stat('ขนาดซอร์ส app.jsx', source.length.toLocaleString() + ' ตัวอักษร');
+
+    say('กำลังแปลง JSX ...', 'dim');
+    const t0 = performance.now();
+    const out = Babel.transform(source, {
+      presets: ['react'],
+      filename: 'app.jsx',
+      compact: false
+    }).code;
+    const ms = Math.round(performance.now() - t0);
+    stat('ผลลัพธ์ที่คอมไพล์ได้', out.length.toLocaleString() + ' ตัวอักษร');
+    stat('เวลาที่ใช้แปลง', ms + ' ms');
+
+    say('กำลังเขียนลง app.js ...', 'dim');
+    const save = await fetch('/api/build', {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      body: out
+    });
+    if (!save.ok) throw new Error('เขียนไฟล์ไม่สำเร็จ (HTTP ' + save.status + ') — เปิดผ่าน serve.ps1 หรือยัง?');
+    const info = await save.json();
+
+    say('');
+    say('✔ สำเร็จ — เขียน app.js แล้ว ' + info.chars.toLocaleString() + ' ตัวอักษร', 'ok');
+    say('กด Ctrl+F5 ที่หน้าเว็บหลักเพื่อดูผล', 'dim');
+  } catch (e) {
+    say('');
+    say('✖ ' + e.message, 'err');
+    if (e.loc) say('  บรรทัด ' + e.loc.line + ' คอลัมน์ ' + e.loc.column, 'err');
+  } finally {
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>

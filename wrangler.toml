@@ -1,0 +1,8 @@
+name = "kird-saeng-sawang"
+compatibility_date = "2025-01-01"
+
+# เสิร์ฟทั้งโฟลเดอร์เป็นไฟล์สแตติก (index.html + assets/*)
+# ไฟล์ที่ไม่ต้องอัป กำหนดไว้ใน .assetsignore
+[assets]
+directory = "./"
+not_found_handling = "404-page"
