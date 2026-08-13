@@ -12375,11 +12375,12 @@ function HPAdminPanel({
   })()));
 }
 
-// ผู้ช่วย AI ตอบคำถามลูกค้า — ตอบความรู้เรื่องไฟฟ้า ส่วนราคา/สต็อกส่งต่อไปที่ไลน์ OA
+// ผู้ช่วย AI รับเรื่องลูกค้า — ถามความต้องการ แล้วส่งต่อให้ทีมงานทางไลน์ OA
 function HPChatWidget() {
   const LINE = 'https://lin.ee/rAFJt2QD';
-  const GREET = 'สวัสดีครับ 👋 ผมเป็นผู้ช่วยของเกิดแสงสว่าง ถามเรื่องอุปกรณ์ไฟฟ้าได้เลยครับ เช่น เลือกเบรกเกอร์ ขนาดสายไฟ หรือตู้ไฟแบบไหนเหมาะกับงาน';
-  const SUGGEST = ['เลือกขนาดเบรกเกอร์ยังไง', 'สายไฟ 2.5 sq.mm. ใช้กับอะไรได้', 'ตู้ MDB กับตู้โหลดต่างกันยังไง'];
+  const SUMMARY_TAG = 'สรุปให้ทีมงาน:';
+  const GREET = 'สวัสดีครับ 👋 ผมเป็นผู้ช่วยของเกิดแสงสว่าง\nไม่ทราบว่าวันนี้ต้องการอะไรครับ? บอกมาคร่าวๆ ได้เลย เดี๋ยวผมสรุปส่งให้ทีมงานดูแลต่อทางไลน์ครับ';
+  const SUGGEST = ['อยากได้ราคา/ใบเสนอราคา', 'หาสินค้าอยู่', 'ปรึกษาเรื่องระบบไฟ'];
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState([{
     role: 'assistant',
@@ -12388,7 +12389,40 @@ function HPChatWidget() {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const [copied, setCopied] = useState(false);
   const bodyRef = React.useRef(null);
+
+  // ดึงบรรทัดสรุปจากข้อความล่าสุดของผู้ช่วย — ใช้ให้ลูกค้าคัดลอกไปวางในไลน์
+  // ทีมงานจะได้เห็นเลยว่าลูกค้าต้องการอะไร ไม่ต้องเริ่มถามใหม่
+  const summary = (() => {
+    for (let i = msgs.length - 1; i >= 0; i--) {
+      const m = msgs[i];
+      if (m.role !== 'assistant') continue;
+      const at = m.content.indexOf(SUMMARY_TAG);
+      if (at >= 0) return m.content.slice(at + SUMMARY_TAG.length).split('\n')[0].trim();
+    }
+    return '';
+  })();
+  const copySummary = async () => {
+    const text = 'สวัสดีครับ ผมคุยกับผู้ช่วยหน้าเว็บมาแล้ว\nความต้องการ: ' + summary;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // บางเบราว์เซอร์ไม่ให้ใช้ clipboard API ถ้าไม่ได้เปิดผ่าน https
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+      } catch {}
+      document.body.removeChild(ta);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
   useEffect(() => {
     if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
   }, [msgs, busy, open]);
@@ -12597,7 +12631,42 @@ function HPChatWidget() {
       cursor: 'pointer',
       fontFamily: 'Inter, Noto Sans Thai, sans-serif'
     }
-  }, s)))), /*#__PURE__*/React.createElement("a", {
+  }, s)))), summary && /*#__PURE__*/React.createElement("div", {
+    style: {
+      flexShrink: 0,
+      background: '#fff8e8',
+      borderTop: '1px solid #f2e3bf',
+      padding: '11px 13px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '11.5px',
+      fontWeight: '700',
+      color: '#9a6b00',
+      marginBottom: '5px'
+    }
+  }, "\u0E2A\u0E23\u0E38\u0E1B\u0E2A\u0E48\u0E07\u0E43\u0E2B\u0E49\u0E17\u0E35\u0E21\u0E07\u0E32\u0E19"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '13px',
+      color: '#4a3a10',
+      lineHeight: '1.6',
+      marginBottom: '8px'
+    }
+  }, summary), /*#__PURE__*/React.createElement("button", {
+    onClick: copySummary,
+    style: {
+      width: '100%',
+      background: copied ? '#0d6b5c' : '#fff',
+      color: copied ? '#fff' : '#9a6b00',
+      border: '1px solid ' + (copied ? '#0d6b5c' : '#e4cf9a'),
+      borderRadius: '7px',
+      padding: '8px',
+      fontSize: '12.5px',
+      fontWeight: '700',
+      cursor: 'pointer',
+      fontFamily: 'Inter, Noto Sans Thai, sans-serif'
+    }
+  }, copied ? '✔ คัดลอกแล้ว — ไปวางในไลน์ได้เลย' : 'คัดลอกข้อความไปวางในไลน์')), /*#__PURE__*/React.createElement("a", {
     href: LINE,
     target: "_blank",
     rel: "noopener noreferrer",
@@ -12621,7 +12690,7 @@ function HPChatWidget() {
     fill: "currentColor"
   }, /*#__PURE__*/React.createElement("path", {
     d: "M12 2C6.48 2 2 5.92 2 10.8c0 3.27 1.96 6.16 4.95 7.87L6 21l3.24-1.62c.88.24 1.81.37 2.76.37 5.52 0 10-3.92 10-8.75S17.52 2 12 2z"
-  })), "\u0E02\u0E2D\u0E43\u0E1A\u0E40\u0E2A\u0E19\u0E2D\u0E23\u0E32\u0E04\u0E32\u0E17\u0E32\u0E07\u0E44\u0E25\u0E19\u0E4C"), /*#__PURE__*/React.createElement("div", {
+  })), summary ? 'ทักไลน์ให้ทีมงานดูแลต่อ' : 'คุยกับทีมงานทางไลน์'), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       gap: '8px',
