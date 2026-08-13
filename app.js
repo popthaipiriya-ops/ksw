@@ -154,113 +154,113 @@ const HP_CIRCLE_CATEGORIES = [{
 }, {
   id: 'wire',
   label: 'สายไฟ',
-  img: 'assets/สายไฟ.jpg'
+  img: 'assets/cat-wire-coil.jpg'
 }, {
   id: 'conduitpart',
   label: 'อุปกรณ์ท่อ',
-  img: 'assets/อุปกรณ์ท่อ.jpg',
+  img: 'assets/cat-pipe-fitting.jpg',
   keywords: ['อุปกรณ์ท่อร้อยสายไฟฟ้า', 'ข้อต่อ']
 }, {
   id: 'conduit',
   label: 'ท่อร้อยสายไฟ',
-  img: 'assets/ท่อร้อยสายไฟ.jpg'
+  img: 'assets/cat-conduit-tube.jpg'
 }, {
   id: 'loadcenter',
   label: 'ตู้โหลดเซนเตอร์',
-  img: 'assets/ตู้โหลดเซนเตอร์.png',
+  img: 'assets/cat-loadcenter.png',
   keywords: ['ตู้โหลดเซนเตอร์', 'ตู้โหลดเซ็นเตอร์']
 }, {
   id: 'plasticpanel',
   label: 'แผงไฟฟ้าพลาสติก',
-  img: 'assets/แผงไฟฟ้าพลาสติก.jpg',
+  img: 'assets/cat-plastic-panel.jpg',
   keywords: ['แผงไฟฟ้าพลาสติก']
 }, {
   id: 'faceplate',
   label: 'ฝาครอบหน้ากาก',
-  img: 'assets/ฝาครอบหน้ากาก.jpg',
+  img: 'assets/cat-faceplate.jpg',
   keywords: ['ฝาหน้ากาก', 'ฝาครอบแผงหน้ากากกันน้ำ']
 }, {
   id: 'bulb',
   label: 'หลอดไฟ',
-  img: 'assets/หลอดไฟ.jpg'
+  img: 'assets/cat-bulb.jpg'
 }, {
   id: 'lamp',
   label: 'โคมไฟ',
-  img: 'assets/โคมไฟ .jpg',
+  img: 'assets/cat-lamp.jpg',
   keywords: ['โคมไฟ']
 }, {
   id: 'switch',
   label: 'สวิตซ์,ปลั๊ก',
-  img: 'assets/สวิตซ์,ปลั๊ก.png'
+  img: 'assets/cat-switch-socket.png'
 }, {
   id: 'circuit',
   label: 'ลูกเซอร์กิต',
-  img: 'assets/ลูกเซอร์กิต .png',
+  img: 'assets/cat-mini-breaker.png',
   keywords: ['เซอร์กิตเบรกเกอร์', 'เซอร์กิต เบรกเกอร์']
 }, {
   id: 'wireway',
   label: 'รางวายเวย์',
-  img: 'assets/รางวายเวย์.jpg',
+  img: 'assets/cat-wireway.jpg',
   keywords: ['รางวายเวย์']
 }, {
   id: 'cableladder',
   label: 'รางเคเบิ้ลแลดเดอร์',
-  img: 'assets/รางเคเบิ้ลแลดเดอร์.png',
+  img: 'assets/cat-cable-ladder.png',
   keywords: ['รางเคเบิ้ลแลดเดอร์']
 }, {
   id: 'cableduct',
   label: 'รางเก็บสายไฟ',
-  img: 'assets/รางเก็บสายไฟ.jpg'
+  img: 'assets/cat-cable-trunking.jpg'
 }, {
   id: 'powerstrip',
   label: 'ปลั๊กราง',
-  img: 'assets/ปลั๊กราง.png'
+  img: 'assets/cat-power-strip.png'
 }, {
   id: 'breaker',
   label: 'เบรกเกอร์',
-  img: 'assets/เบรกเกอร์.png'
+  img: 'assets/cat-breaker-icon.png'
 }, {
   id: 'floatblock',
   label: 'บล็อคลอย',
-  img: 'assets/บล็อคลอย.jpg',
+  img: 'assets/cat-surface-box.jpg',
   keywords: ['กล่องลอย']
 }, {
   id: 'waterbox',
   label: 'กล่องกันน้ำ',
-  img: 'assets/กล่องกันน้ำ.jpg'
+  img: 'assets/cat-waterproof-box.jpg'
 }, {
   id: 'consumer',
   label: 'ตู้คอนซูมเมอร์ยูนิต',
-  img: 'assets/ตู้คอนซูมเมอร์ยูนิต.png',
+  img: 'assets/cat-consumer-unit.png',
   keywords: ['ตู้คอนซูมเมอร์']
 }, {
   id: 'switchboard',
   label: 'ตู้สวิทซ์บอร์ด',
-  img: 'assets/ตู้สวิทซ์บอร์ด.jpg',
+  img: 'assets/cat-switchboard.jpg',
   keywords: ['ตู้ไฟสวิทซ์บอร์ด', 'ตู้สวิตช์บอร์ด']
 }, {
   id: 'cabletie',
   label: 'เคเบิลไทร์',
-  img: 'assets/เคเบิลไทร์.png'
+  img: 'assets/cat-cable-tie.png'
 }, {
   id: 'airconduit',
   label: 'ท่อและอุปกรณ์แอร์',
-  img: 'assets/ท่อและอุปกรณ์แอร์.jpg',
+  img: 'assets/cat-air-pipe-fitting.jpg',
   keywords: ['ท่อและอุปกรณ์เครื่องปรับอากาศ']
 }, {
   id: 'plasticbox',
   label: 'ตู้กันน้ำพลาสติก',
-  img: 'assets/ตู้กันน้ำพลาสติก.png',
+  img: 'assets/cat-plastic-waterproof-cabinet.png',
   keywords: ['ตู้กันน้ำพลาสติก']
 }, {
   id: 'flooroutlet',
   label: 'เต้ารับฝังพื้น',
-  img: 'assets/เต้ารับฝังพิ้น.jpg',
+  img: 'assets/cat-floor-socket.jpg',
   keywords: ['เต้ารับฝังพื้น', 'เต้ารับฝังโต๊ะ']
 }, {
   id: 'rubberblock',
   label: 'บล็อคยาง',
-  img: 'assets/บล็อคยาง.png',
+  img: 'assets/cat-rubber-block.png',
   keywords: ['บล็อคยาง', 'บล็อคฝัง']
 }, {
   id: 'grounding',
@@ -2447,7 +2447,7 @@ function HPCategoryShowcase({
     title: 'ตู้โหลดเซนเตอร์',
     desc: 'จัดระเบียบวงจรไฟฟ้าทั้งบ้าน',
     price: 1890,
-    img: 'assets/ตู้โหลดเซนเตอร์.png',
+    img: 'assets/cat-loadcenter.png',
     accent: '#475569'
   }, {
     cat: 'consumer',
@@ -2455,7 +2455,7 @@ function HPCategoryShowcase({
     title: 'ตู้คอนซูมเมอร์',
     desc: 'ครบ จบทุกไซซ์ ราคาโรงงาน',
     price: 1890,
-    img: 'assets/ตู้คอนซูมเมอร์ยูนิต.png',
+    img: 'assets/cat-consumer-unit.png',
     accent: '#f05a20'
   }, {
     cat: 'wire',
@@ -3196,31 +3196,31 @@ function HPProductGuide() {
     cat: 'breaker',
     num: 2,
     title: 'เบรกเกอร์',
-    img: 'assets/เบรกเกอร์.png',
+    img: 'assets/cat-breaker-icon.png',
     intro: 'เบรกเกอร์ทำหน้าที่เหมือนหัวใจของระบบไฟฟ้าในบ้าน เป็นอุปกรณ์ที่ตัดกระแสไฟฟ้าโดยอัตโนมัติเมื่อเกิดกระแสไฟเกินหรือไฟฟ้าลัดวงจร ช่วยป้องกันอัคคีภัยและความเสียหายต่อเครื่องใช้ไฟฟ้า การเลือกขนาดเบรกเกอร์ (แอมป์) ให้เหมาะสมกับโหลดการใช้งานจึงเป็นเรื่องสำคัญมาก'
   }, {
     cat: 'wire',
     num: 3,
     title: 'สายไฟ',
-    img: 'assets/สายไฟ.jpg',
+    img: 'assets/cat-wire-coil.jpg',
     intro: 'สายไฟเป็นตัวนำกระแสไฟฟ้าจากแหล่งจ่ายไปยังจุดใช้งานต่างๆ ทำจากทองแดงแท้หุ้มด้วยฉนวน PVC การเลือกขนาดสายไฟ (ตารางมิลลิเมตร) ให้เหมาะสมกับปริมาณกระแสไฟที่ใช้งานเป็นสิ่งสำคัญ เพราะหากใช้สายไฟขนาดเล็กเกินไปอาจทำให้สายร้อนจัดจนเกิดอัคคีภัยได้'
   }, {
     cat: 'panel',
     num: 4,
     title: 'ตู้ไฟ',
-    img: 'assets/ตู้คอนซูมเมอร์ยูนิต.png',
+    img: 'assets/cat-consumer-unit.png',
     intro: 'ตู้ไฟหรือตู้คอนซูมเมอร์ยูนิต ทำหน้าที่เป็นศูนย์กลางควบคุมวงจรไฟฟ้าทั้งหมดภายในบ้าน ภายในติดตั้งเบรกเกอร์ย่อยแยกตามวงจรการใช้งาน ช่วยให้สามารถตัดไฟเฉพาะจุดได้สะดวกเวลาเกิดปัญหาหรือซ่อมบำรุง'
   }, {
     cat: 'conduit',
     num: 5,
     title: 'ท่อร้อยสายไฟ',
-    img: 'assets/ท่อร้อยสายไฟ.jpg',
+    img: 'assets/cat-conduit-tube.jpg',
     intro: 'ท่อร้อยสายไฟใช้สำหรับป้องกันสายไฟจากความเสียหายทางกายภาพ ความชื้น และสัตว์กัดแทะ อีกทั้งยังช่วยให้เดินสายไฟเป็นระเบียบและซ่อมบำรุงในภายหลังได้ง่ายขึ้น มีทั้งแบบท่อ PVC สำหรับงานทั่วไป และแบบโลหะสำหรับงานที่ต้องการความแข็งแรงเป็นพิเศษ'
   }, {
     cat: 'switch',
     num: 6,
     title: 'สวิตช์และปลั๊ก',
-    img: 'assets/สวิตซ์,ปลั๊ก.png',
+    img: 'assets/cat-switch-socket.png',
     intro: 'สวิตช์และปลั๊กเป็นจุดเชื่อมต่อระหว่างระบบไฟฟ้ากับการใช้งานจริงในชีวิตประจำวัน ควรเลือกใช้ผลิตภัณฑ์ที่ได้มาตรฐาน มอก. มีวัสดุทนความร้อนและรับกระแสไฟได้เพียงพอกับเครื่องใช้ไฟฟ้าที่เชื่อมต่อ เพื่อความปลอดภัยในระยะยาว'
   }];
   return /*#__PURE__*/React.createElement("section", {
@@ -6824,14 +6824,14 @@ const HP_CATALOG_BRANDS = [{
 }, {
   name: 'ท่อน้ำไทย',
   color: '#1e40af',
-  img: 'assets/ท่อน้ำไทย.jpg',
-  product: 'assets/ท่อน้ำไทย.jpg',
+  img: 'assets/brand-thonamthai.jpg',
+  product: 'assets/brand-thonamthai.jpg',
   hideLogoBar: true
 }, {
   name: 'Vena',
   color: '#1e3a8a',
-  img: 'assets/วีน่า.png',
-  product: 'assets/วีน่า.png',
+  img: 'assets/brand-vena-cat.png',
+  product: 'assets/brand-vena-cat.png',
   hideLogoBar: true
 }, {
   name: 'Sonic',
@@ -6848,8 +6848,8 @@ const HP_CATALOG_BRANDS = [{
 }, {
   name: 'GL',
   color: '#8bc83f',
-  img: 'assets/จีแอล เอ็นจิเนียริ่ง.jpg',
-  product: 'assets/จีแอล เอ็นจิเนียริ่ง.jpg',
+  img: 'assets/brand-gl-engineering.jpg',
+  product: 'assets/brand-gl-engineering.jpg',
   hideLogoBar: true
 }, {
   name: 'Panasonic',
@@ -6860,8 +6860,8 @@ const HP_CATALOG_BRANDS = [{
 }, {
   name: 'KJL',
   color: '#1e3a8a',
-  img: 'assets/เคเจแอล.jpg',
-  product: 'assets/เคเจแอล.jpg',
+  img: 'assets/brand-kjl-cat.jpg',
+  product: 'assets/brand-kjl-cat.jpg',
   hideLogoBar: true
 }, {
   name: 'SAFE-T-CUT',
@@ -6890,8 +6890,8 @@ const HP_CATALOG_BRANDS = [{
 }, {
   name: 'สายไฟ',
   color: '#374151',
-  img: 'assets/สายไฟ.jpg',
-  product: 'assets/สายไฟ.jpg',
+  img: 'assets/cat-wire-coil.jpg',
+  product: 'assets/cat-wire-coil.jpg',
   hideLogoBar: true
 }, {
   name: 'Nano LED',
