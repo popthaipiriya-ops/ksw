@@ -3,11 +3,108 @@
 //  เบราว์เซอร์แก้ค่าอะไรก็ไม่มีผล เพราะทุกคำสั่งถูกตรวจซ้ำที่นี่
 // ============================================================================
 import { getStore } from '@netlify/blobs';
+import Anthropic from '@anthropic-ai/sdk';
 
 const STORE   = 'kss-admin';
 const COOKIE  = 'kss_sess';
 const TTL_SEC = 60 * 60 * 8;           // เซสชันอายุ 8 ชั่วโมง
 const PBKDF2_ITER = 150000;
+
+// ---------- ผู้ช่วย AI ตอบลูกค้า ----------
+// endpoint นี้เปิดสาธารณะและมีค่าใช้จ่ายต่อข้อความ จึงต้องจำกัดปริมาณให้รัดกุม
+const CHAT_MODEL      = 'claude-opus-5';
+const CHAT_MAX_CHARS  = 1000;   // ความยาวข้อความลูกค้าต่อครั้ง
+const CHAT_MAX_TURNS  = 20;     // จำนวนข้อความย้อนหลังที่ส่งเข้าโมเดล
+const CHAT_RATE_MAX   = 30;     // จำนวนข้อความต่อ IP
+const CHAT_RATE_WIN   = 60 * 60 * 1000;  // ต่อ 1 ชั่วโมง
+
+const LINE_URL = 'https://lin.ee/rAFJt2QD';
+
+const CHAT_SYSTEM = `คุณคือผู้ช่วยตอบคำถามลูกค้าของ "บริษัท เกิดแสงสว่าง จำกัด" (KiRD SAENG SAWANG CO.,LTD.)
+ร้านจำหน่ายอุปกรณ์ไฟฟ้าครบวงจร ทั้งปลีกและส่ง ย่านบางบอน กรุงเทพฯ
+
+ข้อมูลร้าน
+- ที่อยู่: 87/11-12 ซอยเอกชัย 76 แยก 2 แขวงคลองบางพราน เขตบางบอน กรุงเทพมหานคร 10150
+- โทร: 02-894-4007, 02-894-4008
+- LINE Official: @kirdsaengsawang
+- เวลาทำการ: จันทร์–เสาร์ 08:30–17:30 น. (หยุดวันอาทิตย์และวันหยุดนักขัตฤกษ์)
+
+สินค้าที่จำหน่าย
+เบรกเกอร์ · ตู้โหลดเซนเตอร์ · ตู้คอนซูมเมอร์ยูนิต · ตู้ MDB · ตู้สวิตช์บอร์ด · สายไฟ ·
+หลอดไฟ/โคมไฟ LED · สวิตช์และเต้ารับ · ฝาหน้ากาก · คัตเอาท์ · ท่อร้อยสายไฟ · รางไฟ ·
+บล็อคยาง · สายดินและล่อฟ้า · พัดลมดูดอากาศ · อุปกรณ์ฮาร์ดแวร์ไฟฟ้า
+
+แบรนด์ที่จำหน่าย
+Nano · CHANG (ช้าง) · Panasonic · KJL · SAFE-T-CUT · Sentoshi · Zeberg · IWACHI · Vena ·
+Schneider Electric · Reckon · SOKAWA · Lucky Misu · ท่อน้ำไทย · ทองไทยเบเกอร์ไลท์ และอื่นๆ
+
+บริการ
+รับประกอบตู้โหลด 3 เฟส · รับผลิตตู้ MDB ตามสเปก · บริการติดตั้ง · งานโครงการ · ปรึกษาระบบไฟ
+
+หน้าที่ของคุณ
+1. ตอบคำถามความรู้เรื่องไฟฟ้าและอุปกรณ์ไฟฟ้าให้เข้าใจง่าย เช่น เลือกขนาดเบรกเกอร์ ขนาดสายไฟ
+   ความต่างของตู้แต่ละแบบ ระบบ 1 เฟส/3 เฟส การติดตั้งที่ปลอดภัย มาตรฐาน มอก./IEC
+2. แนะนำว่าสินค้าประเภทไหนเหมาะกับงานของลูกค้า
+3. ให้ข้อมูลร้าน เวลาทำการ ช่องทางติดต่อ
+
+กฎเหล็ก
+- ตอบเป็นภาษาไทยเสมอ สุภาพ เป็นกันเอง กระชับ (ปกติ 2-5 ประโยค) ไม่ต้องใส่หัวข้อหรือ bullet ถ้าไม่จำเป็น
+- ห้ามบอกราคา สต็อก หรือระยะเวลาส่งของเด็ดขาด เพราะคุณไม่มีข้อมูลนั้น
+  ถ้าลูกค้าถามราคา/ขอใบเสนอราคา/ถามว่ามีของไหม ให้ตอบสั้นๆ แล้วบอกให้ทักไลน์ @kirdsaengsawang
+  เพื่อขอใบเสนอราคาและเช็คสต็อกจากทีมงานโดยตรง
+- ห้ามแต่งข้อมูลสเปกสินค้าหรือรุ่นที่ไม่แน่ใจ ถ้าไม่รู้ให้บอกตรงๆ แล้วแนะนำให้สอบถามทางไลน์
+- งานที่ต้องเดินไฟจริง ให้ย้ำเสมอว่าควรใช้ช่างไฟที่มีใบอนุญาตเป็นผู้ติดตั้ง
+- ห้ามแนะนำร้านคู่แข่งหรือเว็บไซต์ร้านอื่น
+- ตอบเฉพาะเรื่องที่เกี่ยวกับไฟฟ้า อุปกรณ์ไฟฟ้า และร้าน ถ้าถูกถามเรื่องอื่นให้ปฏิเสธอย่างสุภาพ
+  แล้วชวนกลับมาคุยเรื่องอุปกรณ์ไฟฟ้า`;
+
+// ---------- กันเดารหัสผ่านหน้าล็อกอิน ----------
+const LOGIN_MAX_FAIL = 5;                 // ผิดได้กี่ครั้ง
+const LOGIN_WINDOW   = 15 * 60 * 1000;    // ภายในกี่นาที
+const LOGIN_LOCK     = 15 * 60 * 1000;    // แล้วล็อกนานเท่าไร
+
+const clientIp = (req) =>
+  req.headers.get('x-nf-client-connection-ip')
+  || (req.headers.get('x-forwarded-for') || '').split(',')[0].trim()
+  || 'unknown';
+const loginKey = (ip) => 'ratelimit/login/' + String(ip).replace(/[^a-zA-Z0-9.:_-]/g, '_');
+
+// เหลือเวลาโดนล็อกกี่วินาที (0 = ไม่ได้ถูกล็อก)
+async function loginLockLeft(ip) {
+  const rec = await readJson(loginKey(ip), null);
+  if (!rec || !rec.until) return 0;
+  const left = rec.until - Date.now();
+  return left > 0 ? Math.ceil(left / 1000) : 0;
+}
+// นับครั้งที่ผิด — คืนจำนวนครั้งที่เหลือก่อนโดนล็อก (0 = ล็อกแล้ว)
+async function loginFail(ip) {
+  const key = loginKey(ip);
+  const now = Date.now();
+  let rec = await readJson(key, null);
+  if (!rec || typeof rec.start !== 'number' || now - rec.start > LOGIN_WINDOW) rec = { start: now, count: 0 };
+  rec.count += 1;
+  if (rec.count >= LOGIN_MAX_FAIL) rec.until = now + LOGIN_LOCK;
+  await writeJson(key, rec);
+  return Math.max(0, LOGIN_MAX_FAIL - rec.count);
+}
+// ล็อกอินสำเร็จแล้วล้างตัวนับทิ้ง
+async function loginReset(ip) {
+  try { await store().delete(loginKey(ip)); } catch {}
+}
+
+// จำกัดจำนวนครั้งต่อ IP — กันค่าใช้จ่ายบานปลายจาก endpoint สาธารณะ
+async function chatRateOk(ip) {
+  const key = 'ratelimit/chat/' + (ip || 'unknown').replace(/[^a-zA-Z0-9.:_-]/g, '_');
+  const now = Date.now();
+  let rec = await readJson(key, null);
+  if (!rec || typeof rec.start !== 'number' || now - rec.start > CHAT_RATE_WIN) {
+    rec = { start: now, count: 0 };
+  }
+  if (rec.count >= CHAT_RATE_MAX) return false;
+  rec.count += 1;
+  await writeJson(key, rec);
+  return true;
+}
 
 // ---------- บทบาทและสิทธิ์ (แหล่งความจริงอยู่ที่เซิร์ฟเวอร์) ----------
 const ROLES = {
@@ -121,6 +218,15 @@ export default async (req) => {
   try {
     // ---------- เข้าสู่ระบบ ----------
     if (path === '/auth/login' && method === 'POST') {
+      const ip = clientIp(req);
+
+      // กันเดารหัสผ่าน — ล็อกชั่วคราวเมื่อผิดติดกันหลายครั้ง
+      const lock = await loginLockLeft(ip);
+      if (lock > 0) {
+        return json({ error:`ใส่รหัสผิดหลายครั้งเกินไป กรุณารออีก ${Math.ceil(lock / 60)} นาทีแล้วลองใหม่` },
+                    429, { 'retry-after': String(lock) });
+      }
+
       const { username, password } = await req.json().catch(() => ({}));
       if (!username || !password) return json({ error:'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน' }, 400);
 
@@ -131,8 +237,13 @@ export default async (req) => {
       // คำนวณแฮชเสมอแม้ไม่เจอผู้ใช้ เพื่อไม่ให้เดาได้จากเวลาตอบกลับ
       const probe = await hashPassword(String(password), u ? u.salt : b64u(new Uint8Array(16)));
       if (!u || !safeEqual(probe.hash, u.hash) || u.active === false) {
-        return json({ error:'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' }, 401);
+        const left = await loginFail(ip);
+        // ไม่บอกว่าผิดที่ชื่อผู้ใช้หรือรหัสผ่าน เพื่อไม่ให้เดาว่ามีบัญชีนี้อยู่จริงไหม
+        return json({ error: left > 0
+          ? `ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง (เหลืออีก ${left} ครั้งก่อนถูกล็อกชั่วคราว)`
+          : 'ใส่รหัสผิดหลายครั้งเกินไป บัญชีนี้ถูกล็อกชั่วคราว กรุณารอสักครู่' }, 401);
       }
+      await loginReset(ip);
       const token = await signToken({ sub:u.id, role:u.role, exp: Math.floor(Date.now()/1000) + TTL_SEC });
       return json({ user: publicUser(u) }, 200, { 'set-cookie': setCookie(token, TTL_SEC) });
     }
@@ -143,6 +254,56 @@ export default async (req) => {
     // อ่านข้อมูลสินค้าเปิดสาธารณะ (หน้าร้านต้องใช้แสดงผล) — แต่การ "แก้ไข" ต้องล็อกอิน
     if (path === '/products' && method === 'GET')
       return json({ products: await readJson('products', []) });
+
+    // อ่านการตั้งค่าเว็บเปิดสาธารณะ (หน้าแคตตาล็อกต้องใช้แสดงลิงก์แบรนด์)
+    if (path === '/settings' && method === 'GET')
+      return json({ settings: await readJson('settings', {}) });
+
+    // ---------- ผู้ช่วย AI ตอบลูกค้า (เปิดสาธารณะ ลูกค้าหน้าเว็บใช้ได้เลย) ----------
+    if (path === '/chat' && method === 'POST') {
+      if (!process.env.ANTHROPIC_API_KEY)
+        return json({ error:'ระบบผู้ช่วยยังไม่ได้ตั้งค่า กรุณาทักไลน์ @kirdsaengsawang', lineUrl: LINE_URL }, 503);
+
+      const ip = req.headers.get('x-nf-client-connection-ip')
+              || (req.headers.get('x-forwarded-for') || '').split(',')[0].trim();
+      if (!(await chatRateOk(ip)))
+        return json({ error:'คุยกันเยอะแล้ววันนี้ 😊 รบกวนทักไลน์ @kirdsaengsawang เพื่อคุยกับทีมงานโดยตรงนะครับ', lineUrl: LINE_URL }, 429);
+
+      const body = await req.json().catch(() => ({}));
+      const history = Array.isArray(body.messages) ? body.messages : [];
+
+      // รับเฉพาะรูปแบบที่ต้องการ และตัดความยาวทิ้ง กันการยัดข้อความยาวผิดปกติ
+      const messages = history
+        .filter(m => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string' && m.content.trim())
+        .slice(-CHAT_MAX_TURNS)
+        .map(m => ({ role: m.role, content: m.content.slice(0, CHAT_MAX_CHARS) }));
+
+      if (!messages.length || messages[messages.length - 1].role !== 'user')
+        return json({ error:'รูปแบบข้อความไม่ถูกต้อง' }, 400);
+
+      try {
+        const anthropic = new Anthropic();
+        const resp = await anthropic.beta.messages.create({
+          model: CHAT_MODEL,
+          max_tokens: 2000,
+          betas: ['server-side-fallback-2026-07-01'],
+          fallbacks: 'default',
+          thinking: { type: 'adaptive' },
+          output_config: { effort: 'low' },
+          system: [{ type:'text', text: CHAT_SYSTEM, cache_control: { type:'ephemeral' } }],
+          messages,
+        });
+
+        if (resp.stop_reason === 'refusal')
+          return json({ reply:'ขออภัยครับ คำถามนี้ผมตอบให้ไม่ได้ รบกวนทักไลน์ @kirdsaengsawang เพื่อคุยกับทีมงานโดยตรงนะครับ', lineUrl: LINE_URL });
+
+        const reply = resp.content.filter(b => b.type === 'text').map(b => b.text).join('').trim();
+        return json({ reply: reply || 'ขออภัยครับ ผมยังตอบคำถามนี้ไม่ได้ รบกวนทักไลน์ @kirdsaengsawang นะครับ', lineUrl: LINE_URL });
+      } catch (e) {
+        console.error('chat error:', e);
+        return json({ error:'ระบบผู้ช่วยขัดข้องชั่วคราว รบกวนทักไลน์ @kirdsaengsawang นะครับ', lineUrl: LINE_URL }, 502);
+      }
+    }
 
     // ---------- ตั้งแต่บรรทัดนี้ ต้องล็อกอินแล้วเท่านั้น ----------
     const me = await currentUser(req);
@@ -228,6 +389,55 @@ export default async (req) => {
         await writeJson('products', body.products);
         return json({ ok:true, count: body.products.length });
       }
+    }
+
+    // ---------- ตั้งค่าเว็บไซต์ (แคตตาล็อก + ข้อมูลติดต่อ) ----------
+    if (path === '/settings' && method === 'POST') {
+      if (!can(me, 'editProduct')) return json({ error:'บทบาทของคุณไม่มีสิทธิ์แก้ไขการตั้งค่าเว็บไซต์' }, 403);
+      const body = await req.json().catch(() => ({}));
+      if (!body.settings || typeof body.settings !== 'object')
+        return json({ error:'รูปแบบข้อมูลไม่ถูกต้อง' }, 400);
+
+      const s = body.settings;
+      const str = (v, max) => String(v == null ? '' : v).trim().slice(0, max);
+      // ยอมรับเฉพาะ http/https เพื่อกัน javascript: และลิงก์แปลกปลอม
+      const okUrl = (v) => !v || /^https?:\/\//i.test(v);
+
+      // ---- แคตตาล็อก: ต่อแบรนด์มี ลิงก์ / ชื่อที่แสดง / ข้อความปุ่ม / ซ่อน ----
+      const catalog = {};
+      for (const [name, raw] of Object.entries(s.catalog || {})) {
+        if (!raw || typeof raw !== 'object') continue;
+        const url = str(raw.url, 500);
+        if (!okUrl(url)) return json({ error:`ลิงก์ของ ${name} ต้องขึ้นต้นด้วย http:// หรือ https://` }, 400);
+        const rec = {};
+        if (url)            rec.url    = url;
+        if (raw.label)      rec.label  = str(raw.label, 60);
+        if (raw.cta)        rec.cta    = str(raw.cta, 40);
+        if (raw.hidden === true) rec.hidden = true;
+        if (Object.keys(rec).length) catalog[name] = rec;
+      }
+
+      // ---- ข้อมูลติดต่อ (ใช้ร่วมกันหลายหน้า) ----
+      const c = s.contact || {};
+      const lineUrl = str(c.lineUrl, 300);
+      if (!okUrl(lineUrl)) return json({ error:'ลิงก์ไลน์ต้องขึ้นต้นด้วย http:// หรือ https://' }, 400);
+      const contact = {
+        phone:   str(c.phone, 60),
+        lineId:  str(c.lineId, 60),
+        lineUrl,
+        hours:   str(c.hours, 120),
+        address: str(c.address, 300),
+      };
+
+      const out = {
+        catalog,
+        catalogFooter: str(s.catalogFooter, 80),
+        contact,
+        // เก็บรูปแบบเดิมไว้ด้วย เผื่อหน้าเว็บเวอร์ชันเก่ายังอ่านอยู่
+        catalogUrls: Object.fromEntries(Object.entries(catalog).filter(([, v]) => v.url).map(([k, v]) => [k, v.url])),
+      };
+      await writeJson('settings', out);
+      return json({ ok:true, settings: out });
     }
 
     // ---------- ใบเสนอราคา ----------

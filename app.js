@@ -403,6 +403,25 @@ function HPMainHeader({
 }) {
   const [showLine, setShowLine] = useState(false);
   const [openMenu, setOpenMenu] = useState(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileSub, setMobileSub] = useState(null);
+  // กดเมนูบนมือถือแล้วต้องปิดแผงเสมอ ไม่งั้นแผงจะค้างทับหน้าใหม่
+  const goMobile = t => {
+    setMobileOpen(false);
+    setMobileSub(null);
+    onNavigate(t);
+  };
+  useEffect(() => {
+    // ปิดแผงอัตโนมัติถ้าผู้ใช้ขยายจอกลับเป็นเดสก์ท็อป ไม่งั้นแผงจะค้างอยู่ทั้งที่เมนูปกติกลับมาแล้ว
+    const onResize = () => {
+      if (window.innerWidth > 980) {
+        setMobileOpen(false);
+        setMobileSub(null);
+      }
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
   const navLinks = [{
     label: 'หน้าแรก',
     icon: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
@@ -433,10 +452,10 @@ function HPMainHeader({
       target: 'เกร็ดความรู้'
     }, {
       label: 'ตู้ MDB คืออะไร ?',
-      target: 'เกร็ดความรู้'
+      target: 'mdb-article'
     }, {
       label: 'ความสำคัญของตู้โหลด 3 เฟส',
-      target: 'เกร็ดความรู้'
+      target: 'loadcenter3p-article'
     }]
   }, {
     label: 'แคตตาล็อก',
@@ -483,6 +502,7 @@ function HPMainHeader({
       borderBottom: '1px solid #eef3ef'
     }
   }, /*#__PURE__*/React.createElement("div", {
+    className: "hp-header-row",
     style: {
       maxWidth: '1240px',
       margin: '0 auto',
@@ -497,7 +517,7 @@ function HPMainHeader({
       alignItems: 'center',
       gap: '11px',
       cursor: 'pointer',
-      flexShrink: 0
+      minWidth: 0
     },
     onClick: () => onNavigate('home')
   }, /*#__PURE__*/React.createElement("div", {
@@ -519,23 +539,33 @@ function HPMainHeader({
     }
   })), /*#__PURE__*/React.createElement("div", {
     style: {
-      lineHeight: 1.1
+      lineHeight: 1.1,
+      minWidth: 0
     }
   }, /*#__PURE__*/React.createElement("div", {
+    className: "hp-brand-name",
     style: {
       fontWeight: 800,
       fontSize: '17px',
       color: '#06352e',
-      letterSpacing: '0.2px'
+      letterSpacing: '0.2px',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis'
     }
   }, "KiRD SAENG SAWANG"), /*#__PURE__*/React.createElement("div", {
+    className: "hp-brand-sub",
     style: {
       fontSize: '11px',
       color: '#8a9a90',
       fontWeight: 400,
-      marginTop: '2px'
+      marginTop: '2px',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis'
     }
   }, "\u0E1A\u0E23\u0E34\u0E29\u0E31\u0E17 \u0E40\u0E01\u0E34\u0E14\u0E41\u0E2A\u0E07\u0E2A\u0E27\u0E48\u0E32\u0E07 \u0E08\u0E33\u0E01\u0E31\u0E14"))), /*#__PURE__*/React.createElement("nav", {
+    className: "hp-nav-desktop",
     style: {
       flex: 1,
       display: 'flex',
@@ -637,12 +667,57 @@ function HPMainHeader({
     }
   }, "Member"))))))), /*#__PURE__*/React.createElement("div", {
     style: {
+      flex: 1
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
       display: 'flex',
       alignItems: 'center',
       gap: '8px',
       flexShrink: 0
     }
   }, /*#__PURE__*/React.createElement("div", {
+    className: "hp-burger",
+    style: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '40px',
+      height: '40px',
+      borderRadius: '10px',
+      background: '#f2f6f4',
+      border: '1px solid #e2ece7',
+      cursor: 'pointer'
+    },
+    role: "button",
+    tabIndex: 0,
+    "aria-label": "\u0E40\u0E1B\u0E34\u0E14\u0E40\u0E21\u0E19\u0E39",
+    "aria-expanded": mobileOpen,
+    onClick: () => setMobileOpen(o => !o),
+    onKeyDown: e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        setMobileOpen(o => !o);
+      }
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "21",
+    height: "21",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "#0d5c50",
+    strokeWidth: "2.2",
+    strokeLinecap: "round"
+  }, mobileOpen ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+    d: "M18 6L6 18"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M6 6l12 12"
+  })) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+    d: "M3 6h18"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M3 12h18"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M3 18h18"
+  })))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'center',
@@ -704,7 +779,92 @@ function HPMainHeader({
     r: "3.1"
   }), /*#__PURE__*/React.createElement("path", {
     d: "M19.1 14.6a1.5 1.5 0 00.3 1.66l.05.05a1.82 1.82 0 11-2.58 2.58l-.05-.05a1.5 1.5 0 00-1.66-.3 1.5 1.5 0 00-.91 1.37v.14a1.82 1.82 0 11-3.64 0v-.07a1.5 1.5 0 00-.98-1.37 1.5 1.5 0 00-1.66.3l-.05.05a1.82 1.82 0 11-2.58-2.58l.05-.05a1.5 1.5 0 00.3-1.66 1.5 1.5 0 00-1.37-.91H4.2a1.82 1.82 0 110-3.64h.07a1.5 1.5 0 001.37-.98 1.5 1.5 0 00-.3-1.66l-.05-.05a1.82 1.82 0 112.58-2.58l.05.05a1.5 1.5 0 001.66.3h.07a1.5 1.5 0 00.91-1.37V4.2a1.82 1.82 0 113.64 0v.07a1.5 1.5 0 00.91 1.37 1.5 1.5 0 001.66-.3l.05-.05a1.82 1.82 0 112.58 2.58l-.05.05a1.5 1.5 0 00-.3 1.66v.07a1.5 1.5 0 001.37.91h.14a1.82 1.82 0 110 3.64h-.07a1.5 1.5 0 00-1.37.91z"
-  })))))));
+  }))))), mobileOpen && /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderTop: '1px solid #eef3ef',
+      background: '#fff',
+      maxHeight: '70vh',
+      overflowY: 'auto'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxWidth: '1240px',
+      margin: '0 auto',
+      padding: '8px 12px 14px'
+    }
+  }, navLinks.map(n => /*#__PURE__*/React.createElement("div", {
+    key: n.label
+  }, /*#__PURE__*/React.createElement("div", {
+    role: "button",
+    tabIndex: 0,
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+      padding: '13px 12px',
+      fontSize: '15px',
+      fontWeight: '600',
+      color: '#3a4a42',
+      cursor: 'pointer',
+      borderRadius: '10px'
+    },
+    onClick: () => n.submenu ? setMobileSub(s => s === n.label ? null : n.label) : goMobile(n.target || n.label),
+    onKeyDown: e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        n.submenu ? setMobileSub(s => s === n.label ? null : n.label) : goMobile(n.target || n.label);
+      }
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "20",
+    height: "20",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "1.9",
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    style: {
+      flexShrink: 0
+    }
+  }, n.icon), /*#__PURE__*/React.createElement("span", {
+    style: {
+      flex: 1
+    }
+  }, n.label), n.submenu && /*#__PURE__*/React.createElement("svg", {
+    width: "16",
+    height: "16",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "#9aa8a0",
+    strokeWidth: "2.4",
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    style: {
+      transform: mobileSub === n.label ? 'rotate(180deg)' : 'none',
+      transition: 'transform 0.18s'
+    }
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M6 9l6 6 6-6"
+  }))), n.submenu && mobileSub === n.label && n.submenu.map(s => /*#__PURE__*/React.createElement("div", {
+    key: s.label,
+    role: "button",
+    tabIndex: 0,
+    style: {
+      padding: '11px 12px 11px 44px',
+      fontSize: '14px',
+      color: '#5a7a66',
+      cursor: 'pointer',
+      borderRadius: '10px'
+    },
+    onClick: () => goMobile(s.target),
+    onKeyDown: e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        goMobile(s.target);
+      }
+    }
+  }, "\u2022 ", s.label))))))));
 }
 function HPHeader({
   cartCount,
@@ -3278,11 +3438,28 @@ function HPBrandStrip() {
 // ─── FOOTER ───────────────────────────────────────────────────────────────────
 
 function HPFooter({
-  onCategoryChange
+  onCategoryChange,
+  onNavigate
 }) {
+  // แต่ละบริการต้องกดแล้วไปที่ไหนสักที่ — ก่อนหน้านี้กดแล้วไม่มีอะไรเกิดขึ้น
   const serviceCol = {
     title: 'บริการของเรา',
-    links: ['รับประกอบตู้โหลด 3 เฟส', 'รับผลิตตู้ MDB', 'บริการติดตั้ง', 'งานโครงการ', 'ปรึกษาระบบไฟ']
+    links: [{
+      label: 'รับประกอบตู้โหลด 3 เฟส',
+      go: 'loadcenter3p-article'
+    }, {
+      label: 'รับผลิตตู้ MDB',
+      go: 'mdb-article'
+    }, {
+      label: 'บริการติดตั้ง',
+      go: 'ติดต่อเรา'
+    }, {
+      label: 'งานโครงการ',
+      go: 'ติดต่อเรา'
+    }, {
+      label: 'ปรึกษาระบบไฟ',
+      go: 'ติดต่อเรา'
+    }]
   };
   const productLinks = [...HP_FOOTER_CATEGORIES.map(c => ({
     id: c.id,
@@ -3314,6 +3491,18 @@ function HPFooter({
     transition: 'all 0.15s',
     width: 'fit-content'
   };
+  // <a> ที่ไม่มี href จะกด Tab ไปไม่ถึงและโปรแกรมอ่านหน้าจอไม่รู้ว่าเป็นลิงก์ — เพิ่มให้กดด้วยคีย์บอร์ดได้
+  const linkA11y = fn => ({
+    role: 'link',
+    tabIndex: 0,
+    onClick: fn,
+    onKeyDown: e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        fn();
+      }
+    }
+  });
   return /*#__PURE__*/React.createElement("footer", {
     style: {
       background: '#004E3D',
@@ -3365,6 +3554,7 @@ function HPFooter({
       marginBottom: '26px'
     }
   }, "\u0E1A\u0E23\u0E34\u0E29\u0E31\u0E17 \u0E40\u0E01\u0E34\u0E14\u0E41\u0E2A\u0E07\u0E2A\u0E27\u0E48\u0E32\u0E07 \u0E08\u0E33\u0E01\u0E31\u0E14")), /*#__PURE__*/React.createElement("div", {
+    className: "hp-footer-grid",
     style: {
       maxWidth: '1240px',
       margin: '0 auto',
@@ -3382,10 +3572,10 @@ function HPFooter({
     }
   }, productCols.map((sub, si) => /*#__PURE__*/React.createElement("div", {
     key: si
-  }, sub.map(c => /*#__PURE__*/React.createElement("a", {
+  }, sub.map(c => /*#__PURE__*/React.createElement("a", _extends({
     key: c.id,
-    style: linkStyle,
-    onClick: () => onCategoryChange(c.id),
+    style: linkStyle
+  }, linkA11y(() => onCategoryChange(c.id)), {
     onMouseEnter: e => {
       e.currentTarget.style.color = '#fff';
       e.currentTarget.style.paddingLeft = '4px';
@@ -3394,7 +3584,7 @@ function HPFooter({
       e.currentTarget.style.color = 'rgba(255,255,255,0.65)';
       e.currentTarget.style.paddingLeft = '0';
     }
-  }, /*#__PURE__*/React.createElement("span", {
+  }), /*#__PURE__*/React.createElement("span", {
     style: {
       width: '4px',
       height: '4px',
@@ -3402,9 +3592,10 @@ function HPFooter({
       background: '#5fd1c2',
       flexShrink: 0
     }
-  }), c.label)))))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(ColHead, null, serviceCol.title), serviceCol.links.map(l => /*#__PURE__*/React.createElement("a", {
-    key: l,
-    style: linkStyle,
+  }), c.label)))))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(ColHead, null, serviceCol.title), serviceCol.links.map(l => /*#__PURE__*/React.createElement("a", _extends({
+    key: l.label,
+    style: linkStyle
+  }, linkA11y(() => onNavigate(l.go)), {
     onMouseEnter: e => {
       e.currentTarget.style.color = '#fff';
       e.currentTarget.style.paddingLeft = '4px';
@@ -3413,7 +3604,7 @@ function HPFooter({
       e.currentTarget.style.color = 'rgba(255,255,255,0.65)';
       e.currentTarget.style.paddingLeft = '0';
     }
-  }, /*#__PURE__*/React.createElement("span", {
+  }), /*#__PURE__*/React.createElement("span", {
     style: {
       width: '4px',
       height: '4px',
@@ -3421,7 +3612,7 @@ function HPFooter({
       background: '#5fd1c2',
       flexShrink: 0
     }
-  }), l))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(ColHead, null, "\u0E15\u0E34\u0E14\u0E15\u0E48\u0E2D\u0E40\u0E23\u0E32"), /*#__PURE__*/React.createElement("div", {
+  }), l.label))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(ColHead, null, "\u0E15\u0E34\u0E14\u0E15\u0E48\u0E2D\u0E40\u0E23\u0E32"), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'flex-start',
@@ -4280,55 +4471,121 @@ function HPWholesalePage() {
     }
   }, "\u0E08\u0E31\u0E19\u0E17\u0E23\u0E4C \u2013 \u0E40\u0E2A\u0E32\u0E23\u0E4C 08:30 \u2013 17:30 \u0E19."))))));
 }
-function HPKnowledgePage() {
+function HPKnowledgePage({
+  onCategoryChange,
+  onNavigate
+}) {
+  const KI = {
+    award: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+      cx: "12",
+      cy: "8",
+      r: "6"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M8.5 13.5L7 22l5-3 5 3-1.5-8.5"
+    })),
+    target: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+      cx: "12",
+      cy: "12",
+      r: "9"
+    }), /*#__PURE__*/React.createElement("circle", {
+      cx: "12",
+      cy: "12",
+      r: "5"
+    }), /*#__PURE__*/React.createElement("circle", {
+      cx: "12",
+      cy: "12",
+      r: "1.3",
+      fill: "currentColor",
+      stroke: "none"
+    })),
+    bolt: /*#__PURE__*/React.createElement("path", {
+      d: "M13 2 3 14h7l-1 8 11-14h-7l1-6z"
+    }),
+    shield: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+      d: "M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5l-8-3z"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M9 12l2 2 4-4"
+    })),
+    wrench: /*#__PURE__*/React.createElement("path", {
+      d: "M14.7 6.3a4 4 0 10-5.4 5.4L3 18.6V21h2.4l6.3-6.3a4 4 0 005.4-5.4l-2.8 2.8-2.1-2.1 2.8-2.8z"
+    }),
+    panel: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
+      x: "5",
+      y: "3",
+      width: "14",
+      height: "18",
+      rx: "2"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M9 8h6M9 12h6M9 16h3"
+    }))
+  };
+  const KIcon = ({
+    name,
+    size
+  }) => /*#__PURE__*/React.createElement("svg", {
+    width: size || 24,
+    height: size || 24,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "1.8",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, KI[name]);
   const steps = [{
     n: '1',
-    icon: '🏅',
+    icon: 'award',
     c1: '#8bc83f',
-    c2: '#8bc83f',
+    c2: '#5f9c2b',
     title: 'เลือกอุปกรณ์ที่ผ่านมาตรฐานสากล',
     desc: 'ควรเลือกอุปกรณ์ไฟฟ้าที่ได้รับการรับรองมาตรฐาน เช่น มอก. (มาตรฐานผลิตภัณฑ์อุตสาหกรรม) หรือ IEC (มาตรฐานสากล) เพื่อความปลอดภัยและความน่าเชื่อถือ มั่นใจได้ว่าอุปกรณ์ผ่านการทดสอบคุณภาพมาแล้ว'
   }, {
     n: '2',
-    icon: '🎯',
-    c1: '#0d9488',
-    c2: '#14b8a6',
+    icon: 'target',
+    c1: '#14b8a6',
+    c2: '#0d9488',
     title: 'คำนึงถึงความเหมาะสมกับการใช้งาน',
     desc: 'เลือกอุปกรณ์ให้เหมาะกับลักษณะงานและปริมาณการใช้ไฟฟ้า เช่น ขนาดของเบรกเกอร์ ชนิดของสายไฟ และพิกัดกระแส ให้สอดคล้องกับโหลดที่ใช้จริง เพื่อประสิทธิภาพและความปลอดภัยสูงสุด'
   }, {
     n: '3',
-    icon: '⚡',
-    c1: '#ca8a04',
-    c2: '#eab308',
+    icon: 'bolt',
+    c1: '#eab308',
+    c2: '#ca8a04',
     title: 'ประหยัดพลังงานด้วยอุปกรณ์ที่มีประสิทธิภาพสูง',
     desc: 'เลือกใช้อุปกรณ์ประหยัดพลังงาน เช่น หลอด LED หรืออุปกรณ์ที่มีฉลากประหยัดไฟเบอร์ 5 ช่วยลดการใช้พลังงานและความร้อน ลดค่าไฟในระยะยาว และเป็นมิตรต่อสิ่งแวดล้อม'
   }, {
     n: '4',
-    icon: '🛡️',
-    c1: '#ea580c',
-    c2: '#fb923c',
+    icon: 'shield',
+    c1: '#fb923c',
+    c2: '#ea580c',
     title: 'ตรวจสอบความปลอดภัยในการติดตั้ง',
     desc: 'ก่อนติดตั้งควรตรวจสอบสภาพอุปกรณ์และระบบสายดินให้เรียบร้อย และควรให้ช่างไฟฟ้าที่มีใบอนุญาตเป็นผู้ติดตั้ง เพื่อป้องกันไฟฟ้าลัดวงจรและอุบัติเหตุ'
   }, {
     n: '5',
-    icon: '🛠️',
-    c1: '#2563eb',
-    c2: '#3b82f6',
+    icon: 'wrench',
+    c1: '#3b82f6',
+    c2: '#2563eb',
     title: 'การบำรุงรักษาอุปกรณ์เดินระบบไฟฟ้า',
     desc: 'ตรวจเช็คและบำรุงรักษาอุปกรณ์ไฟฟ้าเป็นประจำ เช่น ทำความสะอาด ตรวจจุดต่อสายไฟ และเช็คความร้อนผิดปกติ จะช่วยยืดอายุการใช้งานและลดความเสี่ยงในการเกิดปัญหา'
   }];
   const more = [{
     title: 'ตู้ MDB คืออะไร ?',
-    excerpt: 'ตู้ MDB (Main Distribution Board) คือตู้จ่ายไฟหลักของอาคาร ทำหน้าที่รับไฟจากการไฟฟ้าแล้วกระจายไปยังตู้ย่อยต่างๆ อย่างปลอดภัย',
-    c1: '#0d9488',
-    c2: '#14b8a6',
-    icon: '🗄️'
+    excerpt: 'ตู้ MDB (Main Distribution Board) คือตู้จ่ายไฟหลักของอาคาร ทำหน้าที่รับไฟจากการไฟฟ้าแล้วกระจายไปยังตู้ย่อยต่างๆ อย่างปลอดภัย เกิดแสงสว่างรับผลิตและจำหน่ายตู้ MDB ตามสเปกงาน',
+    c1: '#14b8a6',
+    c2: '#0d9488',
+    icon: 'panel',
+    img: 'assets/kjl-more/kjl-customcabinet-1.webp',
+    article: 'mdb-article',
+    cta: 'อ่านบทความ'
   }, {
     title: 'ความสำคัญของตู้โหลด 3 เฟส',
     excerpt: 'ตู้โหลด 3 เฟสช่วยกระจายโหลดไฟฟ้าให้สมดุล รองรับเครื่องจักรและอุปกรณ์กำลังสูง เหมาะกับโรงงานและอาคารขนาดใหญ่',
-    c1: '#2563eb',
-    c2: '#3b82f6',
-    icon: '⚡'
+    c1: '#3b82f6',
+    c2: '#2563eb',
+    icon: 'bolt',
+    img: 'assets/kjl-more/kjl-elecservice-1.webp',
+    article: 'loadcenter3p-article',
+    cta: 'อ่านบทความ'
   }];
   return /*#__PURE__*/React.createElement("section", {
     style: {
@@ -4418,103 +4675,109 @@ function HPKnowledgePage() {
     }
   }, "5 \u0E41\u0E19\u0E27\u0E17\u0E32\u0E07\u0E2A\u0E33\u0E04\u0E31\u0E0D"), " \u0E17\u0E35\u0E48\u0E04\u0E27\u0E23\u0E1E\u0E34\u0E08\u0E32\u0E23\u0E13\u0E32\u0E01\u0E48\u0E2D\u0E19\u0E40\u0E25\u0E37\u0E2D\u0E01\u0E0B\u0E37\u0E49\u0E2D\u0E2D\u0E38\u0E1B\u0E01\u0E23\u0E13\u0E4C\u0E44\u0E1F\u0E1F\u0E49\u0E32"), /*#__PURE__*/React.createElement("div", {
     style: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '20px',
+      position: 'relative',
       marginBottom: '40px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      left: '31px',
+      top: '34px',
+      bottom: '34px',
+      width: '2px',
+      background: 'linear-gradient(180deg,#8bc83f,#0d9488,#ca8a04,#ea580c,#2563eb)',
+      opacity: 0.22
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column'
     }
   }, steps.map((s, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     style: {
       position: 'relative',
       display: 'flex',
-      gap: '22px',
-      background: '#fff',
-      borderRadius: '20px',
-      padding: '28px 30px 28px 32px',
-      border: '1px solid #f0f0f0',
-      boxShadow: '0 4px 18px rgba(15,77,42,0.05)',
-      overflow: 'hidden',
-      transition: 'transform 0.18s ease, box-shadow 0.18s ease'
-    },
-    onMouseEnter: e => {
-      e.currentTarget.style.transform = 'translateY(-3px)';
-      e.currentTarget.style.boxShadow = `0 14px 30px ${s.c1}1f`;
-    },
-    onMouseLeave: e => {
-      e.currentTarget.style.transform = 'translateY(0)';
-      e.currentTarget.style.boxShadow = '0 4px 18px rgba(15,77,42,0.05)';
+      gap: '26px',
+      paddingBottom: i < steps.length - 1 ? '22px' : 0
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      position: 'absolute',
-      left: 0,
-      top: 0,
-      bottom: 0,
-      width: '6px',
-      background: `linear-gradient(${s.c1},${s.c2})`
-    }
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: 'absolute',
-      right: '18px',
-      bottom: '-22px',
-      fontFamily: 'Inter, Noto Sans Thai, sans-serif',
-      fontSize: '120px',
-      fontWeight: '800',
-      color: `${s.c1}0f`,
-      lineHeight: 1,
-      pointerEvents: 'none'
-    }
-  }, s.n), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      gap: '8px',
-      flexShrink: 0
+      position: 'relative',
+      flexShrink: 0,
+      width: '64px',
+      height: '64px'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      width: '58px',
-      height: '58px',
-      borderRadius: '16px',
+      width: '64px',
+      height: '64px',
+      borderRadius: '50%',
       background: `linear-gradient(135deg, ${s.c1}, ${s.c2})`,
       color: '#fff',
-      fontSize: '26px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      boxShadow: `0 10px 22px ${s.c1}55`,
+      position: 'relative',
+      zIndex: 1
+    }
+  }, /*#__PURE__*/React.createElement(KIcon, {
+    name: s.icon
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      top: '-5px',
+      right: '-5px',
+      width: '25px',
+      height: '25px',
+      borderRadius: '50%',
+      background: '#fff',
+      border: `2px solid ${s.c2}`,
+      color: s.c2,
+      fontSize: '12.5px',
       fontWeight: '800',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       fontFamily: 'Inter, Noto Sans Thai, sans-serif',
-      boxShadow: `0 8px 18px ${s.c1}45`
+      zIndex: 2
     }
-  }, s.n), /*#__PURE__*/React.createElement("span", {
+  }, s.n)), /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: '26px'
-    }
-  }, s.icon)), /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: 'relative',
-      zIndex: 1
+      flex: 1,
+      background: '#fff',
+      borderRadius: '18px',
+      padding: '22px 26px',
+      border: '1px solid #f0f0f0',
+      boxShadow: '0 4px 16px rgba(15,77,42,0.05)',
+      transition: 'transform 0.18s ease, box-shadow 0.18s ease'
+    },
+    onMouseEnter: e => {
+      e.currentTarget.style.transform = 'translateY(-3px)';
+      e.currentTarget.style.boxShadow = `0 14px 28px ${s.c1}25`;
+    },
+    onMouseLeave: e => {
+      e.currentTarget.style.transform = 'translateY(0)';
+      e.currentTarget.style.boxShadow = '0 4px 16px rgba(15,77,42,0.05)';
     }
   }, /*#__PURE__*/React.createElement("h3", {
     style: {
       fontFamily: 'Inter, Noto Sans Thai, sans-serif',
-      fontSize: '22px',
+      fontSize: '21px',
       fontWeight: '800',
-      color: s.c1,
-      marginBottom: '10px',
+      color: s.c2,
+      marginBottom: '9px',
       lineHeight: '1.4',
       letterSpacing: '-0.3px'
     }
   }, s.title), /*#__PURE__*/React.createElement("p", {
     style: {
-      fontSize: '16.5px',
+      fontSize: '16px',
       color: '#555',
       lineHeight: '1.9'
     }
-  }, s.desc))))), /*#__PURE__*/React.createElement("div", {
+  }, s.desc)))))), /*#__PURE__*/React.createElement("div", {
     style: {
       background: 'linear-gradient(120deg,#eaf6f5,#d8eeec)',
       border: '1.5px solid #a9ddd6',
@@ -4537,67 +4800,808 @@ function HPKnowledgePage() {
       marginBottom: '18px'
     }
   }, "\u0E1A\u0E17\u0E04\u0E27\u0E32\u0E21\u0E2D\u0E37\u0E48\u0E19\u0E46 \u0E17\u0E35\u0E48\u0E19\u0E48\u0E32\u0E2A\u0E19\u0E43\u0E08"), /*#__PURE__*/React.createElement("div", {
+    className: "hp-more-grid",
     style: {
       display: 'grid',
       gridTemplateColumns: '1fr 1fr',
       gap: '18px'
     }
-  }, more.map((a, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
+  }, more.map((a, i) => {
+    const clickable = !!(a.cat || a.article);
+    const handleClick = a.article ? () => onNavigate(a.article) : a.cat ? () => onCategoryChange(a.cat) : undefined;
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      onClick: handleClick,
+      style: {
+        background: '#fff',
+        borderRadius: '16px',
+        overflow: 'hidden',
+        border: '1px solid #eaf3ed',
+        cursor: clickable ? 'pointer' : 'default',
+        display: 'flex',
+        flexDirection: 'column',
+        transition: 'transform 0.18s ease, box-shadow 0.18s ease'
+      },
+      onMouseEnter: e => {
+        if (!clickable) return;
+        e.currentTarget.style.transform = 'translateY(-3px)';
+        e.currentTarget.style.boxShadow = `0 14px 28px ${a.c1}22`;
+      },
+      onMouseLeave: e => {
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.boxShadow = 'none';
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: '150px',
+        background: '#f4f7f6',
+        position: 'relative',
+        overflow: 'hidden'
+      }
+    }, /*#__PURE__*/React.createElement("img", {
+      loading: "lazy",
+      decoding: "async",
+      src: a.img,
+      alt: a.title,
+      style: {
+        width: '100%',
+        height: '100%',
+        objectFit: 'cover'
+      },
+      onError: e => e.target.style.display = 'none'
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: 'absolute',
+        top: '12px',
+        left: '12px',
+        width: '36px',
+        height: '36px',
+        borderRadius: '10px',
+        background: `linear-gradient(135deg, ${a.c1}, ${a.c2})`,
+        color: '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: `0 6px 14px ${a.c1}55`
+      }
+    }, /*#__PURE__*/React.createElement(KIcon, {
+      name: a.icon,
+      size: 18
+    }))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: '22px 24px',
+        display: 'flex',
+        flexDirection: 'column',
+        flex: 1
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: '19px',
+        fontWeight: '800',
+        color: '#1a1a1a',
+        marginBottom: '10px'
+      }
+    }, a.title), /*#__PURE__*/React.createElement("p", {
+      style: {
+        fontSize: '14.5px',
+        color: '#777',
+        lineHeight: '1.7',
+        marginBottom: '16px',
+        flex: 1
+      }
+    }, a.excerpt), clickable && /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: a.c1,
+        fontWeight: '700',
+        fontSize: '14px'
+      }
+    }, a.cta || 'ดูเพิ่มเติม', " \u2192")));
+  }))));
+}
+
+// บทความ "ตู้ MDB คืออะไร ?" — เนื้อหาของเกิดแสงสว่างเอง
+function HPMdbArticlePage({
+  onNavigate,
+  onCategoryChange
+}) {
+  const H2 = ({
+    children
+  }) => /*#__PURE__*/React.createElement("h2", {
     style: {
-      background: '#fff',
-      borderRadius: '14px',
-      overflow: 'hidden',
-      border: '1px solid #eaf3ed',
-      cursor: 'pointer',
-      display: 'flex',
-      flexDirection: 'column',
-      padding: '24px',
-      transition: 'box-shadow 0.18s ease'
-    },
-    onMouseEnter: e => {
-      e.currentTarget.style.boxShadow = `0 10px 26px ${a.c1}1a`;
-    },
-    onMouseLeave: e => {
-      e.currentTarget.style.boxShadow = 'none';
+      fontFamily: 'Inter, Noto Sans Thai, sans-serif',
+      fontSize: '25px',
+      fontWeight: '800',
+      color: '#0d9488',
+      letterSpacing: '-0.3px',
+      margin: '34px 0 14px'
+    }
+  }, children);
+  const P = ({
+    children
+  }) => /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: '17px',
+      color: '#3a4a42',
+      lineHeight: '2',
+      marginBottom: '14px'
+    }
+  }, children);
+  const numbered = [{
+    n: '1',
+    title: 'พิจารณาปริมาณการใช้งานไฟฟ้า (Load Demand)',
+    items: ['ตรวจสอบว่ามีการใช้งานไฟฟ้าจำนวนเท่าใดในพื้นที่ เช่น 100A, 250A หรือ 400A', 'หากมีการใช้งานมากขึ้นในอนาคต อาจต้องเผื่อขนาดให้ใหญ่ขึ้น']
+  }, {
+    n: '2',
+    title: 'การแบ่งเบรกเกอร์ย่อย (Sub Breaker)',
+    items: ['ควรแบ่งเบรกเกอร์ย่อยให้สอดคล้องกับแผนการเดินสายไฟของพื้นที่']
+  }, {
+    n: '3',
+    title: 'วัสดุและการออกแบบ',
+    items: ['เลือกตู้ที่ทำจากวัสดุคุณภาพ เช่น เหล็กพ่นสีป้องกันสนิม หรือสแตนเลสสำหรับพื้นที่ที่มีความชื้นสูง']
+  }];
+  const features = [{
+    title: 'ระบบควบคุมอัจฉริยะ (Smart Control)',
+    desc: 'ใช้เซ็นเซอร์ตรวจจับกระแสไฟฟ้าเพื่อการควบคุมและวิเคราะห์การใช้งาน'
+  }, {
+    title: 'อุปกรณ์ป้องกันไฟฟ้าลัดวงจร',
+    desc: 'เช่น เบรกเกอร์ที่มีระบบป้องกันกระแสไฟฟ้าเกิน (Overload Protection)'
+  }, {
+    title: 'ช่องสำรอง (Spare Space)',
+    desc: 'เพื่อการติดตั้งอุปกรณ์เพิ่มเติมในอนาคต'
+  }];
+  const steps = [{
+    n: '1',
+    title: 'ออกแบบตามความต้องการ',
+    desc: 'ลูกค้าสามารถระบุขนาด, ฟังก์ชัน และวัสดุที่ต้องการ'
+  }, {
+    n: '2',
+    title: 'การผลิตด้วยเทคโนโลยีทันสมัย',
+    desc: 'ใช้เครื่องจักรที่มีความแม่นยำสูงและผ่านการตรวจสอบคุณภาพทุกขั้นตอน'
+  }, {
+    n: '3',
+    title: 'การทดสอบคุณภาพก่อนส่งมอบ',
+    desc: 'เช่น การทดสอบโหลดไฟฟ้า (Load Test) และความทนทานของตู้'
+  }];
+  return /*#__PURE__*/React.createElement("section", {
+    style: {
+      background: '#eef8f7',
+      padding: '30px 0 56px',
+      minHeight: '75vh'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      width: '52px',
-      height: '52px',
-      borderRadius: '12px',
-      background: `${a.c1}14`,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: '18px'
+      maxWidth: '900px',
+      margin: '0 auto',
+      padding: '0 20px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '14px',
+      color: '#888',
+      marginBottom: '22px'
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
-      fontSize: '24px'
-    }
-  }, a.icon)), /*#__PURE__*/React.createElement("div", {
+      cursor: 'pointer'
+    },
+    onClick: () => onNavigate('หน้าแรก')
+  }, "\u0E2B\u0E19\u0E49\u0E32\u0E2B\u0E25\u0E31\u0E01"), " \u203A ", /*#__PURE__*/React.createElement("span", {
     style: {
-      fontSize: '19px',
+      cursor: 'pointer'
+    },
+    onClick: () => onNavigate('เกร็ดความรู้')
+  }, "\u0E40\u0E01\u0E23\u0E47\u0E14\u0E04\u0E27\u0E32\u0E21\u0E23\u0E39\u0E49"), " \u203A ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: '#8bc83f',
+      fontWeight: '700'
+    }
+  }, "\u0E15\u0E39\u0E49 MDB \u0E04\u0E37\u0E2D\u0E2D\u0E30\u0E44\u0E23 ?")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderRadius: '24px',
+      overflow: 'hidden',
+      position: 'relative',
+      boxShadow: '0 14px 38px rgba(10,70,40,0.18)',
+      marginBottom: '28px',
+      border: '1px solid #eaf3ed'
+    }
+  }, /*#__PURE__*/React.createElement("img", {
+    loading: "lazy",
+    decoding: "async",
+    src: "assets/kjl-more/mdb-article-1-full.png",
+    alt: "\u0E15\u0E39\u0E49 MDB \u0E04\u0E37\u0E2D\u0E2D\u0E30\u0E44\u0E23 ?",
+    style: {
+      width: '100%',
+      display: 'block',
+      objectFit: 'contain'
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: '24px'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '8px',
+      background: 'linear-gradient(120deg,#5ee7c8,#0d9488)',
+      color: '#04352c',
+      fontSize: '14px',
       fontWeight: '800',
-      color: '#1a1a1a',
+      padding: '7px 22px',
+      borderRadius: '999px',
+      marginBottom: '14px'
+    }
+  }, "\uD83D\uDCD6 \u0E1A\u0E17\u0E04\u0E27\u0E32\u0E21\u0E19\u0E48\u0E32\u0E23\u0E39\u0E49"), /*#__PURE__*/React.createElement("h1", {
+    style: {
+      fontFamily: 'Inter, Noto Sans Thai, sans-serif',
+      fontSize: '38px',
+      fontWeight: '800',
+      color: '#06352e',
+      letterSpacing: '-0.5px',
+      lineHeight: '1.2',
+      marginBottom: '8px'
+    }
+  }, "\u0E17\u0E38\u0E01\u0E40\u0E23\u0E37\u0E48\u0E2D\u0E07\u0E17\u0E35\u0E48\u0E04\u0E27\u0E23\u0E23\u0E39\u0E49\u0E40\u0E01\u0E35\u0E48\u0E22\u0E27\u0E01\u0E31\u0E1A\u0E15\u0E39\u0E49 MDB"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: '18px',
+      color: '#5a7a66'
+    }
+  }, "\u0E40\u0E25\u0E37\u0E2D\u0E01\u0E15\u0E39\u0E49 MDB \u0E2D\u0E22\u0E48\u0E32\u0E07\u0E44\u0E23\u0E43\u0E2B\u0E49\u0E40\u0E2B\u0E21\u0E32\u0E30\u0E01\u0E31\u0E1A\u0E07\u0E32\u0E19\u0E02\u0E2D\u0E07\u0E04\u0E38\u0E13 \u2014 \u0E42\u0E14\u0E22\u0E40\u0E01\u0E34\u0E14\u0E41\u0E2A\u0E07\u0E2A\u0E27\u0E48\u0E32\u0E07 \u0E1C\u0E39\u0E49\u0E1C\u0E25\u0E34\u0E15\u0E41\u0E25\u0E30\u0E08\u0E33\u0E2B\u0E19\u0E48\u0E32\u0E22\u0E15\u0E39\u0E49\u0E44\u0E1F\u0E1F\u0E49\u0E32\u0E15\u0E32\u0E21\u0E2A\u0E40\u0E1B\u0E01\u0E07\u0E32\u0E19")), /*#__PURE__*/React.createElement(P, null, "\u0E43\u0E19\u0E23\u0E30\u0E1A\u0E1A\u0E44\u0E1F\u0E1F\u0E49\u0E32 \u0E15\u0E39\u0E49 MDB (Main Distribution Board) \u0E16\u0E37\u0E2D\u0E40\u0E1B\u0E47\u0E19\u0E2B\u0E31\u0E27\u0E43\u0E08\u0E2A\u0E33\u0E04\u0E31\u0E0D\u0E02\u0E2D\u0E07\u0E01\u0E32\u0E23\u0E08\u0E31\u0E14\u0E01\u0E32\u0E23\u0E41\u0E25\u0E30\u0E01\u0E23\u0E30\u0E08\u0E32\u0E22\u0E1E\u0E25\u0E31\u0E07\u0E07\u0E32\u0E19\u0E44\u0E1F\u0E1F\u0E49\u0E32\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E1B\u0E25\u0E2D\u0E14\u0E20\u0E31\u0E22\u0E41\u0E25\u0E30\u0E21\u0E35\u0E1B\u0E23\u0E30\u0E2A\u0E34\u0E17\u0E18\u0E34\u0E20\u0E32\u0E1E \u0E01\u0E32\u0E23\u0E40\u0E25\u0E37\u0E2D\u0E01\u0E43\u0E0A\u0E49\u0E15\u0E39\u0E49 MDB \u0E17\u0E35\u0E48\u0E40\u0E2B\u0E21\u0E32\u0E30\u0E2A\u0E21\u0E01\u0E31\u0E1A\u0E04\u0E27\u0E32\u0E21\u0E15\u0E49\u0E2D\u0E07\u0E01\u0E32\u0E23\u0E44\u0E21\u0E48\u0E40\u0E1E\u0E35\u0E22\u0E07\u0E0A\u0E48\u0E27\u0E22\u0E40\u0E1E\u0E34\u0E48\u0E21\u0E04\u0E27\u0E32\u0E21\u0E1B\u0E25\u0E2D\u0E14\u0E20\u0E31\u0E22 \u0E41\u0E15\u0E48\u0E22\u0E31\u0E07\u0E0A\u0E48\u0E27\u0E22\u0E25\u0E14\u0E15\u0E49\u0E19\u0E17\u0E38\u0E19\u0E41\u0E25\u0E30\u0E40\u0E1E\u0E34\u0E48\u0E21\u0E1B\u0E23\u0E30\u0E2A\u0E34\u0E17\u0E18\u0E34\u0E20\u0E32\u0E1E\u0E43\u0E19\u0E01\u0E32\u0E23\u0E43\u0E0A\u0E49\u0E07\u0E32\u0E19\u0E2D\u0E35\u0E01\u0E14\u0E49\u0E27\u0E22 \u0E21\u0E32\u0E14\u0E39\u0E01\u0E31\u0E19\u0E27\u0E48\u0E32\u0E04\u0E27\u0E23\u0E40\u0E25\u0E37\u0E2D\u0E01\u0E15\u0E39\u0E49 MDB \u0E2D\u0E22\u0E48\u0E32\u0E07\u0E44\u0E23\u0E43\u0E2B\u0E49\u0E40\u0E2B\u0E21\u0E32\u0E30\u0E01\u0E31\u0E1A\u0E07\u0E32\u0E19\u0E02\u0E2D\u0E07\u0E04\u0E38\u0E13!"), /*#__PURE__*/React.createElement(H2, null, "\u0E15\u0E39\u0E49 MDB \u0E04\u0E37\u0E2D\u0E2D\u0E30\u0E44\u0E23 ?"), /*#__PURE__*/React.createElement(P, null, "\u0E15\u0E39\u0E49 MDB \u0E04\u0E37\u0E2D \u0E41\u0E1C\u0E07\u0E04\u0E27\u0E1A\u0E04\u0E38\u0E21\u0E2B\u0E25\u0E31\u0E01\u0E17\u0E35\u0E48\u0E43\u0E0A\u0E49\u0E2A\u0E33\u0E2B\u0E23\u0E31\u0E1A\u0E01\u0E32\u0E23\u0E01\u0E23\u0E30\u0E08\u0E32\u0E22\u0E1E\u0E25\u0E31\u0E07\u0E07\u0E32\u0E19\u0E44\u0E1F\u0E1F\u0E49\u0E32\u0E08\u0E32\u0E01\u0E41\u0E2B\u0E25\u0E48\u0E07\u0E08\u0E48\u0E32\u0E22\u0E44\u0E1F\u0E44\u0E1B\u0E22\u0E31\u0E07\u0E2A\u0E48\u0E27\u0E19\u0E15\u0E48\u0E32\u0E07 \u0E46 \u0E02\u0E2D\u0E07\u0E2D\u0E32\u0E04\u0E32\u0E23\u0E2B\u0E23\u0E37\u0E2D\u0E42\u0E23\u0E07\u0E07\u0E32\u0E19 \u0E42\u0E14\u0E22\u0E15\u0E39\u0E49 MDB \u0E08\u0E30\u0E40\u0E1B\u0E47\u0E19\u0E08\u0E38\u0E14\u0E23\u0E27\u0E21\u0E02\u0E2D\u0E07\u0E40\u0E1A\u0E23\u0E01\u0E40\u0E01\u0E2D\u0E23\u0E4C\u0E41\u0E25\u0E30\u0E2D\u0E38\u0E1B\u0E01\u0E23\u0E13\u0E4C\u0E44\u0E1F\u0E1F\u0E49\u0E32\u0E2A\u0E33\u0E04\u0E31\u0E0D \u0E40\u0E0A\u0E48\u0E19 \u0E2B\u0E21\u0E49\u0E2D\u0E41\u0E1B\u0E25\u0E07\u0E44\u0E1F\u0E1F\u0E49\u0E32, \u0E40\u0E1A\u0E23\u0E01\u0E40\u0E01\u0E2D\u0E23\u0E4C\u0E2B\u0E25\u0E31\u0E01 (Main Breaker) \u0E41\u0E25\u0E30\u0E40\u0E1A\u0E23\u0E01\u0E40\u0E01\u0E2D\u0E23\u0E4C\u0E22\u0E48\u0E2D\u0E22"), /*#__PURE__*/React.createElement(H2, null, "\u0E02\u0E19\u0E32\u0E14\u0E02\u0E2D\u0E07\u0E15\u0E39\u0E49 MDB \u0E40\u0E25\u0E37\u0E2D\u0E01\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E44\u0E23\u0E43\u0E2B\u0E49\u0E40\u0E2B\u0E21\u0E32\u0E30\u0E2A\u0E21 ?"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '14px',
+      marginBottom: '18px'
+    }
+  }, numbered.map(g => /*#__PURE__*/React.createElement("div", {
+    key: g.n,
+    style: {
+      background: '#fff',
+      borderRadius: '16px',
+      padding: '20px 24px',
+      border: '1px solid #eaf3ed',
+      boxShadow: '0 4px 16px rgba(15,77,42,0.05)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
       marginBottom: '10px'
     }
-  }, a.title), /*#__PURE__*/React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
-      fontSize: '14.5px',
-      color: '#777',
-      lineHeight: '1.7',
-      marginBottom: '16px',
-      flex: 1
+      width: '28px',
+      height: '28px',
+      flexShrink: 0,
+      borderRadius: '50%',
+      background: '#0d9488',
+      color: '#fff',
+      fontSize: '14px',
+      fontWeight: '800',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
     }
-  }, a.excerpt), /*#__PURE__*/React.createElement("span", {
+  }, g.n), /*#__PURE__*/React.createElement("span", {
     style: {
-      color: a.c1,
+      fontSize: '17px',
       fontWeight: '700',
-      fontSize: '14px'
+      color: '#06352e'
     }
-  }, "\u0E2D\u0E48\u0E32\u0E19\u0E15\u0E48\u0E2D \u2192"))))));
+  }, g.title)), /*#__PURE__*/React.createElement("ul", {
+    style: {
+      margin: 0,
+      paddingLeft: '40px',
+      color: '#555',
+      fontSize: '15.5px',
+      lineHeight: '1.9'
+    }
+  }, g.items.map((it, idx) => /*#__PURE__*/React.createElement("li", {
+    key: idx
+  }, it)))))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderRadius: '20px',
+      overflow: 'hidden',
+      boxShadow: '0 10px 26px rgba(10,70,40,0.14)',
+      marginBottom: '30px',
+      border: '1px solid #eaf3ed'
+    }
+  }, /*#__PURE__*/React.createElement("img", {
+    loading: "lazy",
+    decoding: "async",
+    src: "assets/kjl-more/mdb-article-2.png",
+    alt: "\u0E02\u0E19\u0E32\u0E14\u0E02\u0E2D\u0E07\u0E15\u0E39\u0E49 MDB \u0E40\u0E25\u0E37\u0E2D\u0E01\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E44\u0E23\u0E43\u0E2B\u0E49\u0E40\u0E2B\u0E21\u0E32\u0E30\u0E2A\u0E21",
+    style: {
+      width: '100%',
+      display: 'block',
+      objectFit: 'cover'
+    }
+  })), /*#__PURE__*/React.createElement(H2, null, "\u0E1F\u0E31\u0E07\u0E01\u0E4C\u0E0A\u0E31\u0E19\u0E40\u0E2A\u0E23\u0E34\u0E21\u0E17\u0E35\u0E48\u0E04\u0E27\u0E23\u0E21\u0E35\u0E43\u0E19\u0E15\u0E39\u0E49 MDB"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '10px',
+      marginBottom: '8px'
+    }
+  }, features.map((f, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      display: 'flex',
+      gap: '12px',
+      alignItems: 'flex-start'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: '#0d9488',
+      fontSize: '20px',
+      lineHeight: '1.6'
+    }
+  }, "\u2022"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: '16px',
+      color: '#3a4a42',
+      lineHeight: '1.9'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontWeight: '700',
+      color: '#06352e'
+    }
+  }, f.title), " \u2014 ", f.desc)))), /*#__PURE__*/React.createElement(H2, null, "\u0E02\u0E31\u0E49\u0E19\u0E15\u0E2D\u0E19\u0E01\u0E32\u0E23\u0E1C\u0E25\u0E34\u0E15\u0E15\u0E39\u0E49 MDB \u0E15\u0E32\u0E21\u0E2A\u0E31\u0E48\u0E07"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'relative',
+      marginBottom: '30px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      left: '19px',
+      top: '6px',
+      bottom: '6px',
+      width: '2px',
+      background: '#0d9488',
+      opacity: 0.22
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '18px'
+    }
+  }, steps.map(s => /*#__PURE__*/React.createElement("div", {
+    key: s.n,
+    style: {
+      position: 'relative',
+      display: 'flex',
+      gap: '20px'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: 'relative',
+      zIndex: 1,
+      flexShrink: 0,
+      width: '40px',
+      height: '40px',
+      borderRadius: '50%',
+      background: '#0d9488',
+      color: '#fff',
+      fontSize: '16px',
+      fontWeight: '800',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
+  }, s.n), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '17px',
+      fontWeight: '700',
+      color: '#06352e',
+      marginBottom: '4px'
+    }
+  }, s.title), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: '15.5px',
+      color: '#555',
+      lineHeight: '1.8'
+    }
+  }, s.desc)))))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: 'linear-gradient(120deg,#eaf6f5,#d8eeec)',
+      border: '1.5px solid #a9ddd6',
+      borderRadius: '18px',
+      padding: '24px 28px',
+      marginBottom: '22px'
+    }
+  }, /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: '17px',
+      color: '#0d9488',
+      lineHeight: '1.9',
+      fontWeight: '600',
+      marginBottom: '16px'
+    }
+  }, "\uD83D\uDCA1 \u0E01\u0E32\u0E23\u0E40\u0E25\u0E37\u0E2D\u0E01\u0E15\u0E39\u0E49 MDB \u0E17\u0E35\u0E48\u0E40\u0E2B\u0E21\u0E32\u0E30\u0E2A\u0E21\u0E01\u0E31\u0E1A\u0E04\u0E27\u0E32\u0E21\u0E15\u0E49\u0E2D\u0E07\u0E01\u0E32\u0E23 \u0E08\u0E30\u0E0A\u0E48\u0E27\u0E22\u0E43\u0E2B\u0E49\u0E23\u0E30\u0E1A\u0E1A\u0E44\u0E1F\u0E1F\u0E49\u0E32\u0E1B\u0E25\u0E2D\u0E14\u0E20\u0E31\u0E22 \u0E1B\u0E23\u0E30\u0E2B\u0E22\u0E31\u0E14\u0E15\u0E49\u0E19\u0E17\u0E38\u0E19 \u0E41\u0E25\u0E30\u0E43\u0E0A\u0E49\u0E07\u0E32\u0E19\u0E44\u0E14\u0E49\u0E22\u0E32\u0E27\u0E19\u0E32\u0E19 \u2014 \u0E40\u0E01\u0E34\u0E14\u0E41\u0E2A\u0E07\u0E2A\u0E27\u0E48\u0E32\u0E07\u0E23\u0E31\u0E1A\u0E1C\u0E25\u0E34\u0E15\u0E41\u0E25\u0E30\u0E08\u0E33\u0E2B\u0E19\u0E48\u0E32\u0E22\u0E15\u0E39\u0E49 MDB \u0E15\u0E32\u0E21\u0E2A\u0E40\u0E1B\u0E01\u0E07\u0E32\u0E19 \u0E1E\u0E23\u0E49\u0E2D\u0E21\u0E43\u0E2B\u0E49\u0E04\u0E33\u0E1B\u0E23\u0E36\u0E01\u0E29\u0E32\u0E42\u0E14\u0E22\u0E17\u0E35\u0E21\u0E07\u0E32\u0E19\u0E1C\u0E39\u0E49\u0E40\u0E0A\u0E35\u0E48\u0E22\u0E27\u0E0A\u0E32\u0E0D"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => onCategoryChange('panel'),
+    style: {
+      background: '#0d9488',
+      color: '#fff',
+      border: 'none',
+      borderRadius: '999px',
+      padding: '12px 28px',
+      fontSize: '15px',
+      fontWeight: '700',
+      cursor: 'pointer'
+    }
+  }, "\u0E14\u0E39\u0E15\u0E39\u0E49\u0E44\u0E1F\u0E1F\u0E49\u0E32\u0E02\u0E2D\u0E07\u0E40\u0E23\u0E32 \u2192"))));
+}
+
+// บทความ "ความสำคัญของตู้โหลด 3 เฟส" — เนื้อหาของเกิดแสงสว่างเอง
+function HPLoadCenter3PArticlePage({
+  onNavigate,
+  onCategoryChange
+}) {
+  const H2 = ({
+    children
+  }) => /*#__PURE__*/React.createElement("h2", {
+    style: {
+      fontFamily: 'Inter, Noto Sans Thai, sans-serif',
+      fontSize: '25px',
+      fontWeight: '800',
+      color: '#2563eb',
+      letterSpacing: '-0.3px',
+      margin: '34px 0 14px'
+    }
+  }, children);
+  const P = ({
+    children
+  }) => /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: '17px',
+      color: '#3a4a42',
+      lineHeight: '2',
+      marginBottom: '14px'
+    }
+  }, children);
+  const pros = [{
+    title: 'รองรับพลังงานสูง',
+    desc: 'สามารถจ่ายไฟได้มากกว่าระบบ 1 เฟส เหมาะสำหรับพื้นที่ที่ต้องใช้ไฟฟ้าหนัก เช่น เครื่องจักรขนาดใหญ่'
+  }, {
+    title: 'ลดความเสี่ยงการโอเวอร์โหลด',
+    desc: 'การจ่ายไฟในระบบ 3 เฟสช่วยกระจายโหลดไฟฟ้าให้สมดุล'
+  }, {
+    title: 'ประสิทธิภาพสูง',
+    desc: 'ใช้พลังงานอย่างมีประสิทธิภาพและลดการสูญเสียพลังงานในสายไฟ'
+  }];
+  const choose = [{
+    n: '1',
+    title: 'ขนาดของเบรกเกอร์หลัก (Main Breaker)',
+    items: ['เลือกขนาดที่รองรับกระแสไฟฟ้าสูงสุดที่ระบบต้องการ เช่น 63A, 100A หรือ 250A']
+  }, {
+    n: '2',
+    title: 'จำนวนช่องเบรกเกอร์ย่อย (Sub Breaker)',
+    items: ['พิจารณาจำนวนช่องเบรกเกอร์ที่เหมาะสมกับอุปกรณ์ไฟฟ้าที่ต้องการควบคุม']
+  }, {
+    n: '3',
+    title: 'วัสดุและโครงสร้าง',
+    items: ['เลือกตู้ที่ทำจากวัสดุคุณภาพ เช่น เหล็กเคลือบป้องกันสนิม หรือสแตนเลส', 'ต้องสามารถป้องกันฝุ่นและน้ำได้ตามมาตรฐาน IP']
+  }];
+  const assemble = [{
+    n: '1',
+    title: 'การเลือกอุปกรณ์ไฟฟ้า',
+    items: ['ใช้เบรกเกอร์และสายไฟที่ได้มาตรฐาน เช่น IEC หรือ TIS', 'เพิ่มอุปกรณ์ป้องกัน เช่น Surge Protector หากจำเป็น']
+  }, {
+    n: '2',
+    title: 'การประกอบโดยมืออาชีพ',
+    items: ['การเชื่อมต่อสายไฟฟ้าภายในตู้โหลดต้องแม่นยำและปลอดภัย', 'ทดสอบระบบไฟฟ้าหลังประกอบเสร็จ']
+  }, {
+    n: '3',
+    title: 'การติดตั้งในสถานที่',
+    items: ['ติดตั้งในจุดที่เข้าถึงง่ายสำหรับการบำรุงรักษา', 'หลีกเลี่ยงพื้นที่ที่มีความชื้นสูงหรือแสงแดดจัด']
+  }];
+  const caution = ['หลีกเลี่ยงการต่อโหลดไฟฟ้าเกินขนาดที่ตู้รองรับ', 'ตรวจสอบระบบสายดินและเบรกเกอร์ให้อยู่ในสภาพพร้อมใช้งาน', 'บำรุงรักษาและตรวจเช็กระบบไฟฟ้าเป็นประจำ'];
+  return /*#__PURE__*/React.createElement("section", {
+    style: {
+      background: '#eef8f7',
+      padding: '30px 0 56px',
+      minHeight: '75vh'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxWidth: '900px',
+      margin: '0 auto',
+      padding: '0 20px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '14px',
+      color: '#888',
+      marginBottom: '22px'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      cursor: 'pointer'
+    },
+    onClick: () => onNavigate('หน้าแรก')
+  }, "\u0E2B\u0E19\u0E49\u0E32\u0E2B\u0E25\u0E31\u0E01"), " \u203A ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      cursor: 'pointer'
+    },
+    onClick: () => onNavigate('เกร็ดความรู้')
+  }, "\u0E40\u0E01\u0E23\u0E47\u0E14\u0E04\u0E27\u0E32\u0E21\u0E23\u0E39\u0E49"), " \u203A ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: '#8bc83f',
+      fontWeight: '700'
+    }
+  }, "\u0E04\u0E27\u0E32\u0E21\u0E2A\u0E33\u0E04\u0E31\u0E0D\u0E02\u0E2D\u0E07\u0E15\u0E39\u0E49\u0E42\u0E2B\u0E25\u0E14 3 \u0E40\u0E1F\u0E2A")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderRadius: '24px',
+      overflow: 'hidden',
+      position: 'relative',
+      boxShadow: '0 14px 38px rgba(10,70,40,0.18)',
+      marginBottom: '28px',
+      border: '1px solid #eaf3ed'
+    }
+  }, /*#__PURE__*/React.createElement("img", {
+    loading: "lazy",
+    decoding: "async",
+    src: "assets/kjl-more/loadcenter3p-1.png",
+    alt: "\u0E04\u0E27\u0E32\u0E21\u0E2A\u0E33\u0E04\u0E31\u0E0D\u0E02\u0E2D\u0E07\u0E15\u0E39\u0E49\u0E42\u0E2B\u0E25\u0E14 3 \u0E40\u0E1F\u0E2A",
+    style: {
+      width: '100%',
+      display: 'block',
+      objectFit: 'contain'
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: '24px'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '8px',
+      background: 'linear-gradient(120deg,#7fb2ff,#2563eb)',
+      color: '#04204a',
+      fontSize: '14px',
+      fontWeight: '800',
+      padding: '7px 22px',
+      borderRadius: '999px',
+      marginBottom: '14px'
+    }
+  }, "\uD83D\uDCD6 \u0E1A\u0E17\u0E04\u0E27\u0E32\u0E21\u0E19\u0E48\u0E32\u0E23\u0E39\u0E49"), /*#__PURE__*/React.createElement("h1", {
+    style: {
+      fontFamily: 'Inter, Noto Sans Thai, sans-serif',
+      fontSize: '38px',
+      fontWeight: '800',
+      color: '#06352e',
+      letterSpacing: '-0.5px',
+      lineHeight: '1.2',
+      marginBottom: '8px'
+    }
+  }, "\u0E04\u0E27\u0E32\u0E21\u0E2A\u0E33\u0E04\u0E31\u0E0D\u0E02\u0E2D\u0E07\u0E15\u0E39\u0E49\u0E42\u0E2B\u0E25\u0E14 3 \u0E40\u0E1F\u0E2A"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: '18px',
+      color: '#5a7a66'
+    }
+  }, "\u0E15\u0E39\u0E49\u0E42\u0E2B\u0E25\u0E14 3 \u0E40\u0E1F\u0E2A\u0E21\u0E35\u0E04\u0E27\u0E32\u0E21\u0E2A\u0E33\u0E04\u0E31\u0E0D\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E44\u0E23 \u0E41\u0E25\u0E30\u0E04\u0E27\u0E23\u0E40\u0E25\u0E37\u0E2D\u0E01\u0E43\u0E0A\u0E49\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E44\u0E23\u0E43\u0E2B\u0E49\u0E15\u0E2D\u0E1A\u0E42\u0E08\u0E17\u0E22\u0E4C \u2014 \u0E42\u0E14\u0E22\u0E40\u0E01\u0E34\u0E14\u0E41\u0E2A\u0E07\u0E2A\u0E27\u0E48\u0E32\u0E07 \u0E1C\u0E39\u0E49\u0E1C\u0E25\u0E34\u0E15\u0E41\u0E25\u0E30\u0E08\u0E33\u0E2B\u0E19\u0E48\u0E32\u0E22\u0E15\u0E39\u0E49\u0E44\u0E1F\u0E1F\u0E49\u0E32\u0E15\u0E32\u0E21\u0E2A\u0E40\u0E1B\u0E01\u0E07\u0E32\u0E19")), /*#__PURE__*/React.createElement(P, null, "\u0E43\u0E19\u0E23\u0E30\u0E1A\u0E1A\u0E44\u0E1F\u0E1F\u0E49\u0E32\u0E2A\u0E33\u0E2B\u0E23\u0E31\u0E1A\u0E1A\u0E49\u0E32\u0E19\u0E2B\u0E23\u0E37\u0E2D\u0E2D\u0E32\u0E04\u0E32\u0E23\u0E02\u0E19\u0E32\u0E14\u0E43\u0E2B\u0E0D\u0E48 \u0E15\u0E39\u0E49\u0E42\u0E2B\u0E25\u0E14 3 \u0E40\u0E1F\u0E2A \u0E40\u0E1B\u0E47\u0E19\u0E2D\u0E07\u0E04\u0E4C\u0E1B\u0E23\u0E30\u0E01\u0E2D\u0E1A\u0E2A\u0E33\u0E04\u0E31\u0E0D\u0E17\u0E35\u0E48\u0E0A\u0E48\u0E27\u0E22\u0E04\u0E27\u0E1A\u0E04\u0E38\u0E21\u0E41\u0E25\u0E30\u0E01\u0E23\u0E30\u0E08\u0E32\u0E22\u0E44\u0E1F\u0E1F\u0E49\u0E32\u0E44\u0E14\u0E49\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E21\u0E35\u0E1B\u0E23\u0E30\u0E2A\u0E34\u0E17\u0E18\u0E34\u0E20\u0E32\u0E1E \u0E2B\u0E32\u0E01\u0E40\u0E25\u0E37\u0E2D\u0E01\u0E41\u0E25\u0E30\u0E1B\u0E23\u0E30\u0E01\u0E2D\u0E1A\u0E15\u0E39\u0E49\u0E42\u0E2B\u0E25\u0E14\u0E44\u0E14\u0E49\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E40\u0E2B\u0E21\u0E32\u0E30\u0E2A\u0E21 \u0E19\u0E2D\u0E01\u0E08\u0E32\u0E01\u0E08\u0E30\u0E0A\u0E48\u0E27\u0E22\u0E40\u0E1E\u0E34\u0E48\u0E21\u0E04\u0E27\u0E32\u0E21\u0E1B\u0E25\u0E2D\u0E14\u0E20\u0E31\u0E22 \u0E22\u0E31\u0E07\u0E0A\u0E48\u0E27\u0E22\u0E22\u0E37\u0E14\u0E2D\u0E32\u0E22\u0E38\u0E01\u0E32\u0E23\u0E43\u0E0A\u0E49\u0E07\u0E32\u0E19\u0E02\u0E2D\u0E07\u0E23\u0E30\u0E1A\u0E1A\u0E44\u0E1F\u0E1F\u0E49\u0E32\u0E17\u0E31\u0E49\u0E07\u0E2B\u0E21\u0E14\u0E2D\u0E35\u0E01\u0E14\u0E49\u0E27\u0E22 \u0E21\u0E32\u0E14\u0E39\u0E01\u0E31\u0E19\u0E27\u0E48\u0E32 \u0E15\u0E39\u0E49\u0E42\u0E2B\u0E25\u0E14 3 \u0E40\u0E1F\u0E2A\u0E21\u0E35\u0E04\u0E27\u0E32\u0E21\u0E2A\u0E33\u0E04\u0E31\u0E0D\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E44\u0E23 \u0E41\u0E25\u0E30\u0E04\u0E27\u0E23\u0E40\u0E25\u0E37\u0E2D\u0E01\u0E43\u0E0A\u0E49\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E44\u0E23\u0E43\u0E2B\u0E49\u0E15\u0E2D\u0E1A\u0E42\u0E08\u0E17\u0E22\u0E4C!"), /*#__PURE__*/React.createElement(H2, null, "\u0E15\u0E39\u0E49\u0E42\u0E2B\u0E25\u0E14 3 \u0E40\u0E1F\u0E2A \u0E04\u0E37\u0E2D\u0E2D\u0E30\u0E44\u0E23?"), /*#__PURE__*/React.createElement(P, null, "\u0E15\u0E39\u0E49\u0E42\u0E2B\u0E25\u0E14 3 \u0E40\u0E1F\u0E2A (Three-Phase Load Center) \u0E04\u0E37\u0E2D \u0E41\u0E1C\u0E07\u0E04\u0E27\u0E1A\u0E04\u0E38\u0E21\u0E44\u0E1F\u0E1F\u0E49\u0E32\u0E17\u0E35\u0E48\u0E43\u0E0A\u0E49\u0E43\u0E19\u0E23\u0E30\u0E1A\u0E1A\u0E44\u0E1F\u0E1F\u0E49\u0E32 3 \u0E40\u0E1F\u0E2A \u0E0B\u0E36\u0E48\u0E07\u0E40\u0E2B\u0E21\u0E32\u0E30\u0E2A\u0E33\u0E2B\u0E23\u0E31\u0E1A\u0E2D\u0E32\u0E04\u0E32\u0E23 \u0E42\u0E23\u0E07\u0E07\u0E32\u0E19 \u0E2B\u0E23\u0E37\u0E2D\u0E1E\u0E37\u0E49\u0E19\u0E17\u0E35\u0E48\u0E17\u0E35\u0E48\u0E15\u0E49\u0E2D\u0E07\u0E01\u0E32\u0E23\u0E43\u0E0A\u0E49\u0E1E\u0E25\u0E31\u0E07\u0E07\u0E32\u0E19\u0E44\u0E1F\u0E1F\u0E49\u0E32\u0E1B\u0E23\u0E34\u0E21\u0E32\u0E13\u0E21\u0E32\u0E01 \u0E15\u0E39\u0E49\u0E42\u0E2B\u0E25\u0E14\u0E19\u0E35\u0E49\u0E17\u0E33\u0E2B\u0E19\u0E49\u0E32\u0E17\u0E35\u0E48\u0E01\u0E23\u0E30\u0E08\u0E32\u0E22\u0E1E\u0E25\u0E31\u0E07\u0E07\u0E32\u0E19\u0E44\u0E1B\u0E22\u0E31\u0E07\u0E40\u0E04\u0E23\u0E37\u0E48\u0E2D\u0E07\u0E43\u0E0A\u0E49\u0E44\u0E1F\u0E1F\u0E49\u0E32\u0E2B\u0E23\u0E37\u0E2D\u0E2D\u0E38\u0E1B\u0E01\u0E23\u0E13\u0E4C\u0E15\u0E48\u0E32\u0E07 \u0E46 \u0E44\u0E14\u0E49\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E2A\u0E21\u0E14\u0E38\u0E25 \u0E25\u0E14\u0E04\u0E27\u0E32\u0E21\u0E40\u0E2A\u0E35\u0E48\u0E22\u0E07\u0E02\u0E2D\u0E07\u0E01\u0E23\u0E30\u0E41\u0E2A\u0E44\u0E1F\u0E1F\u0E49\u0E32\u0E40\u0E01\u0E34\u0E19\u0E2B\u0E23\u0E37\u0E2D\u0E44\u0E21\u0E48\u0E2A\u0E21\u0E48\u0E33\u0E40\u0E2A\u0E21\u0E2D"), /*#__PURE__*/React.createElement(H2, null, "\u0E02\u0E49\u0E2D\u0E14\u0E35\u0E02\u0E2D\u0E07\u0E01\u0E32\u0E23\u0E43\u0E0A\u0E49\u0E15\u0E39\u0E49\u0E42\u0E2B\u0E25\u0E14 3 \u0E40\u0E1F\u0E2A"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '10px',
+      marginBottom: '8px'
+    }
+  }, pros.map((f, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      display: 'flex',
+      gap: '12px',
+      alignItems: 'flex-start'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: '26px',
+      height: '26px',
+      flexShrink: 0,
+      borderRadius: '50%',
+      background: '#2563eb',
+      color: '#fff',
+      fontSize: '13px',
+      fontWeight: '800',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
+  }, i + 1), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: '16px',
+      color: '#3a4a42',
+      lineHeight: '1.9'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontWeight: '700',
+      color: '#06352e'
+    }
+  }, f.title), " \u2014 ", f.desc)))), /*#__PURE__*/React.createElement(H2, null, "\u0E27\u0E34\u0E18\u0E35\u0E40\u0E25\u0E37\u0E2D\u0E01\u0E15\u0E39\u0E49\u0E42\u0E2B\u0E25\u0E14 3 \u0E40\u0E1F\u0E2A\u0E43\u0E2B\u0E49\u0E40\u0E2B\u0E21\u0E32\u0E30\u0E2A\u0E21"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '14px',
+      marginBottom: '18px'
+    }
+  }, choose.map(g => /*#__PURE__*/React.createElement("div", {
+    key: g.n,
+    style: {
+      background: '#fff',
+      borderRadius: '16px',
+      padding: '20px 24px',
+      border: '1px solid #eaf3ed',
+      boxShadow: '0 4px 16px rgba(15,77,42,0.05)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+      marginBottom: '10px'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: '28px',
+      height: '28px',
+      flexShrink: 0,
+      borderRadius: '50%',
+      background: '#2563eb',
+      color: '#fff',
+      fontSize: '14px',
+      fontWeight: '800',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
+  }, g.n), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: '17px',
+      fontWeight: '700',
+      color: '#06352e'
+    }
+  }, g.title)), /*#__PURE__*/React.createElement("ul", {
+    style: {
+      margin: 0,
+      paddingLeft: '40px',
+      color: '#555',
+      fontSize: '15.5px',
+      lineHeight: '1.9'
+    }
+  }, g.items.map((it, idx) => /*#__PURE__*/React.createElement("li", {
+    key: idx
+  }, it)))))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderRadius: '20px',
+      overflow: 'hidden',
+      boxShadow: '0 10px 26px rgba(10,70,40,0.14)',
+      marginBottom: '30px',
+      border: '1px solid #eaf3ed'
+    }
+  }, /*#__PURE__*/React.createElement("img", {
+    loading: "lazy",
+    decoding: "async",
+    src: "assets/kjl-more/loadcenter3p-2.png",
+    alt: "\u0E27\u0E34\u0E18\u0E35\u0E40\u0E25\u0E37\u0E2D\u0E01\u0E15\u0E39\u0E49\u0E42\u0E2B\u0E25\u0E14 3 \u0E40\u0E1F\u0E2A\u0E43\u0E2B\u0E49\u0E40\u0E2B\u0E21\u0E32\u0E30\u0E2A\u0E21",
+    style: {
+      width: '100%',
+      display: 'block',
+      objectFit: 'contain',
+      background: '#f4f7f6'
+    }
+  })), /*#__PURE__*/React.createElement(H2, null, "\u0E02\u0E31\u0E49\u0E19\u0E15\u0E2D\u0E19\u0E01\u0E32\u0E23\u0E1B\u0E23\u0E30\u0E01\u0E2D\u0E1A\u0E15\u0E39\u0E49\u0E42\u0E2B\u0E25\u0E14 3 \u0E40\u0E1F\u0E2A"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '14px',
+      marginBottom: '18px'
+    }
+  }, assemble.map(g => /*#__PURE__*/React.createElement("div", {
+    key: g.n,
+    style: {
+      background: '#fff',
+      borderRadius: '16px',
+      padding: '20px 24px',
+      border: '1px solid #eaf3ed',
+      boxShadow: '0 4px 16px rgba(15,77,42,0.05)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+      marginBottom: '10px'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: '28px',
+      height: '28px',
+      flexShrink: 0,
+      borderRadius: '50%',
+      background: '#2563eb',
+      color: '#fff',
+      fontSize: '14px',
+      fontWeight: '800',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
+  }, g.n), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: '17px',
+      fontWeight: '700',
+      color: '#06352e'
+    }
+  }, g.title)), /*#__PURE__*/React.createElement("ul", {
+    style: {
+      margin: 0,
+      paddingLeft: '40px',
+      color: '#555',
+      fontSize: '15.5px',
+      lineHeight: '1.9'
+    }
+  }, g.items.map((it, idx) => /*#__PURE__*/React.createElement("li", {
+    key: idx
+  }, it)))))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#fff7ed',
+      border: '1.5px solid #fed7aa',
+      borderRadius: '18px',
+      padding: '22px 26px',
+      marginBottom: '30px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '17px',
+      fontWeight: '800',
+      color: '#c2410c',
+      marginBottom: '10px'
+    }
+  }, "\u26A0\uFE0F \u0E02\u0E49\u0E2D\u0E04\u0E27\u0E23\u0E23\u0E30\u0E27\u0E31\u0E07 \u0E43\u0E19\u0E01\u0E32\u0E23\u0E43\u0E0A\u0E49\u0E07\u0E32\u0E19\u0E15\u0E39\u0E49\u0E42\u0E2B\u0E25\u0E14 3 \u0E40\u0E1F\u0E2A"), /*#__PURE__*/React.createElement("ul", {
+    style: {
+      margin: 0,
+      paddingLeft: '22px',
+      color: '#7c4a1e',
+      fontSize: '15.5px',
+      lineHeight: '1.9'
+    }
+  }, caution.map((c, i) => /*#__PURE__*/React.createElement("li", {
+    key: i
+  }, c)))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: 'linear-gradient(120deg,#eaf2fe,#dbe9fc)',
+      border: '1.5px solid #a9c8f5',
+      borderRadius: '18px',
+      padding: '24px 28px',
+      marginBottom: '22px'
+    }
+  }, /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: '17px',
+      color: '#2563eb',
+      lineHeight: '1.9',
+      fontWeight: '600',
+      marginBottom: '16px'
+    }
+  }, "\uD83D\uDCA1 \u0E01\u0E32\u0E23\u0E40\u0E25\u0E37\u0E2D\u0E01\u0E41\u0E25\u0E30\u0E1B\u0E23\u0E30\u0E01\u0E2D\u0E1A\u0E15\u0E39\u0E49\u0E42\u0E2B\u0E25\u0E14 3 \u0E40\u0E1F\u0E2A\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E40\u0E2B\u0E21\u0E32\u0E30\u0E2A\u0E21 \u0E08\u0E30\u0E0A\u0E48\u0E27\u0E22\u0E43\u0E2B\u0E49\u0E23\u0E30\u0E1A\u0E1A\u0E44\u0E1F\u0E1F\u0E49\u0E32\u0E1B\u0E25\u0E2D\u0E14\u0E20\u0E31\u0E22 \u0E1B\u0E23\u0E30\u0E2B\u0E22\u0E31\u0E14\u0E1E\u0E25\u0E31\u0E07\u0E07\u0E32\u0E19 \u0E41\u0E25\u0E30\u0E43\u0E0A\u0E49\u0E07\u0E32\u0E19\u0E44\u0E14\u0E49\u0E22\u0E32\u0E27\u0E19\u0E32\u0E19 \u2014 \u0E40\u0E01\u0E34\u0E14\u0E41\u0E2A\u0E07\u0E2A\u0E27\u0E48\u0E32\u0E07\u0E23\u0E31\u0E1A\u0E1B\u0E23\u0E30\u0E01\u0E2D\u0E1A\u0E15\u0E39\u0E49\u0E42\u0E2B\u0E25\u0E14 3 \u0E40\u0E1F\u0E2A \u0E1E\u0E23\u0E49\u0E2D\u0E21\u0E43\u0E2B\u0E49\u0E04\u0E33\u0E1B\u0E23\u0E36\u0E01\u0E29\u0E32\u0E42\u0E14\u0E22\u0E17\u0E35\u0E21\u0E07\u0E32\u0E19\u0E1C\u0E39\u0E49\u0E40\u0E0A\u0E35\u0E48\u0E22\u0E27\u0E0A\u0E32\u0E0D"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => onCategoryChange('loadcenter'),
+    style: {
+      background: '#2563eb',
+      color: '#fff',
+      border: 'none',
+      borderRadius: '999px',
+      padding: '12px 28px',
+      fontSize: '15px',
+      fontWeight: '700',
+      cursor: 'pointer'
+    }
+  }, "\u0E14\u0E39\u0E15\u0E39\u0E49\u0E42\u0E2B\u0E25\u0E14\u0E40\u0E0B\u0E19\u0E40\u0E15\u0E2D\u0E23\u0E4C\u0E02\u0E2D\u0E07\u0E40\u0E23\u0E32 \u2192"))));
 }
 
 // ดูรูปสินค้าแบบธรรมดา — ซูม เลื่อนดู และเปลี่ยนรูปได้
@@ -4617,6 +5621,7 @@ function HPImageZoomRotateModal({
   });
   const [dragging, setDragging] = useState(false);
   const drag = React.useRef(null);
+  const stage = React.useRef(null);
   const zoomIn = () => setZoom(z => Math.min(4, Math.round((z + 0.25) * 100) / 100));
   const zoomOut = () => setZoom(z => {
     const n = Math.max(1, Math.round((z - 0.25) * 100) / 100);
@@ -4676,10 +5681,20 @@ function HPImageZoomRotateModal({
     drag.current = null;
     setDragging(false);
   };
-  const onWheel = e => {
-    e.preventDefault();
-    (e.deltaY < 0 ? zoomIn : zoomOut)();
-  };
+  // ต้องผูก wheel เองแบบ passive:false — ถ้าใช้ onWheel ของ React จะเป็น passive
+  // ทำให้ preventDefault ไม่ทำงาน แล้วหน้าเว็บด้านหลังจะเลื่อนตามไปด้วยตอนหมุนล้อซูมรูป
+  useEffect(() => {
+    const el = stage.current;
+    if (!el) return;
+    const handler = e => {
+      e.preventDefault();
+      (e.deltaY < 0 ? zoomIn : zoomOut)();
+    };
+    el.addEventListener('wheel', handler, {
+      passive: false
+    });
+    return () => el.removeEventListener('wheel', handler);
+  }, []);
   const btn = {
     width: '40px',
     height: '40px',
@@ -4723,6 +5738,7 @@ function HPImageZoomRotateModal({
       height: '42px'
     }
   }, "\u2715")), /*#__PURE__*/React.createElement("div", {
+    ref: stage,
     style: {
       width: '90vw',
       maxWidth: '860px',
@@ -4733,10 +5749,10 @@ function HPImageZoomRotateModal({
       position: 'relative',
       overflow: 'hidden',
       userSelect: 'none',
+      touchAction: 'none',
       cursor: zoom > 1 ? dragging ? 'grabbing' : 'grab' : 'default'
     },
     onClick: e => e.stopPropagation(),
-    onWheel: onWheel,
     onMouseDown: onDown,
     onMouseMove: onMove,
     onMouseUp: onUp,
@@ -5429,12 +6445,14 @@ function HPBrandProductsPage({
       fontWeight: '700'
     }
   }, "\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E15\u0E32\u0E21\u0E41\u0E1A\u0E23\u0E19\u0E14\u0E4C")), /*#__PURE__*/React.createElement("div", {
+    className: "hp-brand-layout",
     style: {
       display: 'flex',
       gap: '28px',
       alignItems: 'flex-start'
     }
   }, /*#__PURE__*/React.createElement("div", {
+    className: "hp-brand-sidebar",
     style: {
       width: '250px',
       flexShrink: 0,
@@ -5636,6 +6654,7 @@ function HPBrandProductsPage({
       }, /*#__PURE__*/React.createElement("path", {
         d: "M6 9l6 6 6-6"
       }))), !isCollapsed && /*#__PURE__*/React.createElement("div", {
+        className: "hp-product-grid",
         style: {
           display: 'grid',
           gridTemplateColumns: 'repeat(5, 1fr)',
@@ -5758,133 +6777,191 @@ function HPBrandProductsPage({
     onClose: () => setZoomProduct(null)
   }));
 }
+
+// รายชื่อแบรนด์ในแคตตาล็อก — ใช้ร่วมกันทั้งหน้าแคตตาล็อกและหน้าตั้งค่าเว็บไซต์ในระบบหลังบ้าน
+const HP_CATALOG_BRANDS = [{
+  name: 'เกิดแสงสว่าง',
+  color: '#0d5c50',
+  img: 'assets/kerd-cat.jpg',
+  product: 'assets/kerd-cat.jpg',
+  hideLogoBar: true
+}, {
+  name: 'Nano',
+  color: '#0d5c50',
+  img: 'assets/banner11.png',
+  product: 'assets/nano.jpg.jpg',
+  hideLogoBar: true
+}, {
+  name: 'CHANG',
+  color: '#1e3a8a',
+  img: 'assets/banner2.png',
+  product: 'assets/chang.png',
+  hideLogoBar: true
+}, {
+  name: 'Reckon',
+  color: '#29abe2',
+  img: 'assets/reckon.png',
+  product: 'assets/reckon.png',
+  hideLogoBar: true
+}, {
+  name: 'AP',
+  color: '#e2231a',
+  img: 'assets/ap.png',
+  product: 'assets/ap.png',
+  hideLogoBar: true
+}, {
+  name: 'Zeberg',
+  color: '#c2410c',
+  img: 'assets/zeberg.png',
+  product: 'assets/zeberg.png',
+  hideLogoBar: true
+}, {
+  name: 'Sentoshi',
+  color: '#9a3412',
+  img: 'assets/sentoshi.png',
+  product: 'assets/sentoshi.png',
+  hideLogoBar: true
+}, {
+  name: 'ท่อน้ำไทย',
+  color: '#1e40af',
+  img: 'assets/ท่อน้ำไทย.jpg',
+  product: 'assets/ท่อน้ำไทย.jpg',
+  hideLogoBar: true
+}, {
+  name: 'Vena',
+  color: '#1e3a8a',
+  img: 'assets/วีน่า.png',
+  product: 'assets/วีน่า.png',
+  hideLogoBar: true
+}, {
+  name: 'Sonic',
+  color: '#b91c1c',
+  img: 'assets/sonic.png',
+  product: 'assets/sonic.png',
+  hideLogoBar: true
+}, {
+  name: 'SOKAWA',
+  color: '#1e3a8a',
+  img: 'assets/sokawa.png',
+  product: 'assets/sokawa.png',
+  hideLogoBar: true
+}, {
+  name: 'GL',
+  color: '#8bc83f',
+  img: 'assets/จีแอล เอ็นจิเนียริ่ง.jpg',
+  product: 'assets/จีแอล เอ็นจิเนียริ่ง.jpg',
+  hideLogoBar: true
+}, {
+  name: 'Panasonic',
+  color: '#1e40af',
+  img: 'assets/panasonic.png',
+  product: 'assets/panasonic.png',
+  hideLogoBar: true
+}, {
+  name: 'KJL',
+  color: '#1e3a8a',
+  img: 'assets/เคเจแอล.jpg',
+  product: 'assets/เคเจแอล.jpg',
+  hideLogoBar: true
+}, {
+  name: 'SAFE-T-CUT',
+  color: '#dc2626',
+  img: 'assets/safe-tcut.jpg',
+  product: 'assets/safe-tcut.jpg',
+  hideLogoBar: true
+}, {
+  name: 'Lucky Misu',
+  color: '#f59e0b',
+  img: 'assets/lucky misu.jpg',
+  product: 'assets/lucky misu.jpg',
+  hideLogoBar: true
+}, {
+  name: 'iwachi',
+  color: '#3b5bdb',
+  img: 'assets/iwachi.jpg',
+  product: 'assets/iwachi.jpg',
+  hideLogoBar: true
+}, {
+  name: 'Thongthai Bakelite',
+  color: '#f97316',
+  img: 'assets/thongthai bikelite.png',
+  product: 'assets/thongthai bikelite.png',
+  hideLogoBar: true
+}, {
+  name: 'สายไฟ',
+  color: '#374151',
+  img: 'assets/สายไฟ.jpg',
+  product: 'assets/สายไฟ.jpg',
+  hideLogoBar: true
+}, {
+  name: 'Nano LED',
+  color: '#8bc83f',
+  img: 'assets/nano led.png',
+  product: 'assets/nano led.png',
+  hideLogoBar: true
+}];
 function HPCatalogPage() {
-  const brands = [{
-    name: 'เกิดแสงสว่าง',
-    color: '#0d5c50',
-    img: 'assets/kerd-cat.jpg',
-    product: 'assets/kerd-cat.jpg',
-    hideLogoBar: true
-  }, {
-    name: 'Nano',
-    color: '#0d5c50',
-    img: 'assets/banner11.png',
-    product: 'assets/nano.jpg.jpg',
-    hideLogoBar: true
-  }, {
-    name: 'CHANG',
-    color: '#1e3a8a',
-    img: 'assets/banner2.png',
-    product: 'assets/chang.png',
-    hideLogoBar: true
-  }, {
-    name: 'Reckon',
-    color: '#29abe2',
-    img: 'assets/reckon.png',
-    product: 'assets/reckon.png',
-    hideLogoBar: true
-  }, {
-    name: 'AP',
-    color: '#e2231a',
-    img: 'assets/ap.png',
-    product: 'assets/ap.png',
-    hideLogoBar: true
-  }, {
-    name: 'Zeberg',
-    color: '#c2410c',
-    img: 'assets/zeberg.png',
-    product: 'assets/zeberg.png',
-    hideLogoBar: true
-  }, {
-    name: 'Sentoshi',
-    color: '#9a3412',
-    img: 'assets/sentoshi.png',
-    product: 'assets/sentoshi.png',
-    hideLogoBar: true
-  }, {
-    name: 'ท่อน้ำไทย',
-    color: '#1e40af',
-    img: 'assets/ท่อน้ำไทย.jpg',
-    product: 'assets/ท่อน้ำไทย.jpg',
-    hideLogoBar: true
-  }, {
-    name: 'Vena',
-    color: '#1e3a8a',
-    img: 'assets/วีน่า.png',
-    product: 'assets/วีน่า.png',
-    hideLogoBar: true
-  }, {
-    name: 'Sonic',
-    color: '#b91c1c',
-    img: 'assets/sonic.png',
-    product: 'assets/sonic.png',
-    hideLogoBar: true
-  }, {
-    name: 'SOKAWA',
-    color: '#1e3a8a',
-    img: 'assets/sokawa.png',
-    product: 'assets/sokawa.png',
-    hideLogoBar: true
-  }, {
-    name: 'GL',
-    color: '#8bc83f',
-    img: 'assets/จีแอล เอ็นจิเนียริ่ง.jpg',
-    product: 'assets/จีแอล เอ็นจิเนียริ่ง.jpg',
-    hideLogoBar: true
-  }, {
-    name: 'Panasonic',
-    color: '#1e40af',
-    img: 'assets/panasonic.png',
-    product: 'assets/panasonic.png',
-    hideLogoBar: true
-  }, {
-    name: 'KJL',
-    color: '#1e3a8a',
-    img: 'assets/เคเจแอล.jpg',
-    product: 'assets/เคเจแอล.jpg',
-    hideLogoBar: true
-  }, {
-    name: 'SAFE-T-CUT',
-    color: '#dc2626',
-    img: 'assets/safe-tcut.jpg',
-    product: 'assets/safe-tcut.jpg',
-    hideLogoBar: true
-  }, {
-    name: 'Lucky Misu',
-    color: '#f59e0b',
-    img: 'assets/lucky misu.jpg',
-    product: 'assets/lucky misu.jpg',
-    hideLogoBar: true
-  }, {
-    name: 'iwachi',
-    color: '#3b5bdb',
-    img: 'assets/iwachi.jpg',
-    product: 'assets/iwachi.jpg',
-    hideLogoBar: true
-  }, {
-    name: 'Thongthai Bakelite',
-    color: '#f97316',
-    img: 'assets/thongthai bikelite.png',
-    product: 'assets/thongthai bikelite.png',
-    hideLogoBar: true
-  }, {
-    name: 'สายไฟ',
-    color: '#374151',
-    img: 'assets/สายไฟ.jpg',
-    product: 'assets/สายไฟ.jpg',
-    hideLogoBar: true
-  }, {
-    name: 'Nano LED',
-    color: '#8bc83f',
-    img: 'assets/nano led.png',
-    product: 'assets/nano led.png',
-    hideLogoBar: true
-  }];
   const [page, setPage] = useState(0);
   const [zoomOpen, setZoomOpen] = useState(false);
+  // แคตตาล็อกตั้งค่าได้จากระบบหลังบ้าน (หน้า "ตั้งค่าเว็บไซต์") ไม่ต้องแก้โค้ด
+  const [cfg, setCfg] = useState({}); // { ชื่อแบรนด์: { url, label, cta, hidden } }
+  const [footerTxt, setFooterTxt] = useState('');
+  useEffect(() => {
+    hpApi('/settings').then(r => {
+      const s = r.settings || {};
+      let cat = s.catalog;
+      // รองรับข้อมูลรูปแบบเดิมที่เก็บแค่ลิงก์
+      if (!cat || !Object.keys(cat).length) {
+        cat = {};
+        for (const [k, v] of Object.entries(s.catalogUrls || {})) cat[k] = {
+          url: v
+        };
+      }
+      setCfg(cat);
+      setFooterTxt(s.catalogFooter || '');
+    }).catch(() => {});
+  }, []);
+
+  // แบรนด์ที่ตั้งให้ซ่อนจะไม่ถูกนับเป็นหน้าในแคตตาล็อกเลย
+  const brands = HP_CATALOG_BRANDS.filter(x => !(cfg[x.name] && cfg[x.name].hidden));
   const total = brands.length;
-  const goTo = n => setPage((n + total) % total);
-  const b = brands[page];
+  // ถ้าซ่อนจนหน้าที่เปิดอยู่หายไป ให้ถอยมาหน้าสุดท้ายที่ยังมี
+  const idx = total ? Math.min(page, total - 1) : 0;
+  const goTo = n => setPage(total ? (n % total + total) % total : 0);
+  if (!total) {
+    return /*#__PURE__*/React.createElement("section", {
+      style: {
+        background: '#eef1ee',
+        padding: '30px 0 56px',
+        minHeight: '75vh'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        maxWidth: '1100px',
+        margin: '0 auto',
+        padding: '0 20px',
+        textAlign: 'center'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: '#fff',
+        borderRadius: '14px',
+        padding: '60px 24px',
+        color: '#8a9a92',
+        fontSize: '15px'
+      }
+    }, "\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E2B\u0E19\u0E49\u0E32\u0E41\u0E04\u0E15\u0E15\u0E32\u0E25\u0E47\u0E2D\u0E01\u0E17\u0E35\u0E48\u0E40\u0E1B\u0E34\u0E14\u0E41\u0E2A\u0E14\u0E07\u0E2D\u0E22\u0E39\u0E48")));
+  }
+  const base = brands[idx];
+  const set = cfg[base.name] || {};
+  const b = {
+    ...base,
+    url: set.url || '',
+    name: set.label || base.name,
+    cta: set.cta || ''
+  };
+  // แบรนด์ที่ใส่ลิงก์ไว้ กดที่รูปแล้วเปิดเว็บแบรนด์ในแท็บใหม่ / ที่ยังไม่ใส่ กดแล้วซูมดูรูปเหมือนเดิม
+  const openBrandSite = () => window.open(b.url, '_blank', 'noopener,noreferrer');
   return /*#__PURE__*/React.createElement("section", {
     style: {
       background: '#eef1ee',
@@ -5937,7 +7014,7 @@ function HPCatalogPage() {
       gap: '18px'
     }
   }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => goTo(page - 1),
+    onClick: () => goTo(idx - 1),
     style: {
       flexShrink: 0,
       width: '46px',
@@ -5963,7 +7040,7 @@ function HPCatalogPage() {
   }, /*#__PURE__*/React.createElement("path", {
     d: "M15 18l-6-6 6-6"
   }))), /*#__PURE__*/React.createElement("div", {
-    key: page,
+    key: idx,
     className: "hp-page-flip",
     style: {
       position: 'relative',
@@ -6009,7 +7086,7 @@ function HPCatalogPage() {
       zIndex: 3,
       fontFamily: 'Inter, Noto Sans Thai, sans-serif'
     }
-  }, "\u0E2B\u0E19\u0E49\u0E32 ", page + 1, " / ", total), /*#__PURE__*/React.createElement("div", {
+  }, "\u0E2B\u0E19\u0E49\u0E32 ", idx + 1, " / ", total), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       minHeight: 0,
@@ -6019,9 +7096,10 @@ function HPCatalogPage() {
       padding: '18px',
       position: 'relative',
       zIndex: 2,
-      cursor: 'zoom-in'
+      cursor: b.url ? 'pointer' : 'zoom-in'
     },
-    onClick: () => setZoomOpen(true)
+    title: b.url ? `เปิดเว็บไซต์ ${b.name}` : 'คลิกเพื่อขยายรูป',
+    onClick: () => b.url ? openBrandSite() : setZoomOpen(true)
   }, /*#__PURE__*/React.createElement("img", {
     loading: "lazy",
     decoding: "async",
@@ -6033,6 +7111,7 @@ function HPCatalogPage() {
     },
     onError: e => e.target.style.display = 'none'
   }), /*#__PURE__*/React.createElement("div", {
+    title: "\u0E02\u0E22\u0E32\u0E22\u0E23\u0E39\u0E1B",
     style: {
       position: 'absolute',
       bottom: '8px',
@@ -6043,7 +7122,12 @@ function HPCatalogPage() {
       background: 'rgba(13,92,80,0.85)',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center'
+      justifyContent: 'center',
+      cursor: 'zoom-in'
+    },
+    onClick: e => {
+      e.stopPropagation();
+      setZoomOpen(true);
     }
   }, /*#__PURE__*/React.createElement("svg", {
     width: "15",
@@ -6087,7 +7171,46 @@ function HPCatalogPage() {
       objectFit: 'contain'
     },
     onError: e => e.target.style.display = 'none'
-  }))), /*#__PURE__*/React.createElement("div", {
+  }))), b.url ? /*#__PURE__*/React.createElement("a", {
+    href: b.url,
+    target: "_blank",
+    rel: "noopener noreferrer",
+    style: {
+      background: '#0d5c50',
+      color: '#fff',
+      textAlign: 'center',
+      fontFamily: 'Inter, Noto Sans Thai, sans-serif',
+      fontSize: '13px',
+      fontWeight: '700',
+      padding: '12px',
+      letterSpacing: '0.03em',
+      position: 'relative',
+      zIndex: 2,
+      textDecoration: 'none',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '8px',
+      transition: 'background-color 0.18s ease'
+    },
+    onMouseEnter: e => e.currentTarget.style.backgroundColor = '#0a4a40',
+    onMouseLeave: e => e.currentTarget.style.backgroundColor = '#0d5c50'
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "14",
+    height: "14",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "2.2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M15 3h6v6"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M10 14L21 3"
+  })), b.cta || `เยี่ยมชมเว็บไซต์ ${b.name}`) : /*#__PURE__*/React.createElement("div", {
     style: {
       background: '#0d5c50',
       color: '#fff',
@@ -6100,8 +7223,8 @@ function HPCatalogPage() {
       position: 'relative',
       zIndex: 2
     }
-  }, "KiRD SAENG SAWANG \xB7 CATALOG")), /*#__PURE__*/React.createElement("button", {
-    onClick: () => goTo(page + 1),
+  }, footerTxt || 'KiRD SAENG SAWANG · CATALOG')), /*#__PURE__*/React.createElement("button", {
+    onClick: () => goTo(idx + 1),
     style: {
       flexShrink: 0,
       width: '46px',
@@ -6140,18 +7263,19 @@ function HPCatalogPage() {
   }, brands.map((t, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     onClick: () => goTo(i),
+    title: cfg[t.name] && cfg[t.name].label || t.name,
     style: {
       flexShrink: 0,
       width: '52px',
       height: '52px',
       borderRadius: '8px',
-      border: i === page ? '2px solid #0d5c50' : '1px solid #e2e6e3',
+      border: i === idx ? '2px solid #0d5c50' : '1px solid #e2e6e3',
       background: '#fff',
       cursor: 'pointer',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      opacity: i === page ? 1 : 0.65,
+      opacity: i === idx ? 1 : 0.65,
       transition: 'opacity 0.15s, border-color 0.15s'
     }
   }, /*#__PURE__*/React.createElement("img", {
@@ -6367,221 +7491,55 @@ function HPContactPage() {
       color: '#5a7a66',
       fontWeight: '500'
     }
-  }, "\u0E22\u0E34\u0E19\u0E14\u0E35\u0E43\u0E2B\u0E49\u0E1A\u0E23\u0E34\u0E01\u0E32\u0E23 \u0E1E\u0E23\u0E49\u0E2D\u0E21\u0E15\u0E2D\u0E1A\u0E17\u0E38\u0E01\u0E04\u0E33\u0E16\u0E32\u0E21"))), (() => {
-    const card = {
-      display: 'flex',
-      gap: '14px',
-      alignItems: 'flex-start',
-      textDecoration: 'none',
-      background: '#fff',
-      border: '1px solid #e8f0ec',
-      borderRadius: '16px',
-      padding: '22px 22px',
-      boxShadow: '0 2px 10px rgba(15,77,42,0.05)',
-      transition: 'transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease'
-    };
-    const tile = bg => ({
-      width: '46px',
-      height: '46px',
-      borderRadius: '13px',
-      background: bg,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexShrink: 0
-    });
-    const label = {
-      fontSize: '11.5px',
-      color: '#9aa8a0',
-      fontWeight: '700',
-      letterSpacing: '0.08em',
-      marginBottom: '5px',
-      textTransform: 'uppercase'
-    };
-    const lift = (e, on, color) => {
-      e.currentTarget.style.transform = on ? 'translateY(-3px)' : 'translateY(0)';
-      e.currentTarget.style.boxShadow = on ? '0 12px 26px rgba(15,77,42,0.13)' : '0 2px 10px rgba(15,77,42,0.05)';
-      e.currentTarget.style.borderColor = on ? color : '#e8f0ec';
-    };
-    return /*#__PURE__*/React.createElement("div", {
-      style: {
-        maxWidth: '880px',
-        margin: '6px auto 30px',
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-        gap: '14px'
-      }
-    }, /*#__PURE__*/React.createElement("a", {
-      href: mapUrl,
-      target: "_blank",
-      rel: "noopener noreferrer",
-      style: {
-        ...card,
-        gridColumn: '1 / -1'
-      },
-      onMouseEnter: e => lift(e, true, '#8bc83f'),
-      onMouseLeave: e => lift(e, false)
-    }, /*#__PURE__*/React.createElement("div", {
-      style: tile('#f1f9e8')
-    }, /*#__PURE__*/React.createElement("svg", {
-      width: "22",
-      height: "22",
-      viewBox: "0 0 24 24",
-      fill: "none",
-      stroke: "#6ba52e",
-      strokeWidth: "2",
-      strokeLinecap: "round",
-      strokeLinejoin: "round"
-    }, /*#__PURE__*/React.createElement("path", {
-      d: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"
-    }), /*#__PURE__*/React.createElement("circle", {
-      cx: "12",
-      cy: "9",
-      r: "2.5"
-    }))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        minWidth: 0
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: label
-    }, "\u0E17\u0E35\u0E48\u0E2D\u0E22\u0E39\u0E48\u0E1A\u0E23\u0E34\u0E29\u0E31\u0E17"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: '15.5px',
-        fontWeight: '600',
-        color: '#1a1a1a',
-        lineHeight: '1.65'
-      }
-    }, "87/11-12 \u0E0B\u0E2D\u0E22\u0E40\u0E2D\u0E01\u0E0A\u0E31\u0E22 76 \u0E41\u0E22\u0E01 2 \u0E41\u0E02\u0E27\u0E07\u0E04\u0E25\u0E2D\u0E07\u0E1A\u0E32\u0E07\u0E1E\u0E23\u0E32\u0E19", /*#__PURE__*/React.createElement("br", null), "\u0E40\u0E02\u0E15\u0E1A\u0E32\u0E07\u0E1A\u0E2D\u0E19 \u0E01\u0E23\u0E38\u0E07\u0E40\u0E17\u0E1E\u0E21\u0E2B\u0E32\u0E19\u0E04\u0E23 10150"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: '12.5px',
-        color: '#6ba52e',
-        fontWeight: '700',
-        marginTop: '9px'
-      }
-    }, "\u0E14\u0E39\u0E40\u0E2A\u0E49\u0E19\u0E17\u0E32\u0E07\u0E1A\u0E19\u0E41\u0E1C\u0E19\u0E17\u0E35\u0E48 \u2192"))), /*#__PURE__*/React.createElement("a", {
-      href: "tel:028944007",
-      style: card,
-      onMouseEnter: e => lift(e, true, '#f05a20'),
-      onMouseLeave: e => lift(e, false)
-    }, /*#__PURE__*/React.createElement("div", {
-      style: tile('#fff0e8')
-    }, /*#__PURE__*/React.createElement("svg", {
-      width: "21",
-      height: "21",
-      viewBox: "0 0 24 24",
-      fill: "#f05a20"
-    }, /*#__PURE__*/React.createElement("path", {
-      d: "M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24c1.12.37 2.33.57 3.58.57a1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.25.2 2.46.57 3.58a1 1 0 01-.24 1.01l-2.21 2.2z"
-    }))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        minWidth: 0
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: label
-    }, "\u0E42\u0E17\u0E23\u0E28\u0E31\u0E1E\u0E17\u0E4C"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: '21px',
-        fontWeight: '800',
-        color: '#1a1a1a',
-        letterSpacing: '-0.3px',
-        fontFamily: 'Inter, Noto Sans Thai, sans-serif'
-      }
-    }, "02-894-4007"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: '12.5px',
-        color: '#f05a20',
-        fontWeight: '700',
-        marginTop: '7px'
-      }
-    }, "\u0E01\u0E14\u0E40\u0E1E\u0E37\u0E48\u0E2D\u0E42\u0E17\u0E23\u0E2D\u0E2D\u0E01 \u2192"))), /*#__PURE__*/React.createElement("a", {
-      href: "https://lin.ee/rAFJt2QD",
-      target: "_blank",
-      rel: "noopener noreferrer",
-      style: card,
-      onMouseEnter: e => lift(e, true, '#06c755'),
-      onMouseLeave: e => lift(e, false)
-    }, /*#__PURE__*/React.createElement("div", {
-      style: tile('#e8fbef')
-    }, /*#__PURE__*/React.createElement("svg", {
-      width: "22",
-      height: "22",
-      viewBox: "0 0 24 24",
-      fill: "#06c755"
-    }, /*#__PURE__*/React.createElement("path", {
-      d: "M12 2C6.48 2 2 5.92 2 10.8c0 3.27 1.96 6.16 4.95 7.87L6 21l3.24-1.62c.88.24 1.81.37 2.76.37 5.52 0 10-3.92 10-8.75S17.52 2 12 2z"
-    }))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        minWidth: 0
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: label
-    }, "LINE Official"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: '17px',
-        fontWeight: '800',
-        color: '#06c755',
-        wordBreak: 'break-all'
-      }
-    }, "@kirdsaengsawang"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: '12.5px',
-        color: '#06c755',
-        fontWeight: '700',
-        marginTop: '7px'
-      }
-    }, "\u0E01\u0E14\u0E40\u0E1E\u0E37\u0E48\u0E2D\u0E40\u0E1E\u0E34\u0E48\u0E21\u0E40\u0E1E\u0E37\u0E48\u0E2D\u0E19 \u2192"))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        ...card,
-        cursor: 'default'
-      },
-      onMouseEnter: e => lift(e, true, '#2563eb'),
-      onMouseLeave: e => lift(e, false)
-    }, /*#__PURE__*/React.createElement("div", {
-      style: tile('#eaf1fe')
-    }, /*#__PURE__*/React.createElement("svg", {
-      width: "21",
-      height: "21",
-      viewBox: "0 0 24 24",
-      fill: "none",
-      stroke: "#2563eb",
-      strokeWidth: "2.2",
-      strokeLinecap: "round",
-      strokeLinejoin: "round"
-    }, /*#__PURE__*/React.createElement("circle", {
-      cx: "12",
-      cy: "12",
-      r: "9"
-    }), /*#__PURE__*/React.createElement("path", {
-      d: "M12 7v5l3 2"
-    }))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        minWidth: 0
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: label
-    }, "\u0E40\u0E27\u0E25\u0E32\u0E17\u0E33\u0E01\u0E32\u0E23"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: '15.5px',
-        fontWeight: '700',
-        color: '#1a1a1a'
-      }
-    }, "\u0E08\u0E31\u0E19\u0E17\u0E23\u0E4C \u2013 \u0E40\u0E2A\u0E32\u0E23\u0E4C"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: '15.5px',
-        fontWeight: '700',
-        color: '#1a1a1a',
-        marginTop: '2px'
-      }
-    }, "08:30 \u2013 17:30 \u0E19."), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: '12.5px',
-        color: '#94a3b8',
-        fontWeight: '600',
-        marginTop: '7px'
-      }
-    }, "\u0E2B\u0E22\u0E38\u0E14\u0E27\u0E31\u0E19\u0E2D\u0E32\u0E17\u0E34\u0E15\u0E22\u0E4C\u0E41\u0E25\u0E30\u0E27\u0E31\u0E19\u0E2B\u0E22\u0E38\u0E14\u0E19\u0E31\u0E01\u0E02\u0E31\u0E15\u0E24\u0E01\u0E29\u0E4C"))));
-  })(), /*#__PURE__*/React.createElement("div", {
+  }, "\u0E22\u0E34\u0E19\u0E14\u0E35\u0E43\u0E2B\u0E49\u0E1A\u0E23\u0E34\u0E01\u0E32\u0E23 \u0E1E\u0E23\u0E49\u0E2D\u0E21\u0E15\u0E2D\u0E1A\u0E17\u0E38\u0E01\u0E04\u0E33\u0E16\u0E32\u0E21"))), /*#__PURE__*/React.createElement("div", {
     style: {
+      maxWidth: '720px',
+      margin: '0 auto 40px',
+      textAlign: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '15.5px',
+      color: '#5a6a62',
+      lineHeight: '1.8',
+      marginBottom: '18px'
+    }
+  }, "87/11-12 \u0E0B\u0E2D\u0E22\u0E40\u0E2D\u0E01\u0E0A\u0E31\u0E22 76 \u0E41\u0E22\u0E01 2 \u0E41\u0E02\u0E27\u0E07\u0E04\u0E25\u0E2D\u0E07\u0E1A\u0E32\u0E07\u0E1E\u0E23\u0E32\u0E19 \u0E40\u0E02\u0E15\u0E1A\u0E32\u0E07\u0E1A\u0E2D\u0E19 \u0E01\u0E23\u0E38\u0E07\u0E40\u0E17\u0E1E\u0E21\u0E2B\u0E32\u0E19\u0E04\u0E23 10150"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      gap: '8px 34px',
+      fontSize: '15.5px',
+      color: '#3a4a42'
+    }
+  }, /*#__PURE__*/React.createElement("span", null, "\u0E42\u0E17\u0E23. : ", /*#__PURE__*/React.createElement("a", {
+    href: "tel:028944007",
+    style: {
+      color: '#f05a20',
+      fontWeight: '700',
+      textDecoration: 'none'
+    }
+  }, "02-894-4007")), /*#__PURE__*/React.createElement("span", null, "LINE : ", /*#__PURE__*/React.createElement("a", {
+    href: "https://lin.ee/rAFJt2QD",
+    target: "_blank",
+    rel: "noopener noreferrer",
+    style: {
+      color: '#06c755',
+      fontWeight: '700',
+      textDecoration: 'none'
+    }
+  }, "@kirdsaengsawang")), /*#__PURE__*/React.createElement("span", null, "\u0E40\u0E27\u0E25\u0E32\u0E17\u0E33\u0E01\u0E32\u0E23 : ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontWeight: '700',
+      color: '#1a1a1a'
+    }
+  }, "\u0E08\u0E31\u0E19\u0E17\u0E23\u0E4C \u2013 \u0E40\u0E2A\u0E32\u0E23\u0E4C 08:30 \u2013 17:30 \u0E19.")))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'relative',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      width: 'min(1400px, 94vw)',
       borderRadius: '18px',
       overflow: 'hidden',
       boxShadow: '0 8px 26px rgba(15,77,42,0.12)',
@@ -6596,6 +7554,7 @@ function HPContactPage() {
       border: 0,
       width: '100%',
       display: 'block',
+      height: 'min(70vh, 640px)',
       minHeight: '440px'
     },
     loading: "lazy",
@@ -6694,6 +7653,7 @@ function HPCategoryProductsPage({
       borderRadius: '12px'
     }
   }, "\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E43\u0E19\u0E2B\u0E21\u0E27\u0E14\u0E2B\u0E21\u0E39\u0E48\u0E19\u0E35\u0E49") : /*#__PURE__*/React.createElement("div", {
+    className: "hp-product-grid",
     style: {
       display: 'grid',
       gridTemplateColumns: 'repeat(5, 1fr)',
@@ -9232,7 +10192,7 @@ function HPAdminPage({
     }).catch(() => {}).then(() => setUser(null));
   };
   const role = HP_ROLES[user.role] || HP_ROLES.sales;
-  const tabs = [hpCan(user, 'products') && ['products', 'จัดการสินค้า'], hpCan(user, 'sales') && ['sales', 'ระบบเซลล์'], hpCan(user, 'users') && ['users', 'จัดการผู้ใช้']].filter(Boolean);
+  const tabs = [hpCan(user, 'products') && ['products', 'จัดการสินค้า'], hpCan(user, 'sales') && ['sales', 'ระบบเซลล์'], hpCan(user, 'editProduct') && ['settings', 'ตั้งค่าเว็บไซต์'], hpCan(user, 'users') && ['users', 'จัดการผู้ใช้']].filter(Boolean);
   return /*#__PURE__*/React.createElement("section", {
     style: {
       background: '#f6f6f6',
@@ -9333,9 +10293,486 @@ function HPAdminPage({
     embedded: true
   }), tab === 'sales' && hpCan(user, 'sales') && /*#__PURE__*/React.createElement(HPSalesModule, {
     me: user
-  }), tab === 'users' && hpCan(user, 'users') && /*#__PURE__*/React.createElement(HPUsersManager, {
+  }), tab === 'settings' && hpCan(user, 'editProduct') && /*#__PURE__*/React.createElement(HPSiteSettings, null), tab === 'users' && hpCan(user, 'users') && /*#__PURE__*/React.createElement(HPUsersManager, {
     me: user
   })));
+}
+
+// ตั้งค่าเว็บไซต์ — แก้แคตตาล็อกและข้อมูลติดต่อได้เองจากหลังบ้าน โดยไม่ต้องแก้โค้ด
+function HPSiteSettings() {
+  const [catalog, setCatalog] = useState({}); // { ชื่อแบรนด์: { url, label, cta, hidden } }
+  const [footer, setFooter] = useState('');
+  const [contact, setContact] = useState({
+    phone: '',
+    lineId: '',
+    lineUrl: '',
+    hours: '',
+    address: ''
+  });
+  const [openRow, setOpenRow] = useState(null); // แบรนด์ที่กางอยู่
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState('');
+  const [err, setErr] = useState('');
+  useEffect(() => {
+    hpApi('/settings').then(r => {
+      const s = r.settings || {};
+      // รองรับข้อมูลรูปแบบเดิมที่เก็บแค่ลิงก์ ให้ย้ายมาเป็นรูปแบบใหม่อัตโนมัติ
+      let cat = s.catalog;
+      if (!cat || !Object.keys(cat).length) {
+        cat = {};
+        for (const [k, v] of Object.entries(s.catalogUrls || {})) cat[k] = {
+          url: v
+        };
+      }
+      setCatalog(cat);
+      setFooter(s.catalogFooter || '');
+      setContact({
+        phone: '',
+        lineId: '',
+        lineUrl: '',
+        hours: '',
+        address: '',
+        ...(s.contact || {})
+      });
+    }).catch(e => setErr('โหลดการตั้งค่าไม่สำเร็จ: ' + e.message)).then(() => setLoading(false));
+  }, []);
+  const setField = (name, key, v) => setCatalog(prev => ({
+    ...prev,
+    [name]: {
+      ...(prev[name] || {}),
+      [key]: v
+    }
+  }));
+  const rec = name => catalog[name] || {};
+  const save = async () => {
+    setErr('');
+    setMsg('');
+    // ตรวจรูปแบบลิงก์ก่อนส่ง เพื่อบอกทันทีว่าช่องไหนผิด (เซิร์ฟเวอร์ตรวจซ้ำอีกชั้น)
+    const badUrl = v => v && v.trim() && !/^https?:\/\//i.test(v.trim());
+    const bad = Object.entries(catalog).find(([, v]) => badUrl(v.url));
+    if (bad) {
+      setOpenRow(bad[0]);
+      setErr(`ลิงก์ของ ${bad[0]} ต้องขึ้นต้นด้วย https:// (หรือ http://)`);
+      return;
+    }
+    if (badUrl(contact.lineUrl)) {
+      setErr('ลิงก์ไลน์ต้องขึ้นต้นด้วย https:// (หรือ http://)');
+      return;
+    }
+    setSaving(true);
+    try {
+      const r = await hpApi('/settings', {
+        method: 'POST',
+        body: {
+          settings: {
+            catalog,
+            catalogFooter: footer,
+            contact
+          }
+        }
+      });
+      const s = r.settings || {};
+      setCatalog(s.catalog || {});
+      setFooter(s.catalogFooter || '');
+      setContact({
+        phone: '',
+        lineId: '',
+        lineUrl: '',
+        hours: '',
+        address: '',
+        ...(s.contact || {})
+      });
+      setMsg('✔ บันทึกแล้ว — กด Ctrl+F5 ที่หน้าเว็บเพื่อดูผล');
+      setTimeout(() => setMsg(''), 4000);
+    } catch (e) {
+      setErr(e.message);
+    }
+    setSaving(false);
+  };
+  const inputCss = {
+    width: '100%',
+    padding: '9px 12px',
+    fontSize: '14px',
+    border: '1px solid #e2e6e3',
+    borderRadius: '7px',
+    outline: 'none',
+    fontFamily: 'Inter, Noto Sans Thai, sans-serif'
+  };
+  const labelCss = {
+    fontSize: '12.5px',
+    fontWeight: '700',
+    color: '#667',
+    marginBottom: '5px',
+    display: 'block'
+  };
+  const cardCss = {
+    background: '#fff',
+    borderRadius: '10px',
+    border: '1px solid #eee',
+    padding: '22px 24px',
+    marginBottom: '16px'
+  };
+  const Field = ({
+    label,
+    hint,
+    children
+  }) => /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: '14px'
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: labelCss
+  }, label), children, hint && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '11.5px',
+      color: '#9aa8a0',
+      marginTop: '4px'
+    }
+  }, hint));
+  const filled = Object.values(catalog).filter(v => v && v.url && v.url.trim()).length;
+  const hiddenCount = Object.values(catalog).filter(v => v && v.hidden).length;
+  if (loading) return /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '40px',
+      textAlign: 'center',
+      color: '#888'
+    }
+  }, "\u0E01\u0E33\u0E25\u0E31\u0E07\u0E42\u0E2B\u0E25\u0E14\u0E01\u0E32\u0E23\u0E15\u0E31\u0E49\u0E07\u0E04\u0E48\u0E32\u2026");
+  return /*#__PURE__*/React.createElement("div", null, err && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#fdecea',
+      border: '1px solid #f5c6cb',
+      color: '#b3261e',
+      borderRadius: '8px',
+      padding: '12px 16px',
+      marginBottom: '14px',
+      fontSize: '14px'
+    }
+  }, err), msg && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#e8f7ee',
+      border: '1px solid #b7e4c7',
+      color: '#0d6b3f',
+      borderRadius: '8px',
+      padding: '12px 16px',
+      marginBottom: '14px',
+      fontSize: '14px'
+    }
+  }, msg), /*#__PURE__*/React.createElement("div", {
+    style: cardCss
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '18px',
+      fontWeight: '800',
+      color: '#222',
+      marginBottom: '6px'
+    }
+  }, "\u0E2B\u0E19\u0E49\u0E32\u0E41\u0E04\u0E15\u0E15\u0E32\u0E25\u0E47\u0E2D\u0E01"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: '14px',
+      color: '#777',
+      lineHeight: '1.8'
+    }
+  }, "\u0E01\u0E14\u0E17\u0E35\u0E48\u0E0A\u0E37\u0E48\u0E2D\u0E41\u0E1A\u0E23\u0E19\u0E14\u0E4C\u0E40\u0E1E\u0E37\u0E48\u0E2D\u0E01\u0E32\u0E07\u0E2D\u0E2D\u0E01\u0E21\u0E32\u0E41\u0E01\u0E49\u0E44\u0E02 \u2014 \u0E15\u0E31\u0E49\u0E07\u0E25\u0E34\u0E07\u0E01\u0E4C\u0E40\u0E27\u0E47\u0E1A\u0E44\u0E0B\u0E15\u0E4C \u0E40\u0E1B\u0E25\u0E35\u0E48\u0E22\u0E19\u0E0A\u0E37\u0E48\u0E2D\u0E17\u0E35\u0E48\u0E41\u0E2A\u0E14\u0E07 \u0E41\u0E01\u0E49\u0E02\u0E49\u0E2D\u0E04\u0E27\u0E32\u0E21\u0E1B\u0E38\u0E48\u0E21 \u0E2B\u0E23\u0E37\u0E2D\u0E0B\u0E48\u0E2D\u0E19\u0E2B\u0E19\u0E49\u0E32\u0E19\u0E31\u0E49\u0E19\u0E2D\u0E2D\u0E01\u0E08\u0E32\u0E01\u0E41\u0E04\u0E15\u0E15\u0E32\u0E25\u0E47\u0E2D\u0E01\u0E01\u0E47\u0E44\u0E14\u0E49"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: '12px',
+      fontSize: '13.5px',
+      color: '#0d6b5c',
+      fontWeight: '700'
+    }
+  }, "\u0E43\u0E2A\u0E48\u0E25\u0E34\u0E07\u0E01\u0E4C\u0E41\u0E25\u0E49\u0E27 ", filled, " / ", HP_CATALOG_BRANDS.length, " \u0E41\u0E1A\u0E23\u0E19\u0E14\u0E4C", hiddenCount > 0 && /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: '#c2410c'
+    }
+  }, " \xB7 \u0E0B\u0E48\u0E2D\u0E19\u0E2D\u0E22\u0E39\u0E48 ", hiddenCount, " \u0E2B\u0E19\u0E49\u0E32"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#fff',
+      borderRadius: '10px',
+      border: '1px solid #eee',
+      overflow: 'hidden',
+      marginBottom: '16px'
+    }
+  }, HP_CATALOG_BRANDS.map((b, i) => {
+    const r = rec(b.name);
+    const open = openRow === b.name;
+    const url = r.url || '';
+    const invalid = url.trim() && !/^https?:\/\//i.test(url.trim());
+    return /*#__PURE__*/React.createElement("div", {
+      key: b.name,
+      style: {
+        borderTop: i ? '1px solid #f2f2f2' : 'none'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      role: "button",
+      tabIndex: 0,
+      onClick: () => setOpenRow(open ? null : b.name),
+      onKeyDown: e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          setOpenRow(open ? null : b.name);
+        }
+      },
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        padding: '13px 20px',
+        cursor: 'pointer',
+        background: open ? '#f7fbf9' : 'transparent'
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        width: '8px',
+        height: '8px',
+        borderRadius: '50%',
+        flexShrink: 0,
+        background: url.trim() ? '#22c55e' : '#d8dcd9'
+      }
+    }), /*#__PURE__*/React.createElement("span", {
+      style: {
+        flex: 1,
+        minWidth: 0,
+        fontSize: '14.5px',
+        fontWeight: '700',
+        color: r.hidden ? '#aab' : '#333',
+        textDecoration: r.hidden ? 'line-through' : 'none',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap'
+      }
+    }, r.label || b.name, r.label && r.label !== b.name && /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: '#9aa8a0',
+        fontWeight: '500'
+      }
+    }, " (\u0E40\u0E14\u0E34\u0E21: ", b.name, ")")), r.hidden && /*#__PURE__*/React.createElement("span", {
+      style: {
+        flexShrink: 0,
+        fontSize: '11.5px',
+        fontWeight: '700',
+        color: '#c2410c',
+        background: '#fff1e8',
+        borderRadius: '999px',
+        padding: '3px 10px'
+      }
+    }, "\u0E0B\u0E48\u0E2D\u0E19\u0E2D\u0E22\u0E39\u0E48"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        flexShrink: 0,
+        fontSize: '12.5px',
+        color: '#0d6b5c',
+        fontWeight: '700'
+      }
+    }, open ? 'ปิด' : 'แก้ไข'), /*#__PURE__*/React.createElement("svg", {
+      width: "15",
+      height: "15",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "#9aa8a0",
+      strokeWidth: "2.4",
+      strokeLinecap: "round",
+      strokeLinejoin: "round",
+      style: {
+        flexShrink: 0,
+        transform: open ? 'rotate(180deg)' : 'none',
+        transition: 'transform 0.18s'
+      }
+    }, /*#__PURE__*/React.createElement("path", {
+      d: "M6 9l6 6 6-6"
+    }))), open && /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: '4px 20px 20px',
+        background: '#f7fbf9'
+      }
+    }, /*#__PURE__*/React.createElement(Field, {
+      label: "\u0E25\u0E34\u0E07\u0E01\u0E4C\u0E40\u0E27\u0E47\u0E1A\u0E44\u0E0B\u0E15\u0E4C\u0E41\u0E1A\u0E23\u0E19\u0E14\u0E4C",
+      hint: "\u0E40\u0E27\u0E49\u0E19\u0E27\u0E48\u0E32\u0E07\u0E44\u0E14\u0E49 \u2014 \u0E16\u0E49\u0E32\u0E44\u0E21\u0E48\u0E43\u0E2A\u0E48 \u0E01\u0E14\u0E17\u0E35\u0E48\u0E23\u0E39\u0E1B\u0E08\u0E30\u0E40\u0E1B\u0E47\u0E19\u0E01\u0E32\u0E23\u0E02\u0E22\u0E32\u0E22\u0E14\u0E39\u0E23\u0E39\u0E1B\u0E40\u0E2B\u0E21\u0E37\u0E2D\u0E19\u0E40\u0E14\u0E34\u0E21"
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        gap: '10px',
+        alignItems: 'center'
+      }
+    }, /*#__PURE__*/React.createElement("input", {
+      value: url,
+      onChange: e => setField(b.name, 'url', e.target.value),
+      placeholder: "https://www.example.com",
+      style: {
+        ...inputCss,
+        borderColor: invalid ? '#e57373' : '#e2e6e3'
+      }
+    }), url.trim() && !invalid && /*#__PURE__*/React.createElement("a", {
+      href: url.trim(),
+      target: "_blank",
+      rel: "noopener noreferrer",
+      title: "\u0E17\u0E14\u0E2A\u0E2D\u0E1A\u0E40\u0E1B\u0E34\u0E14\u0E25\u0E34\u0E07\u0E01\u0E4C",
+      style: {
+        flexShrink: 0,
+        fontSize: '13px',
+        fontWeight: '700',
+        color: '#0d6b5c',
+        textDecoration: 'none',
+        whiteSpace: 'nowrap'
+      }
+    }, "\u0E17\u0E14\u0E2A\u0E2D\u0E1A \u2197"))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '14px'
+      }
+    }, /*#__PURE__*/React.createElement(Field, {
+      label: "\u0E0A\u0E37\u0E48\u0E2D\u0E17\u0E35\u0E48\u0E41\u0E2A\u0E14\u0E07",
+      hint: `เว้นว่าง = ใช้ "${b.name}"`
+    }, /*#__PURE__*/React.createElement("input", {
+      value: r.label || '',
+      onChange: e => setField(b.name, 'label', e.target.value),
+      placeholder: b.name,
+      maxLength: 60,
+      style: inputCss
+    })), /*#__PURE__*/React.createElement(Field, {
+      label: "\u0E02\u0E49\u0E2D\u0E04\u0E27\u0E32\u0E21\u0E1B\u0E38\u0E48\u0E21\u0E14\u0E49\u0E32\u0E19\u0E25\u0E48\u0E32\u0E07",
+      hint: `เว้นว่าง = "เยี่ยมชมเว็บไซต์ ${r.label || b.name}"`
+    }, /*#__PURE__*/React.createElement("input", {
+      value: r.cta || '',
+      onChange: e => setField(b.name, 'cta', e.target.value),
+      placeholder: "\u0E40\u0E22\u0E35\u0E48\u0E22\u0E21\u0E0A\u0E21\u0E40\u0E27\u0E47\u0E1A\u0E44\u0E0B\u0E15\u0E4C",
+      maxLength: 40,
+      style: inputCss
+    }))), /*#__PURE__*/React.createElement("label", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '9px',
+        fontSize: '14px',
+        color: '#444',
+        cursor: 'pointer',
+        marginTop: '4px'
+      }
+    }, /*#__PURE__*/React.createElement("input", {
+      type: "checkbox",
+      checked: !!r.hidden,
+      onChange: e => setField(b.name, 'hidden', e.target.checked),
+      style: {
+        width: '16px',
+        height: '16px',
+        cursor: 'pointer'
+      }
+    }), "\u0E0B\u0E48\u0E2D\u0E19\u0E2B\u0E19\u0E49\u0E32\u0E19\u0E35\u0E49\u0E44\u0E21\u0E48\u0E43\u0E2B\u0E49\u0E41\u0E2A\u0E14\u0E07\u0E43\u0E19\u0E41\u0E04\u0E15\u0E15\u0E32\u0E25\u0E47\u0E2D\u0E01")));
+  })), /*#__PURE__*/React.createElement("div", {
+    style: cardCss
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '16px',
+      fontWeight: '800',
+      color: '#222',
+      marginBottom: '12px'
+    }
+  }, "\u0E41\u0E16\u0E1A\u0E25\u0E48\u0E32\u0E07\u0E2B\u0E19\u0E49\u0E32\u0E01\u0E23\u0E30\u0E14\u0E32\u0E29\u0E41\u0E04\u0E15\u0E15\u0E32\u0E25\u0E47\u0E2D\u0E01"), /*#__PURE__*/React.createElement(Field, {
+    label: "\u0E02\u0E49\u0E2D\u0E04\u0E27\u0E32\u0E21\u0E1A\u0E19\u0E41\u0E16\u0E1A\u0E40\u0E02\u0E35\u0E22\u0E27",
+    hint: "\u0E40\u0E27\u0E49\u0E19\u0E27\u0E48\u0E32\u0E07 = \"KiRD SAENG SAWANG \xB7 CATALOG\" (\u0E41\u0E16\u0E1A\u0E19\u0E35\u0E49\u0E08\u0E30\u0E41\u0E2A\u0E14\u0E07\u0E40\u0E09\u0E1E\u0E32\u0E30\u0E41\u0E1A\u0E23\u0E19\u0E14\u0E4C\u0E17\u0E35\u0E48\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E43\u0E2A\u0E48\u0E25\u0E34\u0E07\u0E01\u0E4C)"
+  }, /*#__PURE__*/React.createElement("input", {
+    value: footer,
+    onChange: e => setFooter(e.target.value),
+    placeholder: "KiRD SAENG SAWANG \xB7 CATALOG",
+    maxLength: 80,
+    style: inputCss
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: cardCss
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '16px',
+      fontWeight: '800',
+      color: '#222',
+      marginBottom: '6px'
+    }
+  }, "\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E15\u0E34\u0E14\u0E15\u0E48\u0E2D"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: '13.5px',
+      color: '#777',
+      lineHeight: '1.8',
+      marginBottom: '16px'
+    }
+  }, "\u0E43\u0E0A\u0E49\u0E23\u0E48\u0E27\u0E21\u0E01\u0E31\u0E19\u0E43\u0E19\u0E2B\u0E19\u0E49\u0E32 \u201C\u0E15\u0E34\u0E14\u0E15\u0E48\u0E2D\u0E40\u0E23\u0E32\u201D \u0E41\u0E25\u0E30\u0E1F\u0E38\u0E15\u0E40\u0E15\u0E2D\u0E23\u0E4C\u0E17\u0E49\u0E32\u0E22\u0E40\u0E27\u0E47\u0E1A \u2014 \u0E40\u0E27\u0E49\u0E19\u0E27\u0E48\u0E32\u0E07\u0E0A\u0E48\u0E2D\u0E07\u0E44\u0E2B\u0E19\u0E44\u0E27\u0E49 \u0E0A\u0E48\u0E2D\u0E07\u0E19\u0E31\u0E49\u0E19\u0E08\u0E30\u0E43\u0E0A\u0E49\u0E04\u0E48\u0E32\u0E40\u0E14\u0E34\u0E21\u0E17\u0E35\u0E48\u0E15\u0E31\u0E49\u0E07\u0E44\u0E27\u0E49\u0E43\u0E19\u0E40\u0E27\u0E47\u0E1A"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: '14px'
+    }
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "\u0E40\u0E1A\u0E2D\u0E23\u0E4C\u0E42\u0E17\u0E23\u0E28\u0E31\u0E1E\u0E17\u0E4C"
+  }, /*#__PURE__*/React.createElement("input", {
+    value: contact.phone,
+    onChange: e => setContact(c => ({
+      ...c,
+      phone: e.target.value
+    })),
+    placeholder: "02-894-4007",
+    maxLength: 60,
+    style: inputCss
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "\u0E40\u0E27\u0E25\u0E32\u0E17\u0E33\u0E01\u0E32\u0E23"
+  }, /*#__PURE__*/React.createElement("input", {
+    value: contact.hours,
+    onChange: e => setContact(c => ({
+      ...c,
+      hours: e.target.value
+    })),
+    placeholder: "\u0E08\u0E31\u0E19\u0E17\u0E23\u0E4C \u2013 \u0E40\u0E2A\u0E32\u0E23\u0E4C 08:30 \u2013 17:30 \u0E19.",
+    maxLength: 120,
+    style: inputCss
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "LINE ID"
+  }, /*#__PURE__*/React.createElement("input", {
+    value: contact.lineId,
+    onChange: e => setContact(c => ({
+      ...c,
+      lineId: e.target.value
+    })),
+    placeholder: "@kirdsaengsawang",
+    maxLength: 60,
+    style: inputCss
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "\u0E25\u0E34\u0E07\u0E01\u0E4C\u0E40\u0E1E\u0E34\u0E48\u0E21\u0E40\u0E1E\u0E37\u0E48\u0E2D\u0E19\u0E44\u0E25\u0E19\u0E4C"
+  }, /*#__PURE__*/React.createElement("input", {
+    value: contact.lineUrl,
+    onChange: e => setContact(c => ({
+      ...c,
+      lineUrl: e.target.value
+    })),
+    placeholder: "https://lin.ee/...",
+    maxLength: 300,
+    style: inputCss
+  }))), /*#__PURE__*/React.createElement(Field, {
+    label: "\u0E17\u0E35\u0E48\u0E2D\u0E22\u0E39\u0E48\u0E1A\u0E23\u0E34\u0E29\u0E31\u0E17"
+  }, /*#__PURE__*/React.createElement("textarea", {
+    value: contact.address,
+    onChange: e => setContact(c => ({
+      ...c,
+      address: e.target.value
+    })),
+    placeholder: "87/11-12 \u0E0B\u0E2D\u0E22\u0E40\u0E2D\u0E01\u0E0A\u0E31\u0E22 76 \u0E41\u0E22\u0E01 2 \u0E41\u0E02\u0E27\u0E07\u0E04\u0E25\u0E2D\u0E07\u0E1A\u0E32\u0E07\u0E1E\u0E23\u0E32\u0E19 \u0E40\u0E02\u0E15\u0E1A\u0E32\u0E07\u0E1A\u0E2D\u0E19 \u0E01\u0E23\u0E38\u0E07\u0E40\u0E17\u0E1E\u0E21\u0E2B\u0E32\u0E19\u0E04\u0E23 10150",
+    maxLength: 300,
+    rows: 2,
+    style: {
+      ...inputCss,
+      resize: 'vertical',
+      lineHeight: '1.7'
+    }
+  }))), /*#__PURE__*/React.createElement("button", {
+    onClick: save,
+    disabled: saving,
+    style: {
+      background: saving ? '#9bb8b1' : '#0d6b5c',
+      color: '#fff',
+      border: 'none',
+      borderRadius: '7px',
+      padding: '12px 30px',
+      fontSize: '15px',
+      fontWeight: '700',
+      cursor: saving ? 'default' : 'pointer',
+      fontFamily: 'Inter, Noto Sans Thai, sans-serif'
+    }
+  }, saving ? 'กำลังบันทึก…' : 'บันทึกการตั้งค่า'));
 }
 function HPAdminPanel({
   onLogout,
@@ -10937,6 +12374,325 @@ function HPAdminPanel({
     }, form.id != null ? 'อัปเดต' : 'บันทึก')));
   })()));
 }
+
+// ผู้ช่วย AI ตอบคำถามลูกค้า — ตอบความรู้เรื่องไฟฟ้า ส่วนราคา/สต็อกส่งต่อไปที่ไลน์ OA
+function HPChatWidget() {
+  const LINE = 'https://lin.ee/rAFJt2QD';
+  const GREET = 'สวัสดีครับ 👋 ผมเป็นผู้ช่วยของเกิดแสงสว่าง ถามเรื่องอุปกรณ์ไฟฟ้าได้เลยครับ เช่น เลือกเบรกเกอร์ ขนาดสายไฟ หรือตู้ไฟแบบไหนเหมาะกับงาน';
+  const SUGGEST = ['เลือกขนาดเบรกเกอร์ยังไง', 'สายไฟ 2.5 sq.mm. ใช้กับอะไรได้', 'ตู้ MDB กับตู้โหลดต่างกันยังไง'];
+  const [open, setOpen] = useState(false);
+  const [msgs, setMsgs] = useState([{
+    role: 'assistant',
+    content: GREET
+  }]);
+  const [input, setInput] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const bodyRef = React.useRef(null);
+  useEffect(() => {
+    if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
+  }, [msgs, busy, open]);
+  const send = async text => {
+    const q = (text != null ? text : input).trim();
+    if (!q || busy) return;
+    setErr('');
+    setInput('');
+    // ส่งเฉพาะบทสนทนาจริง ไม่รวมข้อความทักทายที่ฝั่งเราสร้างเอง
+    const next = [...msgs, {
+      role: 'user',
+      content: q
+    }];
+    setMsgs(next);
+    setBusy(true);
+    try {
+      const r = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          messages: next.filter(m => m.content !== GREET)
+        })
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.error || 'ระบบขัดข้องชั่วคราว');
+      setMsgs(m => [...m, {
+        role: 'assistant',
+        content: data.reply
+      }]);
+    } catch (e) {
+      setErr(e.message);
+    }
+    setBusy(false);
+  };
+  const bubble = (m, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      display: 'flex',
+      justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start',
+      marginBottom: '10px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxWidth: '82%',
+      padding: '10px 14px',
+      borderRadius: m.role === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+      background: m.role === 'user' ? '#0d6b5c' : '#f1f5f3',
+      color: m.role === 'user' ? '#fff' : '#26332e',
+      fontSize: '14.5px',
+      lineHeight: '1.75',
+      whiteSpace: 'pre-wrap',
+      wordBreak: 'break-word'
+    }
+  }, m.content));
+  return /*#__PURE__*/React.createElement(React.Fragment, null, !open && /*#__PURE__*/React.createElement("button", {
+    onClick: () => setOpen(true),
+    "aria-label": "\u0E04\u0E38\u0E22\u0E01\u0E31\u0E1A\u0E1C\u0E39\u0E49\u0E0A\u0E48\u0E27\u0E22",
+    style: {
+      position: 'fixed',
+      left: '18px',
+      bottom: '18px',
+      zIndex: 9998,
+      display: 'flex',
+      alignItems: 'center',
+      gap: '9px',
+      background: '#0d6b5c',
+      color: '#fff',
+      border: 'none',
+      borderRadius: '999px',
+      padding: '13px 20px',
+      fontSize: '14.5px',
+      fontWeight: '700',
+      cursor: 'pointer',
+      boxShadow: '0 8px 24px rgba(13,107,92,0.4)',
+      fontFamily: 'Inter, Noto Sans Thai, sans-serif'
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "20",
+    height: "20",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"
+  })), "\u0E2A\u0E2D\u0E1A\u0E16\u0E32\u0E21\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25"), open && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'fixed',
+      left: '18px',
+      bottom: '18px',
+      zIndex: 9998,
+      width: 'min(380px, calc(100vw - 36px))',
+      height: 'min(560px, calc(100vh - 100px))',
+      background: '#fff',
+      borderRadius: '18px',
+      boxShadow: '0 18px 48px rgba(6,53,46,0.28)',
+      border: '1px solid #e4ede9',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#0d6b5c',
+      color: '#fff',
+      padding: '14px 16px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '11px',
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("img", {
+    src: "assets/logo-kss-trans.png",
+    alt: "",
+    style: {
+      width: '30px',
+      height: '30px',
+      objectFit: 'contain',
+      filter: 'brightness(0) invert(1)'
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '14.5px',
+      fontWeight: '800'
+    }
+  }, "\u0E1C\u0E39\u0E49\u0E0A\u0E48\u0E27\u0E22\u0E40\u0E01\u0E34\u0E14\u0E41\u0E2A\u0E07\u0E2A\u0E27\u0E48\u0E32\u0E07"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '11.5px',
+      opacity: 0.85
+    }
+  }, "\u0E15\u0E2D\u0E1A\u0E04\u0E33\u0E16\u0E32\u0E21\u0E40\u0E23\u0E37\u0E48\u0E2D\u0E07\u0E2D\u0E38\u0E1B\u0E01\u0E23\u0E13\u0E4C\u0E44\u0E1F\u0E1F\u0E49\u0E32")), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setOpen(false),
+    "aria-label": "\u0E1B\u0E34\u0E14",
+    style: {
+      background: 'transparent',
+      border: 'none',
+      color: '#fff',
+      fontSize: '20px',
+      cursor: 'pointer',
+      lineHeight: 1,
+      padding: '2px 4px'
+    }
+  }, "\u2715")), /*#__PURE__*/React.createElement("div", {
+    ref: bodyRef,
+    style: {
+      flex: 1,
+      overflowY: 'auto',
+      padding: '16px',
+      background: '#fbfdfc'
+    }
+  }, msgs.map(bubble), busy && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '13px',
+      color: '#8fa39a',
+      padding: '4px 2px'
+    }
+  }, "\u0E01\u0E33\u0E25\u0E31\u0E07\u0E1E\u0E34\u0E21\u0E1E\u0E4C\u2026"), err && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#fdecea',
+      border: '1px solid #f5c6cb',
+      color: '#b3261e',
+      borderRadius: '10px',
+      padding: '10px 12px',
+      fontSize: '13px',
+      lineHeight: '1.7'
+    }
+  }, err, /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: '6px'
+    }
+  }, /*#__PURE__*/React.createElement("a", {
+    href: LINE,
+    target: "_blank",
+    rel: "noopener noreferrer",
+    style: {
+      color: '#06c755',
+      fontWeight: '700'
+    }
+  }, "\u0E17\u0E31\u0E01\u0E44\u0E25\u0E19\u0E4C @kirdsaengsawang \u2192"))), msgs.length === 1 && !busy && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '7px',
+      marginTop: '6px'
+    }
+  }, SUGGEST.map(s => /*#__PURE__*/React.createElement("button", {
+    key: s,
+    onClick: () => send(s),
+    style: {
+      background: '#fff',
+      border: '1px solid #cfe3dc',
+      color: '#0d6b5c',
+      borderRadius: '999px',
+      padding: '7px 13px',
+      fontSize: '12.5px',
+      fontWeight: '600',
+      cursor: 'pointer',
+      fontFamily: 'Inter, Noto Sans Thai, sans-serif'
+    }
+  }, s)))), /*#__PURE__*/React.createElement("a", {
+    href: LINE,
+    target: "_blank",
+    rel: "noopener noreferrer",
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '8px',
+      background: '#06c755',
+      color: '#fff',
+      padding: '11px',
+      fontSize: '13.5px',
+      fontWeight: '700',
+      textDecoration: 'none',
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "17",
+    height: "17",
+    viewBox: "0 0 24 24",
+    fill: "currentColor"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M12 2C6.48 2 2 5.92 2 10.8c0 3.27 1.96 6.16 4.95 7.87L6 21l3.24-1.62c.88.24 1.81.37 2.76.37 5.52 0 10-3.92 10-8.75S17.52 2 12 2z"
+  })), "\u0E02\u0E2D\u0E43\u0E1A\u0E40\u0E2A\u0E19\u0E2D\u0E23\u0E32\u0E04\u0E32\u0E17\u0E32\u0E07\u0E44\u0E25\u0E19\u0E4C"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: '8px',
+      padding: '11px',
+      borderTop: '1px solid #eef3f0',
+      background: '#fff',
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    value: input,
+    onChange: e => setInput(e.target.value),
+    onKeyDown: e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        send();
+      }
+    },
+    maxLength: 1000,
+    placeholder: "\u0E1E\u0E34\u0E21\u0E1E\u0E4C\u0E04\u0E33\u0E16\u0E32\u0E21\u0E17\u0E35\u0E48\u0E19\u0E35\u0E48\u2026",
+    disabled: busy,
+    style: {
+      flex: 1,
+      minWidth: 0,
+      padding: '10px 13px',
+      fontSize: '14px',
+      border: '1px solid #dde7e2',
+      borderRadius: '999px',
+      outline: 'none',
+      fontFamily: 'Inter, Noto Sans Thai, sans-serif'
+    }
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: () => send(),
+    disabled: busy || !input.trim(),
+    "aria-label": "\u0E2A\u0E48\u0E07",
+    style: {
+      width: '40px',
+      height: '40px',
+      flexShrink: 0,
+      borderRadius: '50%',
+      border: 'none',
+      background: busy || !input.trim() ? '#c3d4cd' : '#0d6b5c',
+      color: '#fff',
+      cursor: busy || !input.trim() ? 'default' : 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "18",
+    height: "18",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "2.2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M22 2L11 13"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M22 2l-7 20-4-9-9-4 20-7z"
+  })))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '10.5px',
+      color: '#9fb0a8',
+      textAlign: 'center',
+      padding: '0 12px 9px',
+      background: '#fff',
+      lineHeight: '1.5'
+    }
+  }, "\u0E1C\u0E39\u0E49\u0E0A\u0E48\u0E27\u0E22 AI \u0E2D\u0E32\u0E08\u0E15\u0E2D\u0E1A\u0E1C\u0E34\u0E14\u0E1E\u0E25\u0E32\u0E14\u0E44\u0E14\u0E49 \xB7 \u0E23\u0E32\u0E04\u0E32\u0E41\u0E25\u0E30\u0E2A\u0E15\u0E47\u0E2D\u0E01\u0E01\u0E23\u0E38\u0E13\u0E32\u0E2A\u0E2D\u0E1A\u0E16\u0E32\u0E21\u0E17\u0E32\u0E07\u0E44\u0E25\u0E19\u0E4C")));
+}
 function HPApp() {
   const [page, setPage] = useState('home');
   const [activeCategory, setActiveCategory] = useState('all');
@@ -10982,6 +12738,16 @@ function HPApp() {
     }
     if (p === 'เกร็ดความรู้') {
       setPage('knowledge');
+      window.scrollTo(0, 0);
+      return;
+    }
+    if (p === 'mdb-article') {
+      setPage('mdb-article');
+      window.scrollTo(0, 0);
+      return;
+    }
+    if (p === 'loadcenter3p-article') {
+      setPage('loadcenter3p-article');
       window.scrollTo(0, 0);
       return;
     }
@@ -11048,7 +12814,16 @@ function HPApp() {
   }), /*#__PURE__*/React.createElement(HPProductGuide, null), /*#__PURE__*/React.createElement(HPBrandStrip, null)), page === 'shop' && /*#__PURE__*/React.createElement(HPCategoryProductsPage, {
     activeCategory: activeCategory,
     onSelectProduct: onSelectProduct
-  }), page === 'wholesale' && /*#__PURE__*/React.createElement(HPWholesalePage, null), page === 'contact' && /*#__PURE__*/React.createElement(HPContactPage, null), page === 'knowledge' && /*#__PURE__*/React.createElement(HPKnowledgePage, null), page === 'catalog' && /*#__PURE__*/React.createElement(HPCatalogPage, null), page === 'brands' && /*#__PURE__*/React.createElement(HPBrandProductsPage, {
+  }), page === 'wholesale' && /*#__PURE__*/React.createElement(HPWholesalePage, null), page === 'contact' && /*#__PURE__*/React.createElement(HPContactPage, null), page === 'knowledge' && /*#__PURE__*/React.createElement(HPKnowledgePage, {
+    onCategoryChange: onCategoryChange,
+    onNavigate: onNavigate
+  }), page === 'mdb-article' && /*#__PURE__*/React.createElement(HPMdbArticlePage, {
+    onNavigate: onNavigate,
+    onCategoryChange: onCategoryChange
+  }), page === 'loadcenter3p-article' && /*#__PURE__*/React.createElement(HPLoadCenter3PArticlePage, {
+    onNavigate: onNavigate,
+    onCategoryChange: onCategoryChange
+  }), page === 'catalog' && /*#__PURE__*/React.createElement(HPCatalogPage, null), page === 'brands' && /*#__PURE__*/React.createElement(HPBrandProductsPage, {
     onSelectProduct: onSelectProduct
   }), page === 'product-detail' && /*#__PURE__*/React.createElement(HPProductDetailPage, {
     product: selectedProduct,
@@ -11063,8 +12838,10 @@ function HPApp() {
   }), page === 'admin' && /*#__PURE__*/React.createElement(HPAdminPage, {
     onNavigate: onNavigate
   })), /*#__PURE__*/React.createElement(HPFooter, {
-    onCategoryChange: onCategoryChange
-  }), /*#__PURE__*/React.createElement("div", {
+    onCategoryChange: onCategoryChange,
+    onNavigate: onNavigate
+  }), /*#__PURE__*/React.createElement(HPChatWidget, null), /*#__PURE__*/React.createElement("div", {
+    className: "hp-zoom-ctrl",
     style: {
       position: 'fixed',
       right: '18px',

@@ -14,10 +14,67 @@ $UTF8   = New-Object System.Text.UTF8Encoding($false)
 $ITER   = 150000
 $TTLSEC = 60 * 60 * 8
 
+# ---------- กันเดารหัสผ่านหน้าล็อกอิน ----------
+$LOGIN_MAX_FAIL = 5                 # ผิดได้กี่ครั้ง
+$LOGIN_WINDOW   = 15 * 60 * 1000    # ภายในกี่นาที
+$LOGIN_LOCK     = 15 * 60 * 1000    # แล้วล็อกนานเท่าไร
+$LoginFail      = @{}               # นับในหน่วยความจำ (รีเซ็ตเมื่อรีสตาร์ทเซิร์ฟเวอร์)
+
+# ---------- ผู้ช่วย AI ตอบลูกค้า ----------
+# endpoint นี้เปิดสาธารณะและมีค่าใช้จ่ายต่อข้อความ จึงต้องจำกัดปริมาณให้รัดกุม
+$CHAT_MODEL     = 'claude-opus-5'
+$CHAT_MAX_CHARS = 1000            # ความยาวข้อความลูกค้าต่อครั้ง
+$CHAT_MAX_TURNS = 20              # จำนวนข้อความย้อนหลังที่ส่งเข้าโมเดล
+$CHAT_RATE_MAX  = 30              # จำนวนข้อความต่อ IP
+$CHAT_RATE_WIN  = 60 * 60 * 1000  # ต่อ 1 ชั่วโมง
+$ChatRate       = @{}             # นับจำนวนครั้งในหน่วยความจำ (รีเซ็ตเมื่อรีสตาร์ทเซิร์ฟเวอร์)
+$LINE_URL       = 'https://lin.ee/rAFJt2QD'
+
+$CHAT_SYSTEM = @'
+คุณคือผู้ช่วยตอบคำถามลูกค้าของ "บริษัท เกิดแสงสว่าง จำกัด" (KiRD SAENG SAWANG CO.,LTD.)
+ร้านจำหน่ายอุปกรณ์ไฟฟ้าครบวงจร ทั้งปลีกและส่ง ย่านบางบอน กรุงเทพฯ
+
+ข้อมูลร้าน
+- ที่อยู่: 87/11-12 ซอยเอกชัย 76 แยก 2 แขวงคลองบางพราน เขตบางบอน กรุงเทพมหานคร 10150
+- โทร: 02-894-4007, 02-894-4008
+- LINE Official: @kirdsaengsawang
+- เวลาทำการ: จันทร์–เสาร์ 08:30–17:30 น. (หยุดวันอาทิตย์และวันหยุดนักขัตฤกษ์)
+
+สินค้าที่จำหน่าย
+เบรกเกอร์ · ตู้โหลดเซนเตอร์ · ตู้คอนซูมเมอร์ยูนิต · ตู้ MDB · ตู้สวิตช์บอร์ด · สายไฟ ·
+หลอดไฟ/โคมไฟ LED · สวิตช์และเต้ารับ · ฝาหน้ากาก · คัตเอาท์ · ท่อร้อยสายไฟ · รางไฟ ·
+บล็อคยาง · สายดินและล่อฟ้า · พัดลมดูดอากาศ · อุปกรณ์ฮาร์ดแวร์ไฟฟ้า
+
+แบรนด์ที่จำหน่าย
+Nano · CHANG (ช้าง) · Panasonic · KJL · SAFE-T-CUT · Sentoshi · Zeberg · IWACHI · Vena ·
+Schneider Electric · Reckon · SOKAWA · Lucky Misu · ท่อน้ำไทย · ทองไทยเบเกอร์ไลท์ และอื่นๆ
+
+บริการ
+รับประกอบตู้โหลด 3 เฟส · รับผลิตตู้ MDB ตามสเปก · บริการติดตั้ง · งานโครงการ · ปรึกษาระบบไฟ
+
+หน้าที่ของคุณ
+1. ตอบคำถามความรู้เรื่องไฟฟ้าและอุปกรณ์ไฟฟ้าให้เข้าใจง่าย เช่น เลือกขนาดเบรกเกอร์ ขนาดสายไฟ
+   ความต่างของตู้แต่ละแบบ ระบบ 1 เฟส/3 เฟส การติดตั้งที่ปลอดภัย มาตรฐาน มอก./IEC
+2. แนะนำว่าสินค้าประเภทไหนเหมาะกับงานของลูกค้า
+3. ให้ข้อมูลร้าน เวลาทำการ ช่องทางติดต่อ
+
+กฎเหล็ก
+- ตอบเป็นภาษาไทยเสมอ สุภาพ เป็นกันเอง กระชับ (ปกติ 2-5 ประโยค) ไม่ต้องใส่หัวข้อหรือ bullet ถ้าไม่จำเป็น
+- ห้ามบอกราคา สต็อก หรือระยะเวลาส่งของเด็ดขาด เพราะคุณไม่มีข้อมูลนั้น
+  ถ้าลูกค้าถามราคา/ขอใบเสนอราคา/ถามว่ามีของไหม ให้ตอบสั้นๆ แล้วบอกให้ทักไลน์ @kirdsaengsawang
+  เพื่อขอใบเสนอราคาและเช็คสต็อกจากทีมงานโดยตรง
+- ห้ามแต่งข้อมูลสเปกสินค้าหรือรุ่นที่ไม่แน่ใจ ถ้าไม่รู้ให้บอกตรงๆ แล้วแนะนำให้สอบถามทางไลน์
+- งานที่ต้องเดินไฟจริง ให้ย้ำเสมอว่าควรใช้ช่างไฟที่มีใบอนุญาตเป็นผู้ติดตั้ง
+- ห้ามแนะนำร้านคู่แข่งหรือเว็บไซต์ร้านอื่น
+- ตอบเฉพาะเรื่องที่เกี่ยวกับไฟฟ้า อุปกรณ์ไฟฟ้า และร้าน ถ้าถูกถามเรื่องอื่นให้ปฏิเสธอย่างสุภาพ
+  แล้วชวนกลับมาคุยเรื่องอุปกรณ์ไฟฟ้า
+'@
+
 # ---------- ไฟล์เก็บข้อมูล ----------
 $fUsers   = Join-Path $data "users.json"
 $fQuotes  = Join-Path $data "quotes.json"
 $fProds   = Join-Path $data "products.json"
+$fSetting = Join-Path $data "settings.json"
 $fSecret  = Join-Path $data "secret.key"
 
 function Read-Json([string]$path, $fallback) {
@@ -34,6 +91,24 @@ function Read-Json([string]$path, $fallback) {
 function Write-Json([string]$path, $obj) {
   $json = ConvertTo-Json -InputObject @($obj) -Depth 12 -Compress
   [System.IO.File]::WriteAllText($path, $json, $UTF8)
+}
+# เขียน JSON แบบ object เดี่ยว (ไม่ห่อเป็น array) — ใช้กับ settings.json
+function Write-JsonObj([string]$path, $obj) {
+  $json = ConvertTo-Json -InputObject $obj -Depth 12 -Compress
+  [System.IO.File]::WriteAllText($path, $json, $UTF8)
+}
+# ตัดช่องว่างหัวท้ายและจำกัดความยาว (รับ $null ได้)
+function Trim-Max($v, [int]$max) {
+  $s = ([string]$v).Trim()
+  if ($s.Length -gt $max) { $s = $s.Substring(0, $max) }
+  return $s
+}
+# แปลง PSCustomObject ที่อ่านจาก JSON ให้เป็น hashtable ธรรมดา
+function To-Hashtable($o) {
+  $h = @{}
+  if ($null -eq $o) { return $h }
+  foreach ($p in $o.PSObject.Properties) { $h[$p.Name] = $p.Value }
+  return $h
 }
 
 # ---------- crypto ----------
@@ -204,6 +279,17 @@ while ($listener.IsListening) {
       $ep = $path.Substring(4)
 
       if ($ep -eq '/auth/login' -and $method -eq 'POST') {
+        $lip = [string]$req.RemoteEndPoint.Address
+        $nowMs = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+
+        # กันเดารหัสผ่าน — ล็อกชั่วคราวเมื่อผิดติดกันหลายครั้ง
+        $lrec = $LoginFail[$lip]
+        if ($null -ne $lrec -and $lrec.until -and [int64]$lrec.until -gt $nowMs) {
+          $leftSec = [Math]::Ceiling(([int64]$lrec.until - $nowMs) / 1000)
+          $leftMin = [Math]::Ceiling($leftSec / 60)
+          Send-Json $res @{ error=("ใส่รหัสผิดหลายครั้งเกินไป กรุณารออีก {0} นาทีแล้วลองใหม่" -f $leftMin) } 429; continue
+        }
+
         $b = Read-Body $req
         if (-not $b -or -not $b.username -or -not $b.password) { Send-Json $res @{ error='กรุณากรอกชื่อผู้ใช้และรหัสผ่าน' } 400; continue }
         $users = @(Load-Users)
@@ -212,8 +298,17 @@ while ($listener.IsListening) {
         $saltUse = if ($u) { $u.salt } else { To-B64Url (New-Object byte[] 16) }
         $probe = Hash-Password ([string]$b.password) $saltUse
         if (-not $u -or -not (Safe-Equal $probe.hash $u.hash) -or $u.active -eq $false) {
-          Send-Json $res @{ error='ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' } 401; continue
+          if ($null -eq $lrec -or ($nowMs - [int64]$lrec.start) -gt $LOGIN_WINDOW) { $lrec = @{ start=$nowMs; count=0; until=$null } }
+          $lrec.count = [int]$lrec.count + 1
+          if ([int]$lrec.count -ge $LOGIN_MAX_FAIL) { $lrec.until = $nowMs + $LOGIN_LOCK }
+          $LoginFail[$lip] = $lrec
+          $left = [Math]::Max(0, $LOGIN_MAX_FAIL - [int]$lrec.count)
+          # ไม่บอกว่าผิดที่ชื่อผู้ใช้หรือรหัสผ่าน เพื่อไม่ให้เดาว่ามีบัญชีนี้อยู่จริงไหม
+          $emsg = if ($left -gt 0) { "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง (เหลืออีก $left ครั้งก่อนถูกล็อกชั่วคราว)" }
+                  else { 'ใส่รหัสผิดหลายครั้งเกินไป บัญชีนี้ถูกล็อกชั่วคราว กรุณารอสักครู่' }
+          Send-Json $res @{ error=$emsg } 401; continue
         }
+        $LoginFail.Remove($lip) | Out-Null   # ล็อกอินสำเร็จแล้วล้างตัวนับทิ้ง
         $now = [int][double]::Parse((Get-Date -UFormat %s))
         $tok = Sign-Token @{ sub=$u.id; role=$u.role; exp=($now + $TTLSEC) }
         Send-Json $res @{ user=(Public-User $u) } 200 (Make-Cookie $tok $TTLSEC); continue
@@ -226,6 +321,82 @@ while ($listener.IsListening) {
       # อ่านสินค้าเปิดสาธารณะ (หน้าร้านต้องใช้)
       if ($ep -eq '/products' -and $method -eq 'GET') {
         Send-Json $res @{ products=(Read-Json $fProds @()) } 200; continue
+      }
+
+      # อ่านการตั้งค่าเว็บเปิดสาธารณะ (หน้าแคตตาล็อกต้องใช้แสดงลิงก์แบรนด์)
+      if ($ep -eq '/settings' -and $method -eq 'GET') {
+        Send-Json $res @{ settings=(Read-Json $fSetting @{}) } 200; continue
+      }
+
+      # ---------- ผู้ช่วย AI ตอบลูกค้า (เปิดสาธารณะ ลูกค้าหน้าเว็บใช้ได้เลย) ----------
+      if ($ep -eq '/chat' -and $method -eq 'POST') {
+        if (-not $env:ANTHROPIC_API_KEY) {
+          Send-Json $res @{ error='ยังไม่ได้ตั้งค่า ANTHROPIC_API_KEY กรุณาทักไลน์ @kirdsaengsawang'; lineUrl=$LINE_URL } 503; continue
+        }
+
+        # จำกัดจำนวนครั้งต่อ IP กันค่าใช้จ่ายบานปลาย
+        $ip = [string]$req.RemoteEndPoint.Address
+        $now = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        $rec = $ChatRate[$ip]
+        if ($null -eq $rec -or ($now - [int64]$rec.start) -gt $CHAT_RATE_WIN) { $rec = @{ start=$now; count=0 } }
+        if ([int]$rec.count -ge $CHAT_RATE_MAX) {
+          Send-Json $res @{ error='คุยกันเยอะแล้ววันนี้ รบกวนทักไลน์ @kirdsaengsawang นะครับ'; lineUrl=$LINE_URL } 429; continue
+        }
+        $rec.count = [int]$rec.count + 1
+        $ChatRate[$ip] = $rec
+
+        $b = Read-Body $req
+        if ($null -eq $b -or $null -eq $b.messages) { Send-Json $res @{ error='รูปแบบข้อความไม่ถูกต้อง' } 400; continue }
+
+        # รับเฉพาะรูปแบบที่ต้องการ และตัดความยาวทิ้ง
+        $msgs = @()
+        foreach ($m in @($b.messages)) {
+          if ($null -eq $m) { continue }
+          $role = [string]$m.role
+          $text = [string]$m.content
+          if (($role -ne 'user' -and $role -ne 'assistant') -or -not $text.Trim()) { continue }
+          if ($text.Length -gt $CHAT_MAX_CHARS) { $text = $text.Substring(0, $CHAT_MAX_CHARS) }
+          $msgs += ,@{ role=$role; content=$text }
+        }
+        if ($msgs.Count -gt $CHAT_MAX_TURNS) { $msgs = $msgs[($msgs.Count - $CHAT_MAX_TURNS)..($msgs.Count - 1)] }
+        if ($msgs.Count -eq 0 -or $msgs[$msgs.Count - 1].role -ne 'user') {
+          Send-Json $res @{ error='รูปแบบข้อความไม่ถูกต้อง' } 400; continue
+        }
+
+        try {
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+          $payload = @{
+            model      = $CHAT_MODEL
+            max_tokens = 2000
+            fallbacks  = 'default'
+            thinking   = @{ type='adaptive' }
+            output_config = @{ effort='low' }
+            system     = @(@{ type='text'; text=$CHAT_SYSTEM; cache_control=@{ type='ephemeral' } })
+            messages   = $msgs
+          }
+          $jsonBody  = ConvertTo-Json -InputObject $payload -Depth 12 -Compress
+          $bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($jsonBody)
+          $headers = @{
+            'x-api-key'         = $env:ANTHROPIC_API_KEY
+            'anthropic-version' = '2023-06-01'
+            'anthropic-beta'    = 'server-side-fallback-2026-07-01'
+          }
+          $r = Invoke-WebRequest -Uri 'https://api.anthropic.com/v1/messages' -Method Post `
+                 -Headers $headers -Body $bodyBytes -ContentType 'application/json; charset=utf-8' `
+                 -UseBasicParsing -TimeoutSec 120
+          $respText = [System.Text.Encoding]::UTF8.GetString($r.RawContentStream.ToArray())
+          $obj = $respText | ConvertFrom-Json
+
+          if ([string]$obj.stop_reason -eq 'refusal') {
+            Send-Json $res @{ reply='ขออภัยครับ คำถามนี้ผมตอบให้ไม่ได้ รบกวนทักไลน์ @kirdsaengsawang นะครับ'; lineUrl=$LINE_URL } 200; continue
+          }
+          $reply = (@($obj.content | Where-Object { $_.type -eq 'text' } | ForEach-Object { $_.text }) -join '').Trim()
+          if (-not $reply) { $reply = 'ขออภัยครับ ผมยังตอบคำถามนี้ไม่ได้ รบกวนทักไลน์ @kirdsaengsawang นะครับ' }
+          Send-Json $res @{ reply=$reply; lineUrl=$LINE_URL } 200; continue
+        } catch {
+          Write-Host ("chat error: {0}" -f $_.Exception.Message) -ForegroundColor Red
+          Send-Json $res @{ error='ระบบผู้ช่วยขัดข้องชั่วคราว รบกวนทักไลน์ @kirdsaengsawang นะครับ'; lineUrl=$LINE_URL } 502; continue
+        }
       }
 
       # เครื่องมือ build (build.html) — ใช้เฉพาะตอนพัฒนาในเครื่อง ไม่เกี่ยวกับระบบหลังบ้าน จึงไม่ต้องล็อกอิน
@@ -318,6 +489,56 @@ while ($listener.IsListening) {
         if ($null -eq $b -or $null -eq $b.products) { Send-Json $res @{ error='รูปแบบข้อมูลไม่ถูกต้อง' } 400; continue }
         Write-Json $fProds @($b.products)
         Send-Json $res @{ ok=$true; count=@($b.products).Count } 200; continue
+      }
+
+      # ---------- ตั้งค่าเว็บไซต์ (ลิงก์แบรนด์ในหน้าแคตตาล็อก ฯลฯ) ----------
+      if ($ep -eq '/settings' -and $method -eq 'POST') {
+        if (-not (Can $me 'editProduct')) { Send-Json $res @{ error='บทบาทของคุณไม่มีสิทธิ์แก้ไขการตั้งค่าเว็บไซต์' } 403; continue }
+        $b = Read-Body $req
+        if ($null -eq $b -or $null -eq $b.settings) { Send-Json $res @{ error='รูปแบบข้อมูลไม่ถูกต้อง' } 400; continue }
+
+        # ---- แคตตาล็อก: ต่อแบรนด์มี ลิงก์ / ชื่อที่แสดง / ข้อความปุ่ม / ซ่อน ----
+        # ยอมรับเฉพาะ http/https เพื่อกัน javascript: และลิงก์แปลกปลอม
+        $inCat   = To-Hashtable $b.settings.catalog
+        $catalog = @{}
+        $urlMap  = @{}
+        $badKey  = $null
+        foreach ($k in @($inCat.Keys)) {
+          $raw = $inCat[$k]
+          if ($null -eq $raw) { continue }
+          $url = Trim-Max $raw.url 500
+          if ($url -and $url -notmatch '^https?://') { $badKey = $k; break }
+          $rec = @{}
+          if ($url)                  { $rec['url']    = $url; $urlMap[[string]$k] = $url }
+          if ($raw.label)            { $rec['label']  = Trim-Max $raw.label 60 }
+          if ($raw.cta)              { $rec['cta']    = Trim-Max $raw.cta 40 }
+          if ($raw.hidden -eq $true) { $rec['hidden'] = $true }
+          if ($rec.Count -gt 0)      { $catalog[[string]$k] = $rec }
+        }
+        if ($badKey) { Send-Json $res @{ error=("ลิงก์ของ {0} ต้องขึ้นต้นด้วย http:// หรือ https://" -f $badKey) } 400; continue }
+
+        # ---- ข้อมูลติดต่อ (ใช้ร่วมกันหลายหน้า) ----
+        $c = $b.settings.contact
+        $lineUrl = Trim-Max $c.lineUrl 300
+        if ($lineUrl -and $lineUrl -notmatch '^https?://') {
+          Send-Json $res @{ error='ลิงก์ไลน์ต้องขึ้นต้นด้วย http:// หรือ https://' } 400; continue
+        }
+        $contact = @{
+          phone   = Trim-Max $c.phone 60
+          lineId  = Trim-Max $c.lineId 60
+          lineUrl = $lineUrl
+          hours   = Trim-Max $c.hours 120
+          address = Trim-Max $c.address 300
+        }
+
+        $out = @{
+          catalog       = $catalog
+          catalogFooter = Trim-Max $b.settings.catalogFooter 80
+          contact       = $contact
+          catalogUrls   = $urlMap   # เก็บรูปแบบเดิมไว้ เผื่อหน้าเว็บเวอร์ชันเก่ายังอ่านอยู่
+        }
+        Write-JsonObj $fSetting $out
+        Send-Json $res @{ ok=$true; settings=$out } 200; continue
       }
 
       # ---------- ใบเสนอราคา ----------

@@ -5,6 +5,7 @@
   "description": "เว็บไซต์ บริษัท เกิดแสงสว่าง จำกัด — ระบบหลังบ้านตรวจสิทธิ์ฝั่งเซิร์ฟเวอร์",
   "type": "module",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.70.0",
     "@netlify/blobs": "^8.1.0"
   }
 }

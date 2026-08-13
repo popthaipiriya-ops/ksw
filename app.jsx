@@ -201,14 +201,24 @@ const HP_HERO_SLIDES = [
 function HPMainHeader({ cartCount, onNavigate, onSearch }) {
   const [showLine, setShowLine] = useState(false);
   const [openMenu, setOpenMenu] = useState(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileSub, setMobileSub]   = useState(null);
+  // กดเมนูบนมือถือแล้วต้องปิดแผงเสมอ ไม่งั้นแผงจะค้างทับหน้าใหม่
+  const goMobile = (t) => { setMobileOpen(false); setMobileSub(null); onNavigate(t); };
+  useEffect(() => {
+    // ปิดแผงอัตโนมัติถ้าผู้ใช้ขยายจอกลับเป็นเดสก์ท็อป ไม่งั้นแผงจะค้างอยู่ทั้งที่เมนูปกติกลับมาแล้ว
+    const onResize = () => { if (window.innerWidth > 980) { setMobileOpen(false); setMobileSub(null); } };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
   const navLinks = [
     { label:'หน้าแรก',        icon:<><path d="M3 9.5L12 3l9 6.5"/><path d="M5 9v11a1 1 0 001 1h12a1 1 0 001-1V9"/><path d="M9 21v-6h6v6"/></> },
     { label:'สินค้าตามแบรนด์', icon:<><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><circle cx="7" cy="7" r="1.5"/></> },
     { label:'เกร็ดความรู้',    icon:<><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></>,
       submenu:[
         { label:'5 แนวทางการเลือกซื้ออุปกรณ์เดินระบบไฟฟ้า', target:'เกร็ดความรู้' },
-        { label:'ตู้ MDB คืออะไร ?', target:'เกร็ดความรู้' },
-        { label:'ความสำคัญของตู้โหลด 3 เฟส', target:'เกร็ดความรู้' },
+        { label:'ตู้ MDB คืออะไร ?', target:'mdb-article' },
+        { label:'ความสำคัญของตู้โหลด 3 เฟส', target:'loadcenter3p-article' },
       ] },
     { label:'แคตตาล็อก',      icon:<><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></> },
     { label:'ติดต่อเรา',       icon:<><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 6L2 7"/></> },
@@ -217,21 +227,21 @@ function HPMainHeader({ cartCount, onNavigate, onSearch }) {
     <>
     {showLine && <LineQRModal onClose={() => setShowLine(false)}/>}
     <div style={{ background:'#ffffff', padding:'14px 0', boxShadow:'0 2px 14px rgba(15,77,42,0.07)', borderBottom:'1px solid #eef3ef' }}>
-      <div style={{ maxWidth:'1240px', margin:'0 auto', padding:'0 20px', display:'flex', alignItems:'center', gap:'14px' }}>
+      <div className="hp-header-row" style={{ maxWidth:'1240px', margin:'0 auto', padding:'0 20px', display:'flex', alignItems:'center', gap:'14px' }}>
 
-        {/* Logo */}
-        <div style={{ display:'flex', alignItems:'center', gap:'11px', cursor:'pointer', flexShrink:0 }} onClick={() => onNavigate('home')}>
+        {/* Logo — ต้องย่อได้เมื่อจอแคบ ไม่งั้นจะดันปุ่มขวาจนล้นออกนอกจอ */}
+        <div style={{ display:'flex', alignItems:'center', gap:'11px', cursor:'pointer', minWidth:0 }} onClick={() => onNavigate('home')}>
           <div style={{ width:'46px', height:'46px', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
             <img src="assets/logo-kss.jpg" alt="KSS" style={{ width:'46px', height:'46px', objectFit:'contain' }}/>
           </div>
-          <div style={{ lineHeight:1.1 }}>
-            <div style={{ fontWeight:800, fontSize:'17px', color:'#06352e', letterSpacing:'0.2px' }}>KiRD SAENG SAWANG</div>
-            <div style={{ fontSize:'11px', color:'#8a9a90', fontWeight:400, marginTop:'2px' }}>บริษัท เกิดแสงสว่าง จำกัด</div>
+          <div style={{ lineHeight:1.1, minWidth:0 }}>
+            <div className="hp-brand-name" style={{ fontWeight:800, fontSize:'17px', color:'#06352e', letterSpacing:'0.2px', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>KiRD SAENG SAWANG</div>
+            <div className="hp-brand-sub" style={{ fontSize:'11px', color:'#8a9a90', fontWeight:400, marginTop:'2px', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>บริษัท เกิดแสงสว่าง จำกัด</div>
           </div>
         </div>
 
-        {/* Nav links */}
-        <nav style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:'2px' }}>
+        {/* Nav links — ซ่อนเมื่อจอแคบ แล้วใช้ปุ่ม ☰ แทน */}
+        <nav className="hp-nav-desktop" style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:'2px' }}>
           {navLinks.map(n => (
             <div key={n.label} style={{ position:'relative' }}
               onMouseEnter={() => n.submenu && setOpenMenu(n.label)}
@@ -264,8 +274,22 @@ function HPMainHeader({ cartCount, onNavigate, onSearch }) {
           ))}
         </nav>
 
+        {/* ดันปุ่มขวาไปสุดขอบเมื่อเมนูกลางถูกซ่อน */}
+        <div style={{ flex:1 }}/>
+
         {/* Right actions */}
         <div style={{ display:'flex', alignItems:'center', gap:'8px', flexShrink:0 }}>
+          {/* ปุ่มเมนูสำหรับจอแคบ */}
+          <div className="hp-burger"
+            style={{ alignItems:'center', justifyContent:'center', width:'40px', height:'40px', borderRadius:'10px', background:'#f2f6f4', border:'1px solid #e2ece7', cursor:'pointer' }}
+            role="button" tabIndex={0} aria-label="เปิดเมนู" aria-expanded={mobileOpen}
+            onClick={() => setMobileOpen(o => !o)}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMobileOpen(o => !o); } }}>
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#0d5c50" strokeWidth="2.2" strokeLinecap="round">
+              {mobileOpen ? <><path d="M18 6L6 18"/><path d="M6 6l12 12"/></> : <><path d="M3 6h18"/><path d="M3 12h18"/><path d="M3 18h18"/></>}
+            </svg>
+          </div>
+
           {/* LINE */}
           <div
             style={{ display:'flex', alignItems:'center', justifyContent:'center', width:'40px', height:'40px', borderRadius:'10px', background:'#06c755', cursor:'pointer', transition:'transform 0.15s', boxShadow:'0 2px 8px rgba(6,199,85,0.3)' }}
@@ -292,6 +316,39 @@ function HPMainHeader({ cartCount, onNavigate, onSearch }) {
         </div>
 
       </div>
+
+      {/* แผงเมนูสำหรับจอแคบ */}
+      {mobileOpen && (
+        <div style={{ borderTop:'1px solid #eef3ef', background:'#fff', maxHeight:'70vh', overflowY:'auto' }}>
+          <div style={{ maxWidth:'1240px', margin:'0 auto', padding:'8px 12px 14px' }}>
+            {navLinks.map(n => (
+              <div key={n.label}>
+                <div
+                  role="button" tabIndex={0}
+                  style={{ display:'flex', alignItems:'center', gap:'12px', padding:'13px 12px', fontSize:'15px', fontWeight:'600', color:'#3a4a42', cursor:'pointer', borderRadius:'10px' }}
+                  onClick={() => n.submenu ? setMobileSub(s => s === n.label ? null : n.label) : goMobile(n.target || n.label)}
+                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); n.submenu ? setMobileSub(s => s === n.label ? null : n.label) : goMobile(n.target || n.label); } }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink:0 }}>{n.icon}</svg>
+                  <span style={{ flex:1 }}>{n.label}</span>
+                  {n.submenu && (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9aa8a0" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"
+                      style={{ transform: mobileSub === n.label ? 'rotate(180deg)' : 'none', transition:'transform 0.18s' }}><path d="M6 9l6 6 6-6"/></svg>
+                  )}
+                </div>
+                {n.submenu && mobileSub === n.label && n.submenu.map(s => (
+                  <div key={s.label}
+                    role="button" tabIndex={0}
+                    style={{ padding:'11px 12px 11px 44px', fontSize:'14px', color:'#5a7a66', cursor:'pointer', borderRadius:'10px' }}
+                    onClick={() => goMobile(s.target)}
+                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goMobile(s.target); } }}>
+                    • {s.label}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
     </>
   );
@@ -970,8 +1027,15 @@ function HPBrandStrip() {
 
 // ─── FOOTER ───────────────────────────────────────────────────────────────────
 
-function HPFooter({ onCategoryChange }) {
-  const serviceCol = { title:'บริการของเรา', links:['รับประกอบตู้โหลด 3 เฟส','รับผลิตตู้ MDB','บริการติดตั้ง','งานโครงการ','ปรึกษาระบบไฟ'] };
+function HPFooter({ onCategoryChange, onNavigate }) {
+  // แต่ละบริการต้องกดแล้วไปที่ไหนสักที่ — ก่อนหน้านี้กดแล้วไม่มีอะไรเกิดขึ้น
+  const serviceCol = { title:'บริการของเรา', links:[
+    { label:'รับประกอบตู้โหลด 3 เฟส', go:'loadcenter3p-article' },
+    { label:'รับผลิตตู้ MDB',          go:'mdb-article' },
+    { label:'บริการติดตั้ง',            go:'ติดต่อเรา' },
+    { label:'งานโครงการ',              go:'ติดต่อเรา' },
+    { label:'ปรึกษาระบบไฟ',            go:'ติดต่อเรา' },
+  ] };
   const productLinks = [
     ...HP_FOOTER_CATEGORIES.map(c => ({ id: c.id, label: c.label })),
     ...HP_FOOTER_EXTRA_IDS.map(id => ({ id, label: hpCategoryLabel(id) })),
@@ -982,6 +1046,8 @@ function HPFooter({ onCategoryChange }) {
     <div style={{ fontSize:'15px', fontWeight:'700', color:'#fff', marginBottom:'18px' }}>{children}</div>
   );
   const linkStyle = { fontSize:'13.5px', color:'rgba(255,255,255,0.65)', marginBottom:'11px', cursor:'pointer', display:'flex', alignItems:'center', gap:'9px', transition:'all 0.15s', width:'fit-content' };
+  // <a> ที่ไม่มี href จะกด Tab ไปไม่ถึงและโปรแกรมอ่านหน้าจอไม่รู้ว่าเป็นลิงก์ — เพิ่มให้กดด้วยคีย์บอร์ดได้
+  const linkA11y = (fn) => ({ role:'link', tabIndex:0, onClick:fn, onKeyDown:(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(); } } });
   return (
     <footer style={{ background:'#004E3D', color:'#fff', marginTop:'8px', position:'relative' }}>
       {/* top accent line */}
@@ -997,7 +1063,7 @@ function HPFooter({ onCategoryChange }) {
       </div>
 
       {/* main grid */}
-      <div style={{ maxWidth:'1240px', margin:'0 auto', padding:'32px 24px 32px', borderTop:'1px solid rgba(255,255,255,0.08)', display:'grid', gridTemplateColumns:'1.6fr 1fr 1fr 1.1fr', gap:'32px' }}>
+      <div className="hp-footer-grid" style={{ maxWidth:'1240px', margin:'0 auto', padding:'32px 24px 32px', borderTop:'1px solid rgba(255,255,255,0.08)', display:'grid', gridTemplateColumns:'1.6fr 1fr 1fr 1.1fr', gap:'32px' }}>
         {/* col 2: สินค้า — 2 sub-lists */}
         <div>
           <ColHead>สินค้า</ColHead>
@@ -1005,8 +1071,7 @@ function HPFooter({ onCategoryChange }) {
             {productCols.map((sub, si) => (
               <div key={si}>
                 {sub.map(c => (
-                  <a key={c.id} style={linkStyle}
-                    onClick={() => onCategoryChange(c.id)}
+                  <a key={c.id} style={linkStyle} {...linkA11y(() => onCategoryChange(c.id))}
                     onMouseEnter={e => { e.currentTarget.style.color='#fff'; e.currentTarget.style.paddingLeft='4px'; }}
                     onMouseLeave={e => { e.currentTarget.style.color='rgba(255,255,255,0.65)'; e.currentTarget.style.paddingLeft='0'; }}>
                     <span style={{ width:'4px', height:'4px', borderRadius:'50%', background:'#5fd1c2', flexShrink:0 }}/>{c.label}
@@ -1021,10 +1086,10 @@ function HPFooter({ onCategoryChange }) {
         <div>
           <ColHead>{serviceCol.title}</ColHead>
           {serviceCol.links.map(l => (
-            <a key={l} style={linkStyle}
+            <a key={l.label} style={linkStyle} {...linkA11y(() => onNavigate(l.go))}
               onMouseEnter={e => { e.currentTarget.style.color='#fff'; e.currentTarget.style.paddingLeft='4px'; }}
               onMouseLeave={e => { e.currentTarget.style.color='rgba(255,255,255,0.65)'; e.currentTarget.style.paddingLeft='0'; }}>
-              <span style={{ width:'4px', height:'4px', borderRadius:'50%', background:'#5fd1c2', flexShrink:0 }}/>{l}
+              <span style={{ width:'4px', height:'4px', borderRadius:'50%', background:'#5fd1c2', flexShrink:0 }}/>{l.label}
             </a>
           ))}
         </div>
@@ -1230,17 +1295,28 @@ function HPWholesalePage() {
   );
 }
 
-function HPKnowledgePage() {
+function HPKnowledgePage({ onCategoryChange, onNavigate }) {
+  const KI = {
+    award:  <><circle cx="12" cy="8" r="6"/><path d="M8.5 13.5L7 22l5-3 5 3-1.5-8.5"/></>,
+    target: <><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></>,
+    bolt:   <path d="M13 2 3 14h7l-1 8 11-14h-7l1-6z"/>,
+    shield: <><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5l-8-3z"/><path d="M9 12l2 2 4-4"/></>,
+    wrench: <path d="M14.7 6.3a4 4 0 10-5.4 5.4L3 18.6V21h2.4l6.3-6.3a4 4 0 005.4-5.4l-2.8 2.8-2.1-2.1 2.8-2.8z"/>,
+    panel:  <><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></>,
+  };
+  const KIcon = ({ name, size }) => (
+    <svg width={size||24} height={size||24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{KI[name]}</svg>
+  );
   const steps = [
-    { n:'1', icon:'🏅', c1:'#8bc83f', c2:'#8bc83f', title:'เลือกอุปกรณ์ที่ผ่านมาตรฐานสากล', desc:'ควรเลือกอุปกรณ์ไฟฟ้าที่ได้รับการรับรองมาตรฐาน เช่น มอก. (มาตรฐานผลิตภัณฑ์อุตสาหกรรม) หรือ IEC (มาตรฐานสากล) เพื่อความปลอดภัยและความน่าเชื่อถือ มั่นใจได้ว่าอุปกรณ์ผ่านการทดสอบคุณภาพมาแล้ว' },
-    { n:'2', icon:'🎯', c1:'#0d9488', c2:'#14b8a6', title:'คำนึงถึงความเหมาะสมกับการใช้งาน', desc:'เลือกอุปกรณ์ให้เหมาะกับลักษณะงานและปริมาณการใช้ไฟฟ้า เช่น ขนาดของเบรกเกอร์ ชนิดของสายไฟ และพิกัดกระแส ให้สอดคล้องกับโหลดที่ใช้จริง เพื่อประสิทธิภาพและความปลอดภัยสูงสุด' },
-    { n:'3', icon:'⚡', c1:'#ca8a04', c2:'#eab308', title:'ประหยัดพลังงานด้วยอุปกรณ์ที่มีประสิทธิภาพสูง', desc:'เลือกใช้อุปกรณ์ประหยัดพลังงาน เช่น หลอด LED หรืออุปกรณ์ที่มีฉลากประหยัดไฟเบอร์ 5 ช่วยลดการใช้พลังงานและความร้อน ลดค่าไฟในระยะยาว และเป็นมิตรต่อสิ่งแวดล้อม' },
-    { n:'4', icon:'🛡️', c1:'#ea580c', c2:'#fb923c', title:'ตรวจสอบความปลอดภัยในการติดตั้ง', desc:'ก่อนติดตั้งควรตรวจสอบสภาพอุปกรณ์และระบบสายดินให้เรียบร้อย และควรให้ช่างไฟฟ้าที่มีใบอนุญาตเป็นผู้ติดตั้ง เพื่อป้องกันไฟฟ้าลัดวงจรและอุบัติเหตุ' },
-    { n:'5', icon:'🛠️', c1:'#2563eb', c2:'#3b82f6', title:'การบำรุงรักษาอุปกรณ์เดินระบบไฟฟ้า', desc:'ตรวจเช็คและบำรุงรักษาอุปกรณ์ไฟฟ้าเป็นประจำ เช่น ทำความสะอาด ตรวจจุดต่อสายไฟ และเช็คความร้อนผิดปกติ จะช่วยยืดอายุการใช้งานและลดความเสี่ยงในการเกิดปัญหา' },
+    { n:'1', icon:'award',  c1:'#8bc83f', c2:'#5f9c2b', title:'เลือกอุปกรณ์ที่ผ่านมาตรฐานสากล', desc:'ควรเลือกอุปกรณ์ไฟฟ้าที่ได้รับการรับรองมาตรฐาน เช่น มอก. (มาตรฐานผลิตภัณฑ์อุตสาหกรรม) หรือ IEC (มาตรฐานสากล) เพื่อความปลอดภัยและความน่าเชื่อถือ มั่นใจได้ว่าอุปกรณ์ผ่านการทดสอบคุณภาพมาแล้ว' },
+    { n:'2', icon:'target', c1:'#14b8a6', c2:'#0d9488', title:'คำนึงถึงความเหมาะสมกับการใช้งาน', desc:'เลือกอุปกรณ์ให้เหมาะกับลักษณะงานและปริมาณการใช้ไฟฟ้า เช่น ขนาดของเบรกเกอร์ ชนิดของสายไฟ และพิกัดกระแส ให้สอดคล้องกับโหลดที่ใช้จริง เพื่อประสิทธิภาพและความปลอดภัยสูงสุด' },
+    { n:'3', icon:'bolt',   c1:'#eab308', c2:'#ca8a04', title:'ประหยัดพลังงานด้วยอุปกรณ์ที่มีประสิทธิภาพสูง', desc:'เลือกใช้อุปกรณ์ประหยัดพลังงาน เช่น หลอด LED หรืออุปกรณ์ที่มีฉลากประหยัดไฟเบอร์ 5 ช่วยลดการใช้พลังงานและความร้อน ลดค่าไฟในระยะยาว และเป็นมิตรต่อสิ่งแวดล้อม' },
+    { n:'4', icon:'shield', c1:'#fb923c', c2:'#ea580c', title:'ตรวจสอบความปลอดภัยในการติดตั้ง', desc:'ก่อนติดตั้งควรตรวจสอบสภาพอุปกรณ์และระบบสายดินให้เรียบร้อย และควรให้ช่างไฟฟ้าที่มีใบอนุญาตเป็นผู้ติดตั้ง เพื่อป้องกันไฟฟ้าลัดวงจรและอุบัติเหตุ' },
+    { n:'5', icon:'wrench', c1:'#3b82f6', c2:'#2563eb', title:'การบำรุงรักษาอุปกรณ์เดินระบบไฟฟ้า', desc:'ตรวจเช็คและบำรุงรักษาอุปกรณ์ไฟฟ้าเป็นประจำ เช่น ทำความสะอาด ตรวจจุดต่อสายไฟ และเช็คความร้อนผิดปกติ จะช่วยยืดอายุการใช้งานและลดความเสี่ยงในการเกิดปัญหา' },
   ];
   const more = [
-    { title:'ตู้ MDB คืออะไร ?', excerpt:'ตู้ MDB (Main Distribution Board) คือตู้จ่ายไฟหลักของอาคาร ทำหน้าที่รับไฟจากการไฟฟ้าแล้วกระจายไปยังตู้ย่อยต่างๆ อย่างปลอดภัย', c1:'#0d9488', c2:'#14b8a6', icon:'🗄️' },
-    { title:'ความสำคัญของตู้โหลด 3 เฟส', excerpt:'ตู้โหลด 3 เฟสช่วยกระจายโหลดไฟฟ้าให้สมดุล รองรับเครื่องจักรและอุปกรณ์กำลังสูง เหมาะกับโรงงานและอาคารขนาดใหญ่', c1:'#2563eb', c2:'#3b82f6', icon:'⚡' },
+    { title:'ตู้ MDB คืออะไร ?', excerpt:'ตู้ MDB (Main Distribution Board) คือตู้จ่ายไฟหลักของอาคาร ทำหน้าที่รับไฟจากการไฟฟ้าแล้วกระจายไปยังตู้ย่อยต่างๆ อย่างปลอดภัย เกิดแสงสว่างรับผลิตและจำหน่ายตู้ MDB ตามสเปกงาน', c1:'#14b8a6', c2:'#0d9488', icon:'panel', img:'assets/kjl-more/kjl-customcabinet-1.webp', article:'mdb-article', cta:'อ่านบทความ' },
+    { title:'ความสำคัญของตู้โหลด 3 เฟส', excerpt:'ตู้โหลด 3 เฟสช่วยกระจายโหลดไฟฟ้าให้สมดุล รองรับเครื่องจักรและอุปกรณ์กำลังสูง เหมาะกับโรงงานและอาคารขนาดใหญ่', c1:'#3b82f6', c2:'#2563eb', icon:'bolt', img:'assets/kjl-more/kjl-elecservice-1.webp', article:'loadcenter3p-article', cta:'อ่านบทความ' },
   ];
   return (
     <section style={{ background:'#eef8f7', padding:'30px 0 56px', minHeight:'75vh' }}>
@@ -1263,27 +1339,27 @@ function HPKnowledgePage() {
           การเดินระบบไฟฟ้าในอาคารหรือโรงงานเป็นสิ่งสำคัญที่ไม่สามารถละเลยได้ เพราะส่งผลโดยตรงต่อความปลอดภัย ประสิทธิภาพการใช้งาน และค่าใช้จ่ายในระยะยาว ต่อไปนี้คือ <span style={{ fontWeight:'700', color:'#8bc83f' }}>5 แนวทางสำคัญ</span> ที่ควรพิจารณาก่อนเลือกซื้ออุปกรณ์ไฟฟ้า
         </p>
 
-        {/* 5 steps */}
-        <div style={{ display:'flex', flexDirection:'column', gap:'20px', marginBottom:'40px' }}>
-          {steps.map((s,i) => (
-            <div key={i} style={{ position:'relative', display:'flex', gap:'22px', background:'#fff', borderRadius:'20px', padding:'28px 30px 28px 32px', border:'1px solid #f0f0f0', boxShadow:'0 4px 18px rgba(15,77,42,0.05)', overflow:'hidden', transition:'transform 0.18s ease, box-shadow 0.18s ease' }}
-              onMouseEnter={e => { e.currentTarget.style.transform='translateY(-3px)'; e.currentTarget.style.boxShadow=`0 14px 30px ${s.c1}1f`; }}
-              onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.boxShadow='0 4px 18px rgba(15,77,42,0.05)'; }}>
-              {/* left accent bar */}
-              <div style={{ position:'absolute', left:0, top:0, bottom:0, width:'6px', background:`linear-gradient(${s.c1},${s.c2})` }}/>
-              {/* giant ghost number */}
-              <div style={{ position:'absolute', right:'18px', bottom:'-22px', fontFamily:'Inter, Noto Sans Thai, sans-serif', fontSize:'120px', fontWeight:'800', color:`${s.c1}0f`, lineHeight:1, pointerEvents:'none' }}>{s.n}</div>
-              {/* number badge */}
-              <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:'8px', flexShrink:0 }}>
-                <div style={{ width:'58px', height:'58px', borderRadius:'16px', background:`linear-gradient(135deg, ${s.c1}, ${s.c2})`, color:'#fff', fontSize:'26px', fontWeight:'800', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'Inter, Noto Sans Thai, sans-serif', boxShadow:`0 8px 18px ${s.c1}45` }}>{s.n}</div>
-                <span style={{ fontSize:'26px' }}>{s.icon}</span>
+        {/* 5 steps — ไทม์ไลน์เชื่อมต่อ */}
+        <div style={{ position:'relative', marginBottom:'40px' }}>
+          <div style={{ position:'absolute', left:'31px', top:'34px', bottom:'34px', width:'2px', background:'linear-gradient(180deg,#8bc83f,#0d9488,#ca8a04,#ea580c,#2563eb)', opacity:0.22 }}/>
+          <div style={{ display:'flex', flexDirection:'column' }}>
+            {steps.map((s,i) => (
+              <div key={i} style={{ position:'relative', display:'flex', gap:'26px', paddingBottom: i < steps.length-1 ? '22px' : 0 }}>
+                <div style={{ position:'relative', flexShrink:0, width:'64px', height:'64px' }}>
+                  <div style={{ width:'64px', height:'64px', borderRadius:'50%', background:`linear-gradient(135deg, ${s.c1}, ${s.c2})`, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 10px 22px ${s.c1}55`, position:'relative', zIndex:1 }}>
+                    <KIcon name={s.icon}/>
+                  </div>
+                  <div style={{ position:'absolute', top:'-5px', right:'-5px', width:'25px', height:'25px', borderRadius:'50%', background:'#fff', border:`2px solid ${s.c2}`, color:s.c2, fontSize:'12.5px', fontWeight:'800', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'Inter, Noto Sans Thai, sans-serif', zIndex:2 }}>{s.n}</div>
+                </div>
+                <div style={{ flex:1, background:'#fff', borderRadius:'18px', padding:'22px 26px', border:'1px solid #f0f0f0', boxShadow:'0 4px 16px rgba(15,77,42,0.05)', transition:'transform 0.18s ease, box-shadow 0.18s ease' }}
+                  onMouseEnter={e => { e.currentTarget.style.transform='translateY(-3px)'; e.currentTarget.style.boxShadow=`0 14px 28px ${s.c1}25`; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.boxShadow='0 4px 16px rgba(15,77,42,0.05)'; }}>
+                  <h3 style={{ fontFamily:'Inter, Noto Sans Thai, sans-serif', fontSize:'21px', fontWeight:'800', color:s.c2, marginBottom:'9px', lineHeight:'1.4', letterSpacing:'-0.3px' }}>{s.title}</h3>
+                  <p style={{ fontSize:'16px', color:'#555', lineHeight:'1.9' }}>{s.desc}</p>
+                </div>
               </div>
-              <div style={{ position:'relative', zIndex:1 }}>
-                <h3 style={{ fontFamily:'Inter, Noto Sans Thai, sans-serif', fontSize:'22px', fontWeight:'800', color:s.c1, marginBottom:'10px', lineHeight:'1.4', letterSpacing:'-0.3px' }}>{s.title}</h3>
-                <p style={{ fontSize:'16.5px', color:'#555', lineHeight:'1.9' }}>{s.desc}</p>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
         {/* closing */}
@@ -1295,21 +1371,271 @@ function HPKnowledgePage() {
 
         {/* more articles */}
         <h2 style={{ fontSize:'24px', fontWeight:'800', color:'#06352e', marginBottom:'18px' }}>บทความอื่นๆ ที่น่าสนใจ</h2>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'18px' }}>
-          {more.map((a,i) => (
-            <div key={i} style={{ background:'#fff', borderRadius:'14px', overflow:'hidden', border:'1px solid #eaf3ed', cursor:'pointer', display:'flex', flexDirection:'column', padding:'24px', transition:'box-shadow 0.18s ease' }}
-              onMouseEnter={e => { e.currentTarget.style.boxShadow=`0 10px 26px ${a.c1}1a`; }}
-              onMouseLeave={e => { e.currentTarget.style.boxShadow='none'; }}>
-              <div style={{ width:'52px', height:'52px', borderRadius:'12px', background:`${a.c1}14`, display:'flex', alignItems:'center', justifyContent:'center', marginBottom:'18px' }}>
-                <span style={{ fontSize:'24px' }}>{a.icon}</span>
+        <div className="hp-more-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'18px' }}>
+          {more.map((a,i) => {
+            const clickable = !!(a.cat || a.article);
+            const handleClick = a.article ? () => onNavigate(a.article) : a.cat ? () => onCategoryChange(a.cat) : undefined;
+            return (
+            <div key={i} onClick={handleClick} style={{ background:'#fff', borderRadius:'16px', overflow:'hidden', border:'1px solid #eaf3ed', cursor: clickable ? 'pointer' : 'default', display:'flex', flexDirection:'column', transition:'transform 0.18s ease, box-shadow 0.18s ease' }}
+              onMouseEnter={e => { if (!clickable) return; e.currentTarget.style.transform='translateY(-3px)'; e.currentTarget.style.boxShadow=`0 14px 28px ${a.c1}22`; }}
+              onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.boxShadow='none'; }}>
+              <div style={{ height:'150px', background:'#f4f7f6', position:'relative', overflow:'hidden' }}>
+                <img loading="lazy" decoding="async" src={a.img} alt={a.title} style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={e => e.target.style.display='none'}/>
+                <div style={{ position:'absolute', top:'12px', left:'12px', width:'36px', height:'36px', borderRadius:'10px', background:`linear-gradient(135deg, ${a.c1}, ${a.c2})`, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 6px 14px ${a.c1}55` }}>
+                  <KIcon name={a.icon} size={18}/>
+                </div>
               </div>
-              <div style={{ fontSize:'19px', fontWeight:'800', color:'#1a1a1a', marginBottom:'10px' }}>{a.title}</div>
-              <p style={{ fontSize:'14.5px', color:'#777', lineHeight:'1.7', marginBottom:'16px', flex:1 }}>{a.excerpt}</p>
-              <span style={{ color:a.c1, fontWeight:'700', fontSize:'14px' }}>อ่านต่อ →</span>
+              <div style={{ padding:'22px 24px', display:'flex', flexDirection:'column', flex:1 }}>
+                <div style={{ fontSize:'19px', fontWeight:'800', color:'#1a1a1a', marginBottom:'10px' }}>{a.title}</div>
+                <p style={{ fontSize:'14.5px', color:'#777', lineHeight:'1.7', marginBottom:'16px', flex:1 }}>{a.excerpt}</p>
+                {clickable && <span style={{ color:a.c1, fontWeight:'700', fontSize:'14px' }}>{a.cta || 'ดูเพิ่มเติม'} →</span>}
+              </div>
+            </div>
+          );})}
+        </div>
+
+      </div>
+    </section>
+  );
+}
+
+// บทความ "ตู้ MDB คืออะไร ?" — เนื้อหาของเกิดแสงสว่างเอง
+function HPMdbArticlePage({ onNavigate, onCategoryChange }) {
+  const H2 = ({ children }) => (
+    <h2 style={{ fontFamily:'Inter, Noto Sans Thai, sans-serif', fontSize:'25px', fontWeight:'800', color:'#0d9488', letterSpacing:'-0.3px', margin:'34px 0 14px' }}>{children}</h2>
+  );
+  const P = ({ children }) => (
+    <p style={{ fontSize:'17px', color:'#3a4a42', lineHeight:'2', marginBottom:'14px' }}>{children}</p>
+  );
+  const numbered = [
+    { n:'1', title:'พิจารณาปริมาณการใช้งานไฟฟ้า (Load Demand)', items:[
+      'ตรวจสอบว่ามีการใช้งานไฟฟ้าจำนวนเท่าใดในพื้นที่ เช่น 100A, 250A หรือ 400A',
+      'หากมีการใช้งานมากขึ้นในอนาคต อาจต้องเผื่อขนาดให้ใหญ่ขึ้น',
+    ]},
+    { n:'2', title:'การแบ่งเบรกเกอร์ย่อย (Sub Breaker)', items:[
+      'ควรแบ่งเบรกเกอร์ย่อยให้สอดคล้องกับแผนการเดินสายไฟของพื้นที่',
+    ]},
+    { n:'3', title:'วัสดุและการออกแบบ', items:[
+      'เลือกตู้ที่ทำจากวัสดุคุณภาพ เช่น เหล็กพ่นสีป้องกันสนิม หรือสแตนเลสสำหรับพื้นที่ที่มีความชื้นสูง',
+    ]},
+  ];
+  const features = [
+    { title:'ระบบควบคุมอัจฉริยะ (Smart Control)', desc:'ใช้เซ็นเซอร์ตรวจจับกระแสไฟฟ้าเพื่อการควบคุมและวิเคราะห์การใช้งาน' },
+    { title:'อุปกรณ์ป้องกันไฟฟ้าลัดวงจร', desc:'เช่น เบรกเกอร์ที่มีระบบป้องกันกระแสไฟฟ้าเกิน (Overload Protection)' },
+    { title:'ช่องสำรอง (Spare Space)', desc:'เพื่อการติดตั้งอุปกรณ์เพิ่มเติมในอนาคต' },
+  ];
+  const steps = [
+    { n:'1', title:'ออกแบบตามความต้องการ', desc:'ลูกค้าสามารถระบุขนาด, ฟังก์ชัน และวัสดุที่ต้องการ' },
+    { n:'2', title:'การผลิตด้วยเทคโนโลยีทันสมัย', desc:'ใช้เครื่องจักรที่มีความแม่นยำสูงและผ่านการตรวจสอบคุณภาพทุกขั้นตอน' },
+    { n:'3', title:'การทดสอบคุณภาพก่อนส่งมอบ', desc:'เช่น การทดสอบโหลดไฟฟ้า (Load Test) และความทนทานของตู้' },
+  ];
+  return (
+    <section style={{ background:'#eef8f7', padding:'30px 0 56px', minHeight:'75vh' }}>
+      <div style={{ maxWidth:'900px', margin:'0 auto', padding:'0 20px' }}>
+        <div style={{ fontSize:'14px', color:'#888', marginBottom:'22px' }}>
+          <span style={{ cursor:'pointer' }} onClick={() => onNavigate('หน้าแรก')}>หน้าหลัก</span> › <span style={{ cursor:'pointer' }} onClick={() => onNavigate('เกร็ดความรู้')}>เกร็ดความรู้</span> › <span style={{ color:'#8bc83f', fontWeight:'700' }}>ตู้ MDB คืออะไร ?</span>
+        </div>
+
+        {/* hero */}
+        <div style={{ borderRadius:'24px', overflow:'hidden', position:'relative', boxShadow:'0 14px 38px rgba(10,70,40,0.18)', marginBottom:'28px', border:'1px solid #eaf3ed' }}>
+          <img loading="lazy" decoding="async" src="assets/kjl-more/mdb-article-1-full.png" alt="ตู้ MDB คืออะไร ?"
+            style={{ width:'100%', display:'block', objectFit:'contain' }}/>
+        </div>
+        <div style={{ marginBottom:'24px' }}>
+          <span style={{ display:'inline-flex', alignItems:'center', gap:'8px', background:'linear-gradient(120deg,#5ee7c8,#0d9488)', color:'#04352c', fontSize:'14px', fontWeight:'800', padding:'7px 22px', borderRadius:'999px', marginBottom:'14px' }}>📖 บทความน่ารู้</span>
+          <h1 style={{ fontFamily:'Inter, Noto Sans Thai, sans-serif', fontSize:'38px', fontWeight:'800', color:'#06352e', letterSpacing:'-0.5px', lineHeight:'1.2', marginBottom:'8px' }}>ทุกเรื่องที่ควรรู้เกี่ยวกับตู้ MDB</h1>
+          <p style={{ fontSize:'18px', color:'#5a7a66' }}>เลือกตู้ MDB อย่างไรให้เหมาะกับงานของคุณ — โดยเกิดแสงสว่าง ผู้ผลิตและจำหน่ายตู้ไฟฟ้าตามสเปกงาน</p>
+        </div>
+
+        <P>ในระบบไฟฟ้า ตู้ MDB (Main Distribution Board) ถือเป็นหัวใจสำคัญของการจัดการและกระจายพลังงานไฟฟ้าอย่างปลอดภัยและมีประสิทธิภาพ การเลือกใช้ตู้ MDB ที่เหมาะสมกับความต้องการไม่เพียงช่วยเพิ่มความปลอดภัย แต่ยังช่วยลดต้นทุนและเพิ่มประสิทธิภาพในการใช้งานอีกด้วย มาดูกันว่าควรเลือกตู้ MDB อย่างไรให้เหมาะกับงานของคุณ!</P>
+
+        <H2>ตู้ MDB คืออะไร ?</H2>
+        <P>ตู้ MDB คือ แผงควบคุมหลักที่ใช้สำหรับการกระจายพลังงานไฟฟ้าจากแหล่งจ่ายไฟไปยังส่วนต่าง ๆ ของอาคารหรือโรงงาน โดยตู้ MDB จะเป็นจุดรวมของเบรกเกอร์และอุปกรณ์ไฟฟ้าสำคัญ เช่น หม้อแปลงไฟฟ้า, เบรกเกอร์หลัก (Main Breaker) และเบรกเกอร์ย่อย</P>
+
+        <H2>ขนาดของตู้ MDB เลือกอย่างไรให้เหมาะสม ?</H2>
+        <div style={{ display:'flex', flexDirection:'column', gap:'14px', marginBottom:'18px' }}>
+          {numbered.map(g => (
+            <div key={g.n} style={{ background:'#fff', borderRadius:'16px', padding:'20px 24px', border:'1px solid #eaf3ed', boxShadow:'0 4px 16px rgba(15,77,42,0.05)' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:'12px', marginBottom:'10px' }}>
+                <span style={{ width:'28px', height:'28px', flexShrink:0, borderRadius:'50%', background:'#0d9488', color:'#fff', fontSize:'14px', fontWeight:'800', display:'flex', alignItems:'center', justifyContent:'center' }}>{g.n}</span>
+                <span style={{ fontSize:'17px', fontWeight:'700', color:'#06352e' }}>{g.title}</span>
+              </div>
+              <ul style={{ margin:0, paddingLeft:'40px', color:'#555', fontSize:'15.5px', lineHeight:'1.9' }}>
+                {g.items.map((it,idx) => <li key={idx}>{it}</li>)}
+              </ul>
             </div>
           ))}
         </div>
 
+        <div style={{ borderRadius:'20px', overflow:'hidden', boxShadow:'0 10px 26px rgba(10,70,40,0.14)', marginBottom:'30px', border:'1px solid #eaf3ed' }}>
+          <img loading="lazy" decoding="async" src="assets/kjl-more/mdb-article-2.png" alt="ขนาดของตู้ MDB เลือกอย่างไรให้เหมาะสม"
+            style={{ width:'100%', display:'block', objectFit:'cover' }}/>
+        </div>
+
+        <H2>ฟังก์ชันเสริมที่ควรมีในตู้ MDB</H2>
+        <div style={{ display:'flex', flexDirection:'column', gap:'10px', marginBottom:'8px' }}>
+          {features.map((f,i) => (
+            <div key={i} style={{ display:'flex', gap:'12px', alignItems:'flex-start' }}>
+              <span style={{ color:'#0d9488', fontSize:'20px', lineHeight:'1.6' }}>•</span>
+              <p style={{ fontSize:'16px', color:'#3a4a42', lineHeight:'1.9' }}><span style={{ fontWeight:'700', color:'#06352e' }}>{f.title}</span> — {f.desc}</p>
+            </div>
+          ))}
+        </div>
+
+        <H2>ขั้นตอนการผลิตตู้ MDB ตามสั่ง</H2>
+        <div style={{ position:'relative', marginBottom:'30px' }}>
+          <div style={{ position:'absolute', left:'19px', top:'6px', bottom:'6px', width:'2px', background:'#0d9488', opacity:0.22 }}/>
+          <div style={{ display:'flex', flexDirection:'column', gap:'18px' }}>
+            {steps.map(s => (
+              <div key={s.n} style={{ position:'relative', display:'flex', gap:'20px' }}>
+                <span style={{ position:'relative', zIndex:1, flexShrink:0, width:'40px', height:'40px', borderRadius:'50%', background:'#0d9488', color:'#fff', fontSize:'16px', fontWeight:'800', display:'flex', alignItems:'center', justifyContent:'center' }}>{s.n}</span>
+                <div>
+                  <div style={{ fontSize:'17px', fontWeight:'700', color:'#06352e', marginBottom:'4px' }}>{s.title}</div>
+                  <p style={{ fontSize:'15.5px', color:'#555', lineHeight:'1.8' }}>{s.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* closing / CTA */}
+        <div style={{ background:'linear-gradient(120deg,#eaf6f5,#d8eeec)', border:'1.5px solid #a9ddd6', borderRadius:'18px', padding:'24px 28px', marginBottom:'22px' }}>
+          <p style={{ fontSize:'17px', color:'#0d9488', lineHeight:'1.9', fontWeight:'600', marginBottom:'16px' }}>
+            💡 การเลือกตู้ MDB ที่เหมาะสมกับความต้องการ จะช่วยให้ระบบไฟฟ้าปลอดภัย ประหยัดต้นทุน และใช้งานได้ยาวนาน — เกิดแสงสว่างรับผลิตและจำหน่ายตู้ MDB ตามสเปกงาน พร้อมให้คำปรึกษาโดยทีมงานผู้เชี่ยวชาญ
+          </p>
+          <button onClick={() => onCategoryChange('panel')} style={{ background:'#0d9488', color:'#fff', border:'none', borderRadius:'999px', padding:'12px 28px', fontSize:'15px', fontWeight:'700', cursor:'pointer' }}>ดูตู้ไฟฟ้าของเรา →</button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// บทความ "ความสำคัญของตู้โหลด 3 เฟส" — เนื้อหาของเกิดแสงสว่างเอง
+function HPLoadCenter3PArticlePage({ onNavigate, onCategoryChange }) {
+  const H2 = ({ children }) => (
+    <h2 style={{ fontFamily:'Inter, Noto Sans Thai, sans-serif', fontSize:'25px', fontWeight:'800', color:'#2563eb', letterSpacing:'-0.3px', margin:'34px 0 14px' }}>{children}</h2>
+  );
+  const P = ({ children }) => (
+    <p style={{ fontSize:'17px', color:'#3a4a42', lineHeight:'2', marginBottom:'14px' }}>{children}</p>
+  );
+  const pros = [
+    { title:'รองรับพลังงานสูง', desc:'สามารถจ่ายไฟได้มากกว่าระบบ 1 เฟส เหมาะสำหรับพื้นที่ที่ต้องใช้ไฟฟ้าหนัก เช่น เครื่องจักรขนาดใหญ่' },
+    { title:'ลดความเสี่ยงการโอเวอร์โหลด', desc:'การจ่ายไฟในระบบ 3 เฟสช่วยกระจายโหลดไฟฟ้าให้สมดุล' },
+    { title:'ประสิทธิภาพสูง', desc:'ใช้พลังงานอย่างมีประสิทธิภาพและลดการสูญเสียพลังงานในสายไฟ' },
+  ];
+  const choose = [
+    { n:'1', title:'ขนาดของเบรกเกอร์หลัก (Main Breaker)', items:[
+      'เลือกขนาดที่รองรับกระแสไฟฟ้าสูงสุดที่ระบบต้องการ เช่น 63A, 100A หรือ 250A',
+    ]},
+    { n:'2', title:'จำนวนช่องเบรกเกอร์ย่อย (Sub Breaker)', items:[
+      'พิจารณาจำนวนช่องเบรกเกอร์ที่เหมาะสมกับอุปกรณ์ไฟฟ้าที่ต้องการควบคุม',
+    ]},
+    { n:'3', title:'วัสดุและโครงสร้าง', items:[
+      'เลือกตู้ที่ทำจากวัสดุคุณภาพ เช่น เหล็กเคลือบป้องกันสนิม หรือสแตนเลส',
+      'ต้องสามารถป้องกันฝุ่นและน้ำได้ตามมาตรฐาน IP',
+    ]},
+  ];
+  const assemble = [
+    { n:'1', title:'การเลือกอุปกรณ์ไฟฟ้า', items:[
+      'ใช้เบรกเกอร์และสายไฟที่ได้มาตรฐาน เช่น IEC หรือ TIS',
+      'เพิ่มอุปกรณ์ป้องกัน เช่น Surge Protector หากจำเป็น',
+    ]},
+    { n:'2', title:'การประกอบโดยมืออาชีพ', items:[
+      'การเชื่อมต่อสายไฟฟ้าภายในตู้โหลดต้องแม่นยำและปลอดภัย',
+      'ทดสอบระบบไฟฟ้าหลังประกอบเสร็จ',
+    ]},
+    { n:'3', title:'การติดตั้งในสถานที่', items:[
+      'ติดตั้งในจุดที่เข้าถึงง่ายสำหรับการบำรุงรักษา',
+      'หลีกเลี่ยงพื้นที่ที่มีความชื้นสูงหรือแสงแดดจัด',
+    ]},
+  ];
+  const caution = [
+    'หลีกเลี่ยงการต่อโหลดไฟฟ้าเกินขนาดที่ตู้รองรับ',
+    'ตรวจสอบระบบสายดินและเบรกเกอร์ให้อยู่ในสภาพพร้อมใช้งาน',
+    'บำรุงรักษาและตรวจเช็กระบบไฟฟ้าเป็นประจำ',
+  ];
+  return (
+    <section style={{ background:'#eef8f7', padding:'30px 0 56px', minHeight:'75vh' }}>
+      <div style={{ maxWidth:'900px', margin:'0 auto', padding:'0 20px' }}>
+        <div style={{ fontSize:'14px', color:'#888', marginBottom:'22px' }}>
+          <span style={{ cursor:'pointer' }} onClick={() => onNavigate('หน้าแรก')}>หน้าหลัก</span> › <span style={{ cursor:'pointer' }} onClick={() => onNavigate('เกร็ดความรู้')}>เกร็ดความรู้</span> › <span style={{ color:'#8bc83f', fontWeight:'700' }}>ความสำคัญของตู้โหลด 3 เฟส</span>
+        </div>
+
+        {/* hero */}
+        <div style={{ borderRadius:'24px', overflow:'hidden', position:'relative', boxShadow:'0 14px 38px rgba(10,70,40,0.18)', marginBottom:'28px', border:'1px solid #eaf3ed' }}>
+          <img loading="lazy" decoding="async" src="assets/kjl-more/loadcenter3p-1.png" alt="ความสำคัญของตู้โหลด 3 เฟส"
+            style={{ width:'100%', display:'block', objectFit:'contain' }}/>
+        </div>
+        <div style={{ marginBottom:'24px' }}>
+          <span style={{ display:'inline-flex', alignItems:'center', gap:'8px', background:'linear-gradient(120deg,#7fb2ff,#2563eb)', color:'#04204a', fontSize:'14px', fontWeight:'800', padding:'7px 22px', borderRadius:'999px', marginBottom:'14px' }}>📖 บทความน่ารู้</span>
+          <h1 style={{ fontFamily:'Inter, Noto Sans Thai, sans-serif', fontSize:'38px', fontWeight:'800', color:'#06352e', letterSpacing:'-0.5px', lineHeight:'1.2', marginBottom:'8px' }}>ความสำคัญของตู้โหลด 3 เฟส</h1>
+          <p style={{ fontSize:'18px', color:'#5a7a66' }}>ตู้โหลด 3 เฟสมีความสำคัญอย่างไร และควรเลือกใช้อย่างไรให้ตอบโจทย์ — โดยเกิดแสงสว่าง ผู้ผลิตและจำหน่ายตู้ไฟฟ้าตามสเปกงาน</p>
+        </div>
+
+        <P>ในระบบไฟฟ้าสำหรับบ้านหรืออาคารขนาดใหญ่ ตู้โหลด 3 เฟส เป็นองค์ประกอบสำคัญที่ช่วยควบคุมและกระจายไฟฟ้าได้อย่างมีประสิทธิภาพ หากเลือกและประกอบตู้โหลดได้อย่างเหมาะสม นอกจากจะช่วยเพิ่มความปลอดภัย ยังช่วยยืดอายุการใช้งานของระบบไฟฟ้าทั้งหมดอีกด้วย มาดูกันว่า ตู้โหลด 3 เฟสมีความสำคัญอย่างไร และควรเลือกใช้อย่างไรให้ตอบโจทย์!</P>
+
+        <H2>ตู้โหลด 3 เฟส คืออะไร?</H2>
+        <P>ตู้โหลด 3 เฟส (Three-Phase Load Center) คือ แผงควบคุมไฟฟ้าที่ใช้ในระบบไฟฟ้า 3 เฟส ซึ่งเหมาะสำหรับอาคาร โรงงาน หรือพื้นที่ที่ต้องการใช้พลังงานไฟฟ้าปริมาณมาก ตู้โหลดนี้ทำหน้าที่กระจายพลังงานไปยังเครื่องใช้ไฟฟ้าหรืออุปกรณ์ต่าง ๆ ได้อย่างสมดุล ลดความเสี่ยงของกระแสไฟฟ้าเกินหรือไม่สม่ำเสมอ</P>
+
+        <H2>ข้อดีของการใช้ตู้โหลด 3 เฟส</H2>
+        <div style={{ display:'flex', flexDirection:'column', gap:'10px', marginBottom:'8px' }}>
+          {pros.map((f,i) => (
+            <div key={i} style={{ display:'flex', gap:'12px', alignItems:'flex-start' }}>
+              <span style={{ width:'26px', height:'26px', flexShrink:0, borderRadius:'50%', background:'#2563eb', color:'#fff', fontSize:'13px', fontWeight:'800', display:'flex', alignItems:'center', justifyContent:'center' }}>{i+1}</span>
+              <p style={{ fontSize:'16px', color:'#3a4a42', lineHeight:'1.9' }}><span style={{ fontWeight:'700', color:'#06352e' }}>{f.title}</span> — {f.desc}</p>
+            </div>
+          ))}
+        </div>
+
+        <H2>วิธีเลือกตู้โหลด 3 เฟสให้เหมาะสม</H2>
+        <div style={{ display:'flex', flexDirection:'column', gap:'14px', marginBottom:'18px' }}>
+          {choose.map(g => (
+            <div key={g.n} style={{ background:'#fff', borderRadius:'16px', padding:'20px 24px', border:'1px solid #eaf3ed', boxShadow:'0 4px 16px rgba(15,77,42,0.05)' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:'12px', marginBottom:'10px' }}>
+                <span style={{ width:'28px', height:'28px', flexShrink:0, borderRadius:'50%', background:'#2563eb', color:'#fff', fontSize:'14px', fontWeight:'800', display:'flex', alignItems:'center', justifyContent:'center' }}>{g.n}</span>
+                <span style={{ fontSize:'17px', fontWeight:'700', color:'#06352e' }}>{g.title}</span>
+              </div>
+              <ul style={{ margin:0, paddingLeft:'40px', color:'#555', fontSize:'15.5px', lineHeight:'1.9' }}>
+                {g.items.map((it,idx) => <li key={idx}>{it}</li>)}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ borderRadius:'20px', overflow:'hidden', boxShadow:'0 10px 26px rgba(10,70,40,0.14)', marginBottom:'30px', border:'1px solid #eaf3ed' }}>
+          <img loading="lazy" decoding="async" src="assets/kjl-more/loadcenter3p-2.png" alt="วิธีเลือกตู้โหลด 3 เฟสให้เหมาะสม"
+            style={{ width:'100%', display:'block', objectFit:'contain', background:'#f4f7f6' }}/>
+        </div>
+
+        <H2>ขั้นตอนการประกอบตู้โหลด 3 เฟส</H2>
+        <div style={{ display:'flex', flexDirection:'column', gap:'14px', marginBottom:'18px' }}>
+          {assemble.map(g => (
+            <div key={g.n} style={{ background:'#fff', borderRadius:'16px', padding:'20px 24px', border:'1px solid #eaf3ed', boxShadow:'0 4px 16px rgba(15,77,42,0.05)' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:'12px', marginBottom:'10px' }}>
+                <span style={{ width:'28px', height:'28px', flexShrink:0, borderRadius:'50%', background:'#2563eb', color:'#fff', fontSize:'14px', fontWeight:'800', display:'flex', alignItems:'center', justifyContent:'center' }}>{g.n}</span>
+                <span style={{ fontSize:'17px', fontWeight:'700', color:'#06352e' }}>{g.title}</span>
+              </div>
+              <ul style={{ margin:0, paddingLeft:'40px', color:'#555', fontSize:'15.5px', lineHeight:'1.9' }}>
+                {g.items.map((it,idx) => <li key={idx}>{it}</li>)}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ background:'#fff7ed', border:'1.5px solid #fed7aa', borderRadius:'18px', padding:'22px 26px', marginBottom:'30px' }}>
+          <div style={{ fontSize:'17px', fontWeight:'800', color:'#c2410c', marginBottom:'10px' }}>⚠️ ข้อควรระวัง ในการใช้งานตู้โหลด 3 เฟส</div>
+          <ul style={{ margin:0, paddingLeft:'22px', color:'#7c4a1e', fontSize:'15.5px', lineHeight:'1.9' }}>
+            {caution.map((c,i) => <li key={i}>{c}</li>)}
+          </ul>
+        </div>
+
+        {/* closing / CTA */}
+        <div style={{ background:'linear-gradient(120deg,#eaf2fe,#dbe9fc)', border:'1.5px solid #a9c8f5', borderRadius:'18px', padding:'24px 28px', marginBottom:'22px' }}>
+          <p style={{ fontSize:'17px', color:'#2563eb', lineHeight:'1.9', fontWeight:'600', marginBottom:'16px' }}>
+            💡 การเลือกและประกอบตู้โหลด 3 เฟสอย่างเหมาะสม จะช่วยให้ระบบไฟฟ้าปลอดภัย ประหยัดพลังงาน และใช้งานได้ยาวนาน — เกิดแสงสว่างรับประกอบตู้โหลด 3 เฟส พร้อมให้คำปรึกษาโดยทีมงานผู้เชี่ยวชาญ
+          </p>
+          <button onClick={() => onCategoryChange('loadcenter')} style={{ background:'#2563eb', color:'#fff', border:'none', borderRadius:'999px', padding:'12px 28px', fontSize:'15px', fontWeight:'700', cursor:'pointer' }}>ดูตู้โหลดเซนเตอร์ของเรา →</button>
+        </div>
       </div>
     </section>
   );
@@ -1323,7 +1649,8 @@ function HPImageZoomRotateModal({ src, frames, title, onClose }) {
   const [zoom, setZoom] = useState(1);
   const [pan, setPan]   = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
-  const drag = React.useRef(null);
+  const drag  = React.useRef(null);
+  const stage = React.useRef(null);
 
   const zoomIn  = () => setZoom(z => Math.min(4, Math.round((z + 0.25) * 100) / 100));
   const zoomOut = () => setZoom(z => { const n = Math.max(1, Math.round((z - 0.25) * 100) / 100); if (n === 1) setPan({ x:0, y:0 }); return n; });
@@ -1348,7 +1675,15 @@ function HPImageZoomRotateModal({ src, frames, title, onClose }) {
   const onDown = (e) => { if (zoom <= 1) return; const p = pos(e); drag.current = { x: p.clientX - pan.x, y: p.clientY - pan.y }; setDragging(true); };
   const onMove = (e) => { if (!drag.current) return; const p = pos(e); setPan({ x: p.clientX - drag.current.x, y: p.clientY - drag.current.y }); };
   const onUp   = () => { drag.current = null; setDragging(false); };
-  const onWheel = (e) => { e.preventDefault(); (e.deltaY < 0 ? zoomIn : zoomOut)(); };
+  // ต้องผูก wheel เองแบบ passive:false — ถ้าใช้ onWheel ของ React จะเป็น passive
+  // ทำให้ preventDefault ไม่ทำงาน แล้วหน้าเว็บด้านหลังจะเลื่อนตามไปด้วยตอนหมุนล้อซูมรูป
+  useEffect(() => {
+    const el = stage.current;
+    if (!el) return;
+    const handler = (e) => { e.preventDefault(); (e.deltaY < 0 ? zoomIn : zoomOut)(); };
+    el.addEventListener('wheel', handler, { passive: false });
+    return () => el.removeEventListener('wheel', handler);
+  }, []);
 
   const btn = { width:'40px', height:'40px', borderRadius:'50%', border:'none', background:'rgba(255,255,255,0.14)', color:'#fff', fontSize:'18px', fontWeight:'700', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' };
 
@@ -1362,11 +1697,11 @@ function HPImageZoomRotateModal({ src, frames, title, onClose }) {
 
       {/* รูปสินค้า */}
       <div
+        ref={stage}
         style={{ width:'90vw', maxWidth:'860px', height:'72vh', display:'flex', alignItems:'center', justifyContent:'center',
-                 position:'relative', overflow:'hidden', userSelect:'none',
+                 position:'relative', overflow:'hidden', userSelect:'none', touchAction:'none',
                  cursor: zoom > 1 ? (dragging ? 'grabbing' : 'grab') : 'default' }}
         onClick={e => e.stopPropagation()}
-        onWheel={onWheel}
         onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
         onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}>
         <img src={list[idx]} draggable={false} alt={title || ''}
@@ -1571,8 +1906,8 @@ function HPBrandProductsPage({ onSelectProduct }) {
       <div style={{ maxWidth:'1320px', margin:'0 auto', padding:'0 20px' }}>
         <div style={{ fontSize:'14px', color:'#888', marginBottom:'22px' }}>หน้าหลัก › <span style={{ color:'#8bc83f', fontWeight:'700' }}>สินค้าตามแบรนด์</span></div>
 
-        <div style={{ display:'flex', gap:'28px', alignItems:'flex-start' }}>
-          <div style={{ width:'250px', flexShrink:0, border:'1px solid #eef0f2', borderRadius:'12px', overflow:'hidden', position:'sticky', top:'20px' }}>
+        <div className="hp-brand-layout" style={{ display:'flex', gap:'28px', alignItems:'flex-start' }}>
+          <div className="hp-brand-sidebar" style={{ width:'250px', flexShrink:0, border:'1px solid #eef0f2', borderRadius:'12px', overflow:'hidden', position:'sticky', top:'20px' }}>
             <div style={{ background:'#06352e', color:'#fff', fontSize:'14.5px', fontWeight:'700', padding:'14px 18px' }}>หมวดหมู่สินค้า</div>
             <div style={{ padding:'16px 14px 18px' }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'10px' }}>
@@ -1630,7 +1965,7 @@ function HPBrandProductsPage({ onSelectProduct }) {
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5a6b63" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)', transition:'transform 0.15s ease' }}><path d="M6 9l6 6 6-6"/></svg>
                         </div>
                         {!isCollapsed && (
-                          <div style={{ display:'grid', gridTemplateColumns:'repeat(5, 1fr)', gap:'16px', marginBottom:'8px' }}>
+                          <div className="hp-product-grid" style={{ display:'grid', gridTemplateColumns:'repeat(5, 1fr)', gap:'16px', marginBottom:'8px' }}>
                             {catProducts.map((p, i) => {
                               const thumb = (p.images && p.images[0]) || p.img;
                               return (
@@ -1668,8 +2003,8 @@ function HPBrandProductsPage({ onSelectProduct }) {
   );
 }
 
-function HPCatalogPage() {
-  const brands = [
+// รายชื่อแบรนด์ในแคตตาล็อก — ใช้ร่วมกันทั้งหน้าแคตตาล็อกและหน้าตั้งค่าเว็บไซต์ในระบบหลังบ้าน
+const HP_CATALOG_BRANDS = [
     { name:'เกิดแสงสว่าง', color:'#0d5c50', img:'assets/kerd-cat.jpg', product:'assets/kerd-cat.jpg', hideLogoBar:true },
     { name:'Nano',       color:'#0d5c50', img:'assets/banner11.png',        product:'assets/nano.jpg.jpg', hideLogoBar:true },
     { name:'CHANG',      color:'#1e3a8a', img:'assets/banner2.png',         product:'assets/chang.png', hideLogoBar:true },
@@ -1690,12 +2025,52 @@ function HPCatalogPage() {
     { name:'Thongthai Bakelite', color:'#f97316', img:'assets/thongthai bikelite.png', product:'assets/thongthai bikelite.png', hideLogoBar:true },
     { name:'สายไฟ',      color:'#374151', img:'assets/สายไฟ.jpg',       product:'assets/สายไฟ.jpg', hideLogoBar:true },
     { name:'Nano LED',   color:'#8bc83f', img:'assets/nano led.png',        product:'assets/nano led.png', hideLogoBar:true },
-  ];
+];
+
+function HPCatalogPage() {
   const [page, setPage] = useState(0);
   const [zoomOpen, setZoomOpen] = useState(false);
+  // แคตตาล็อกตั้งค่าได้จากระบบหลังบ้าน (หน้า "ตั้งค่าเว็บไซต์") ไม่ต้องแก้โค้ด
+  const [cfg, setCfg] = useState({});          // { ชื่อแบรนด์: { url, label, cta, hidden } }
+  const [footerTxt, setFooterTxt] = useState('');
+  useEffect(() => {
+    hpApi('/settings').then(r => {
+      const s = r.settings || {};
+      let cat = s.catalog;
+      // รองรับข้อมูลรูปแบบเดิมที่เก็บแค่ลิงก์
+      if (!cat || !Object.keys(cat).length) {
+        cat = {};
+        for (const [k, v] of Object.entries(s.catalogUrls || {})) cat[k] = { url: v };
+      }
+      setCfg(cat);
+      setFooterTxt(s.catalogFooter || '');
+    }).catch(() => {});
+  }, []);
+
+  // แบรนด์ที่ตั้งให้ซ่อนจะไม่ถูกนับเป็นหน้าในแคตตาล็อกเลย
+  const brands = HP_CATALOG_BRANDS.filter(x => !(cfg[x.name] && cfg[x.name].hidden));
   const total = brands.length;
-  const goTo = (n) => setPage((n + total) % total);
-  const b = brands[page];
+  // ถ้าซ่อนจนหน้าที่เปิดอยู่หายไป ให้ถอยมาหน้าสุดท้ายที่ยังมี
+  const idx = total ? Math.min(page, total - 1) : 0;
+  const goTo = (n) => setPage(total ? ((n % total) + total) % total : 0);
+
+  if (!total) {
+    return (
+      <section style={{ background:'#eef1ee', padding:'30px 0 56px', minHeight:'75vh' }}>
+        <div style={{ maxWidth:'1100px', margin:'0 auto', padding:'0 20px', textAlign:'center' }}>
+          <div style={{ background:'#fff', borderRadius:'14px', padding:'60px 24px', color:'#8a9a92', fontSize:'15px' }}>
+            ยังไม่มีหน้าแคตตาล็อกที่เปิดแสดงอยู่
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const base = brands[idx];
+  const set  = cfg[base.name] || {};
+  const b = { ...base, url: set.url || '', name: set.label || base.name, cta: set.cta || '' };
+  // แบรนด์ที่ใส่ลิงก์ไว้ กดที่รูปแล้วเปิดเว็บแบรนด์ในแท็บใหม่ / ที่ยังไม่ใส่ กดแล้วซูมดูรูปเหมือนเดิม
+  const openBrandSite = () => window.open(b.url, '_blank', 'noopener,noreferrer');
   return (
     <section style={{ background:'#eef1ee', padding:'30px 0 56px', minHeight:'75vh' }}>
       <div style={{ maxWidth:'1100px', margin:'0 auto', padding:'0 20px' }}>
@@ -1709,24 +2084,27 @@ function HPCatalogPage() {
 
         {/* book viewer */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:'18px' }}>
-          <button onClick={() => goTo(page - 1)}
+          <button onClick={() => goTo(idx - 1)}
             style={{ flexShrink:0, width:'46px', height:'46px', borderRadius:'50%', border:'1px solid #dfe3e0', background:'#fff', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 4px 10px rgba(0,0,0,0.06)' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0d5c50" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
           </button>
 
           {/* the page */}
-          <div key={page} className="hp-page-flip" style={{ position:'relative', width:'100%', maxWidth:'640px', aspectRatio:'3/4', background:'#fff', borderRadius:'4px 14px 14px 4px', boxShadow:'0 18px 40px rgba(0,0,0,0.16), inset -1px 0 0 rgba(0,0,0,0.04)', display:'flex', flexDirection:'column', overflow:'hidden' }}>
+          <div key={idx} className="hp-page-flip" style={{ position:'relative', width:'100%', maxWidth:'640px', aspectRatio:'3/4', background:'#fff', borderRadius:'4px 14px 14px 4px', boxShadow:'0 18px 40px rgba(0,0,0,0.16), inset -1px 0 0 rgba(0,0,0,0.04)', display:'flex', flexDirection:'column', overflow:'hidden' }}>
             {/* spine shadow */}
             <div style={{ position:'absolute', left:0, top:0, bottom:0, width:'18px', background:'linear-gradient(90deg, rgba(0,0,0,0.14), transparent)', zIndex:3 }}/>
             {/* page-curl corner */}
             <div style={{ position:'absolute', right:0, bottom:0, width:'34px', height:'34px', background:'linear-gradient(135deg, transparent 50%, #e9ece9 50%)', boxShadow:'-2px -2px 6px rgba(0,0,0,0.06)', zIndex:3 }}/>
             {/* page number ribbon */}
-            <div style={{ position:'absolute', top:'14px', right:'18px', fontSize:'12px', fontWeight:'700', color:'#9aa39c', zIndex:3, fontFamily:'Inter, Noto Sans Thai, sans-serif' }}>หน้า {page + 1} / {total}</div>
+            <div style={{ position:'absolute', top:'14px', right:'18px', fontSize:'12px', fontWeight:'700', color:'#9aa39c', zIndex:3, fontFamily:'Inter, Noto Sans Thai, sans-serif' }}>หน้า {idx + 1} / {total}</div>
 
-            <div style={{ flex:1, minHeight:0, display:'flex', alignItems:'center', justifyContent:'center', padding:'18px', position:'relative', zIndex:2, cursor:'zoom-in' }}
-              onClick={() => setZoomOpen(true)}>
+            <div style={{ flex:1, minHeight:0, display:'flex', alignItems:'center', justifyContent:'center', padding:'18px', position:'relative', zIndex:2, cursor: b.url ? 'pointer' : 'zoom-in' }}
+              title={b.url ? `เปิดเว็บไซต์ ${b.name}` : 'คลิกเพื่อขยายรูป'}
+              onClick={() => b.url ? openBrandSite() : setZoomOpen(true)}>
               <img loading="lazy" decoding="async" src={b.product} style={{ width:'100%', height:'100%', objectFit:'contain' }} onError={e => e.target.style.display='none'}/>
-              <div style={{ position:'absolute', bottom:'8px', right:'8px', width:'32px', height:'32px', borderRadius:'50%', background:'rgba(13,92,80,0.85)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+              {/* ปุ่มขยายรูป — แยกจากการกดรูป เพื่อให้ยังซูมดูได้แม้แบรนด์นั้นมีลิงก์เว็บ */}
+              <div title="ขยายรูป" style={{ position:'absolute', bottom:'8px', right:'8px', width:'32px', height:'32px', borderRadius:'50%', background:'rgba(13,92,80,0.85)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'zoom-in' }}
+                onClick={e => { e.stopPropagation(); setZoomOpen(true); }}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="M11 8v6M8 11h6"/><path d="M21 21l-4.35-4.35"/></svg>
               </div>
             </div>
@@ -1738,13 +2116,23 @@ function HPCatalogPage() {
               </div>
             )}
 
-            {/* footer strip */}
-            <div style={{ background:'#0d5c50', color:'#fff', textAlign:'center', fontFamily:'Inter, Noto Sans Thai, sans-serif', fontSize:'13px', fontWeight:'600', padding:'12px', letterSpacing:'0.03em', position:'relative', zIndex:2 }}>
-              KiRD SAENG SAWANG · CATALOG
-            </div>
+            {/* footer strip — เป็นลิงก์ไปเว็บแบรนด์ถ้ามี url */}
+            {b.url ? (
+              <a href={b.url} target="_blank" rel="noopener noreferrer"
+                style={{ background:'#0d5c50', color:'#fff', textAlign:'center', fontFamily:'Inter, Noto Sans Thai, sans-serif', fontSize:'13px', fontWeight:'700', padding:'12px', letterSpacing:'0.03em', position:'relative', zIndex:2, textDecoration:'none', display:'flex', alignItems:'center', justifyContent:'center', gap:'8px', transition:'background-color 0.18s ease' }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#0a4a40'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = '#0d5c50'}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><path d="M15 3h6v6"/><path d="M10 14L21 3"/></svg>
+                {b.cta || `เยี่ยมชมเว็บไซต์ ${b.name}`}
+              </a>
+            ) : (
+              <div style={{ background:'#0d5c50', color:'#fff', textAlign:'center', fontFamily:'Inter, Noto Sans Thai, sans-serif', fontSize:'13px', fontWeight:'600', padding:'12px', letterSpacing:'0.03em', position:'relative', zIndex:2 }}>
+                {footerTxt || 'KiRD SAENG SAWANG · CATALOG'}
+              </div>
+            )}
           </div>
 
-          <button onClick={() => goTo(page + 1)}
+          <button onClick={() => goTo(idx + 1)}
             style={{ flexShrink:0, width:'46px', height:'46px', borderRadius:'50%', border:'1px solid #dfe3e0', background:'#fff', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 4px 10px rgba(0,0,0,0.06)' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0d5c50" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
           </button>
@@ -1753,8 +2141,8 @@ function HPCatalogPage() {
         {/* thumbnail strip */}
         <div className="hp-scroll-hide" style={{ display:'flex', gap:'10px', overflowX:'auto', justifyContent:'flex-start', margin:'28px auto 0', maxWidth:'900px', padding:'6px' }}>
           {brands.map((t, i) => (
-            <div key={i} onClick={() => goTo(i)}
-              style={{ flexShrink:0, width:'52px', height:'52px', borderRadius:'8px', border: i===page ? '2px solid #0d5c50' : '1px solid #e2e6e3', background:'#fff', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', opacity: i===page ? 1 : 0.65, transition:'opacity 0.15s, border-color 0.15s' }}>
+            <div key={i} onClick={() => goTo(i)} title={(cfg[t.name] && cfg[t.name].label) || t.name}
+              style={{ flexShrink:0, width:'52px', height:'52px', borderRadius:'8px', border: i===idx ? '2px solid #0d5c50' : '1px solid #e2e6e3', background:'#fff', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', opacity: i===idx ? 1 : 0.65, transition:'opacity 0.15s, border-color 0.15s' }}>
               <img loading="lazy" decoding="async" src={t.product} style={{ maxWidth:'80%', maxHeight:'80%', objectFit:'contain' }} onError={e => e.target.style.display='none'}/>
             </div>
           ))}
@@ -1812,89 +2200,24 @@ function HPContactPage() {
           </div>
         </div>
 
-        {/* contact details — การ์ดกริด */}
-        {(() => {
-          const card = {
-            display:'flex', gap:'14px', alignItems:'flex-start', textDecoration:'none',
-            background:'#fff', border:'1px solid #e8f0ec', borderRadius:'16px', padding:'22px 22px',
-            boxShadow:'0 2px 10px rgba(15,77,42,0.05)', transition:'transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease',
-          };
-          const tile = (bg) => ({ width:'46px', height:'46px', borderRadius:'13px', background:bg, display:'flex',
-                                  alignItems:'center', justifyContent:'center', flexShrink:0 });
-          const label = { fontSize:'11.5px', color:'#9aa8a0', fontWeight:'700', letterSpacing:'0.08em', marginBottom:'5px', textTransform:'uppercase' };
-          const lift = (e, on, color) => {
-            e.currentTarget.style.transform = on ? 'translateY(-3px)' : 'translateY(0)';
-            e.currentTarget.style.boxShadow = on ? '0 12px 26px rgba(15,77,42,0.13)' : '0 2px 10px rgba(15,77,42,0.05)';
-            e.currentTarget.style.borderColor = on ? color : '#e8f0ec';
-          };
-          return (
-            <div style={{ maxWidth:'880px', margin:'6px auto 30px', display:'grid',
-                          gridTemplateColumns:'repeat(auto-fit, minmax(250px, 1fr))', gap:'14px' }}>
+        {/* contact details — ข้อความกึ่งกลาง เรียบง่าย */}
+        <div style={{ maxWidth:'720px', margin:'0 auto 40px', textAlign:'center' }}>
+          <div style={{ fontSize:'15.5px', color:'#5a6a62', lineHeight:'1.8', marginBottom:'18px' }}>
+            87/11-12 ซอยเอกชัย 76 แยก 2 แขวงคลองบางพราน เขตบางบอน กรุงเทพมหานคร 10150
+          </div>
+          <div style={{ display:'flex', flexWrap:'wrap', justifyContent:'center', gap:'8px 34px', fontSize:'15.5px', color:'#3a4a42' }}>
+            <span>โทร. : <a href="tel:028944007" style={{ color:'#f05a20', fontWeight:'700', textDecoration:'none' }}>02-894-4007</a></span>
+            <span>LINE : <a href="https://lin.ee/rAFJt2QD" target="_blank" rel="noopener noreferrer" style={{ color:'#06c755', fontWeight:'700', textDecoration:'none' }}>@kirdsaengsawang</a></span>
+            <span>เวลาทำการ : <span style={{ fontWeight:'700', color:'#1a1a1a' }}>จันทร์ – เสาร์ 08:30 – 17:30 น.</span></span>
+          </div>
+        </div>
 
-              {/* ที่อยู่ — เต็มความกว้าง */}
-              <a href={mapUrl} target="_blank" rel="noopener noreferrer"
-                style={{ ...card, gridColumn:'1 / -1' }}
-                onMouseEnter={e => lift(e, true, '#8bc83f')} onMouseLeave={e => lift(e, false)}>
-                <div style={tile('#f1f9e8')}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6ba52e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
-                </div>
-                <div style={{ minWidth:0 }}>
-                  <div style={label}>ที่อยู่บริษัท</div>
-                  <div style={{ fontSize:'15.5px', fontWeight:'600', color:'#1a1a1a', lineHeight:'1.65' }}>
-                    87/11-12 ซอยเอกชัย 76 แยก 2 แขวงคลองบางพราน<br/>เขตบางบอน กรุงเทพมหานคร 10150
-                  </div>
-                  <div style={{ fontSize:'12.5px', color:'#6ba52e', fontWeight:'700', marginTop:'9px' }}>ดูเส้นทางบนแผนที่ →</div>
-                </div>
-              </a>
-
-              {/* โทรศัพท์ */}
-              <a href="tel:028944007" style={card}
-                onMouseEnter={e => lift(e, true, '#f05a20')} onMouseLeave={e => lift(e, false)}>
-                <div style={tile('#fff0e8')}>
-                  <svg width="21" height="21" viewBox="0 0 24 24" fill="#f05a20"><path d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24c1.12.37 2.33.57 3.58.57a1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.25.2 2.46.57 3.58a1 1 0 01-.24 1.01l-2.21 2.2z"/></svg>
-                </div>
-                <div style={{ minWidth:0 }}>
-                  <div style={label}>โทรศัพท์</div>
-                  <div style={{ fontSize:'21px', fontWeight:'800', color:'#1a1a1a', letterSpacing:'-0.3px', fontFamily:'Inter, Noto Sans Thai, sans-serif' }}>02-894-4007</div>
-                  <div style={{ fontSize:'12.5px', color:'#f05a20', fontWeight:'700', marginTop:'7px' }}>กดเพื่อโทรออก →</div>
-                </div>
-              </a>
-
-              {/* LINE */}
-              <a href="https://lin.ee/rAFJt2QD" target="_blank" rel="noopener noreferrer" style={card}
-                onMouseEnter={e => lift(e, true, '#06c755')} onMouseLeave={e => lift(e, false)}>
-                <div style={tile('#e8fbef')}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="#06c755"><path d="M12 2C6.48 2 2 5.92 2 10.8c0 3.27 1.96 6.16 4.95 7.87L6 21l3.24-1.62c.88.24 1.81.37 2.76.37 5.52 0 10-3.92 10-8.75S17.52 2 12 2z"/></svg>
-                </div>
-                <div style={{ minWidth:0 }}>
-                  <div style={label}>LINE Official</div>
-                  <div style={{ fontSize:'17px', fontWeight:'800', color:'#06c755', wordBreak:'break-all' }}>@kirdsaengsawang</div>
-                  <div style={{ fontSize:'12.5px', color:'#06c755', fontWeight:'700', marginTop:'7px' }}>กดเพื่อเพิ่มเพื่อน →</div>
-                </div>
-              </a>
-
-              {/* เวลาทำการ */}
-              <div style={{ ...card, cursor:'default' }}
-                onMouseEnter={e => lift(e, true, '#2563eb')} onMouseLeave={e => lift(e, false)}>
-                <div style={tile('#eaf1fe')}>
-                  <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-                </div>
-                <div style={{ minWidth:0 }}>
-                  <div style={label}>เวลาทำการ</div>
-                  <div style={{ fontSize:'15.5px', fontWeight:'700', color:'#1a1a1a' }}>จันทร์ – เสาร์</div>
-                  <div style={{ fontSize:'15.5px', fontWeight:'700', color:'#1a1a1a', marginTop:'2px' }}>08:30 – 17:30 น.</div>
-                  <div style={{ fontSize:'12.5px', color:'#94a3b8', fontWeight:'600', marginTop:'7px' }}>หยุดวันอาทิตย์และวันหยุดนักขัตฤกษ์</div>
-                </div>
-              </div>
-            </div>
-          );
-        })()}
-
-        {/* map */}
-        <div style={{ borderRadius:'18px', overflow:'hidden', boxShadow:'0 8px 26px rgba(15,77,42,0.12)', border:'1px solid #eaf3ed', background:'#fff', marginBottom:'24px' }}>
+        {/* map — ขยายให้กว้างกว่าคอลัมน์ข้อความ (จัดกึ่งกลางหน้าจอ ไม่ทำให้เกิดสกรอลล์แนวนอน) */}
+        <div style={{ position:'relative', left:'50%', transform:'translateX(-50%)', width:'min(1400px, 94vw)',
+                      borderRadius:'18px', overflow:'hidden', boxShadow:'0 8px 26px rgba(15,77,42,0.12)', border:'1px solid #eaf3ed', background:'#fff', marginBottom:'24px' }}>
           <iframe title="แผนที่บริษัท เกิดแสงสว่าง จำกัด"
             src="https://maps.google.com/maps?q=13.6732332,100.4165502&z=17&output=embed"
-            style={{ border:0, width:'100%', display:'block', minHeight:'440px' }} loading="lazy" allowFullScreen referrerPolicy="no-referrer-when-downgrade"/>
+            style={{ border:0, width:'100%', display:'block', height:'min(70vh, 640px)', minHeight:'440px' }} loading="lazy" allowFullScreen referrerPolicy="no-referrer-when-downgrade"/>
           <a href={mapUrl} target="_blank" rel="noopener noreferrer"
             style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:'8px', background:'#8bc83f', color:'#fff', fontSize:'14px', fontWeight:'700', padding:'13px', textDecoration:'none' }}>
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2"/></svg>
@@ -1922,7 +2245,7 @@ function HPCategoryProductsPage({ activeCategory, onSelectProduct }) {
         {filtered.length === 0 ? (
           <div style={{ textAlign:'center', padding:'60px', color:'#aaa', fontSize:'15px', background:'#fff', borderRadius:'12px' }}>ยังไม่มีสินค้าในหมวดหมู่นี้</div>
         ) : (
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(5, 1fr)', gap:'16px' }}>
+          <div className="hp-product-grid" style={{ display:'grid', gridTemplateColumns:'repeat(5, 1fr)', gap:'16px' }}>
             {filtered.map((p, i) => {
               const thumb = (p.images && p.images[0]) || p.img;
               return (
@@ -2692,9 +3015,10 @@ function HPAdminPage({ onNavigate }) {
   const logout = () => { hpApi('/auth/logout', { method:'POST' }).catch(() => {}).then(() => setUser(null)); };
   const role = HP_ROLES[user.role] || HP_ROLES.sales;
   const tabs = [
-    hpCan(user, 'products') && ['products', 'จัดการสินค้า'],
-    hpCan(user, 'sales')    && ['sales',    'ระบบเซลล์'],
-    hpCan(user, 'users')    && ['users',    'จัดการผู้ใช้'],
+    hpCan(user, 'products')    && ['products', 'จัดการสินค้า'],
+    hpCan(user, 'sales')       && ['sales',    'ระบบเซลล์'],
+    hpCan(user, 'editProduct') && ['settings', 'ตั้งค่าเว็บไซต์'],
+    hpCan(user, 'users')       && ['users',    'จัดการผู้ใช้'],
   ].filter(Boolean);
 
   return (
@@ -2723,11 +3047,210 @@ function HPAdminPage({ onNavigate }) {
       </div>
 
       <div style={{ maxWidth:'1240px', margin:'0 auto', padding:'22px 24px 60px' }}>
-        {tab === 'products' && hpCan(user, 'products') && <HPAdminPanel user={user} onNavigate={onNavigate} onLogout={logout} embedded/>}
-        {tab === 'sales'    && hpCan(user, 'sales')    && <HPSalesModule me={user}/>}
-        {tab === 'users'    && hpCan(user, 'users')    && <HPUsersManager me={user}/>}
+        {tab === 'products' && hpCan(user, 'products')    && <HPAdminPanel user={user} onNavigate={onNavigate} onLogout={logout} embedded/>}
+        {tab === 'sales'    && hpCan(user, 'sales')       && <HPSalesModule me={user}/>}
+        {tab === 'settings' && hpCan(user, 'editProduct') && <HPSiteSettings/>}
+        {tab === 'users'    && hpCan(user, 'users')       && <HPUsersManager me={user}/>}
       </div>
     </section>
+  );
+}
+
+// ตั้งค่าเว็บไซต์ — แก้แคตตาล็อกและข้อมูลติดต่อได้เองจากหลังบ้าน โดยไม่ต้องแก้โค้ด
+function HPSiteSettings() {
+  const [catalog, setCatalog] = useState({});   // { ชื่อแบรนด์: { url, label, cta, hidden } }
+  const [footer, setFooter]   = useState('');
+  const [contact, setContact] = useState({ phone:'', lineId:'', lineUrl:'', hours:'', address:'' });
+  const [openRow, setOpenRow] = useState(null);  // แบรนด์ที่กางอยู่
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving]   = useState(false);
+  const [msg, setMsg]         = useState('');
+  const [err, setErr]         = useState('');
+
+  useEffect(() => {
+    hpApi('/settings')
+      .then(r => {
+        const s = r.settings || {};
+        // รองรับข้อมูลรูปแบบเดิมที่เก็บแค่ลิงก์ ให้ย้ายมาเป็นรูปแบบใหม่อัตโนมัติ
+        let cat = s.catalog;
+        if (!cat || !Object.keys(cat).length) {
+          cat = {};
+          for (const [k, v] of Object.entries(s.catalogUrls || {})) cat[k] = { url: v };
+        }
+        setCatalog(cat);
+        setFooter(s.catalogFooter || '');
+        setContact({ phone:'', lineId:'', lineUrl:'', hours:'', address:'', ...(s.contact || {}) });
+      })
+      .catch(e => setErr('โหลดการตั้งค่าไม่สำเร็จ: ' + e.message))
+      .then(() => setLoading(false));
+  }, []);
+
+  const setField = (name, key, v) =>
+    setCatalog(prev => ({ ...prev, [name]: { ...(prev[name] || {}), [key]: v } }));
+  const rec = (name) => catalog[name] || {};
+
+  const save = async () => {
+    setErr(''); setMsg('');
+    // ตรวจรูปแบบลิงก์ก่อนส่ง เพื่อบอกทันทีว่าช่องไหนผิด (เซิร์ฟเวอร์ตรวจซ้ำอีกชั้น)
+    const badUrl = (v) => v && v.trim() && !/^https?:\/\//i.test(v.trim());
+    const bad = Object.entries(catalog).find(([, v]) => badUrl(v.url));
+    if (bad) { setOpenRow(bad[0]); setErr(`ลิงก์ของ ${bad[0]} ต้องขึ้นต้นด้วย https:// (หรือ http://)`); return; }
+    if (badUrl(contact.lineUrl)) { setErr('ลิงก์ไลน์ต้องขึ้นต้นด้วย https:// (หรือ http://)'); return; }
+
+    setSaving(true);
+    try {
+      const r = await hpApi('/settings', { method:'POST', body:{ settings:{ catalog, catalogFooter: footer, contact } } });
+      const s = r.settings || {};
+      setCatalog(s.catalog || {});
+      setFooter(s.catalogFooter || '');
+      setContact({ phone:'', lineId:'', lineUrl:'', hours:'', address:'', ...(s.contact || {}) });
+      setMsg('✔ บันทึกแล้ว — กด Ctrl+F5 ที่หน้าเว็บเพื่อดูผล');
+      setTimeout(() => setMsg(''), 4000);
+    } catch (e) { setErr(e.message); }
+    setSaving(false);
+  };
+
+  const inputCss = { width:'100%', padding:'9px 12px', fontSize:'14px', border:'1px solid #e2e6e3', borderRadius:'7px', outline:'none', fontFamily:'Inter, Noto Sans Thai, sans-serif' };
+  const labelCss = { fontSize:'12.5px', fontWeight:'700', color:'#667', marginBottom:'5px', display:'block' };
+  const cardCss  = { background:'#fff', borderRadius:'10px', border:'1px solid #eee', padding:'22px 24px', marginBottom:'16px' };
+
+  const Field = ({ label, hint, children }) => (
+    <div style={{ marginBottom:'14px' }}>
+      <label style={labelCss}>{label}</label>
+      {children}
+      {hint && <div style={{ fontSize:'11.5px', color:'#9aa8a0', marginTop:'4px' }}>{hint}</div>}
+    </div>
+  );
+
+  const filled = Object.values(catalog).filter(v => v && v.url && v.url.trim()).length;
+  const hiddenCount = Object.values(catalog).filter(v => v && v.hidden).length;
+
+  if (loading) return <div style={{ padding:'40px', textAlign:'center', color:'#888' }}>กำลังโหลดการตั้งค่า…</div>;
+
+  return (
+    <div>
+      {err && <div style={{ background:'#fdecea', border:'1px solid #f5c6cb', color:'#b3261e', borderRadius:'8px', padding:'12px 16px', marginBottom:'14px', fontSize:'14px' }}>{err}</div>}
+      {msg && <div style={{ background:'#e8f7ee', border:'1px solid #b7e4c7', color:'#0d6b3f', borderRadius:'8px', padding:'12px 16px', marginBottom:'14px', fontSize:'14px' }}>{msg}</div>}
+
+      {/* ── หน้าแคตตาล็อก ── */}
+      <div style={cardCss}>
+        <div style={{ fontSize:'18px', fontWeight:'800', color:'#222', marginBottom:'6px' }}>หน้าแคตตาล็อก</div>
+        <p style={{ fontSize:'14px', color:'#777', lineHeight:'1.8' }}>
+          กดที่ชื่อแบรนด์เพื่อกางออกมาแก้ไข — ตั้งลิงก์เว็บไซต์ เปลี่ยนชื่อที่แสดง แก้ข้อความปุ่ม หรือซ่อนหน้านั้นออกจากแคตตาล็อกก็ได้
+        </p>
+        <div style={{ marginTop:'12px', fontSize:'13.5px', color:'#0d6b5c', fontWeight:'700' }}>
+          ใส่ลิงก์แล้ว {filled} / {HP_CATALOG_BRANDS.length} แบรนด์
+          {hiddenCount > 0 && <span style={{ color:'#c2410c' }}> · ซ่อนอยู่ {hiddenCount} หน้า</span>}
+        </div>
+      </div>
+
+      <div style={{ background:'#fff', borderRadius:'10px', border:'1px solid #eee', overflow:'hidden', marginBottom:'16px' }}>
+        {HP_CATALOG_BRANDS.map((b, i) => {
+          const r = rec(b.name);
+          const open = openRow === b.name;
+          const url = r.url || '';
+          const invalid = url.trim() && !/^https?:\/\//i.test(url.trim());
+          return (
+            <div key={b.name} style={{ borderTop: i ? '1px solid #f2f2f2' : 'none' }}>
+              {/* แถวหัว — กดเพื่อกาง */}
+              <div role="button" tabIndex={0}
+                onClick={() => setOpenRow(open ? null : b.name)}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpenRow(open ? null : b.name); } }}
+                style={{ display:'flex', alignItems:'center', gap:'12px', padding:'13px 20px', cursor:'pointer', background: open ? '#f7fbf9' : 'transparent' }}>
+                <span style={{ width:'8px', height:'8px', borderRadius:'50%', flexShrink:0, background: url.trim() ? '#22c55e' : '#d8dcd9' }}/>
+                <span style={{ flex:1, minWidth:0, fontSize:'14.5px', fontWeight:'700', color: r.hidden ? '#aab' : '#333', textDecoration: r.hidden ? 'line-through' : 'none', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                  {r.label || b.name}
+                  {r.label && r.label !== b.name && <span style={{ color:'#9aa8a0', fontWeight:'500' }}> (เดิม: {b.name})</span>}
+                </span>
+                {r.hidden && <span style={{ flexShrink:0, fontSize:'11.5px', fontWeight:'700', color:'#c2410c', background:'#fff1e8', borderRadius:'999px', padding:'3px 10px' }}>ซ่อนอยู่</span>}
+                <span style={{ flexShrink:0, fontSize:'12.5px', color:'#0d6b5c', fontWeight:'700' }}>{open ? 'ปิด' : 'แก้ไข'}</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9aa8a0" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"
+                  style={{ flexShrink:0, transform: open ? 'rotate(180deg)' : 'none', transition:'transform 0.18s' }}><path d="M6 9l6 6 6-6"/></svg>
+              </div>
+
+              {/* ฟอร์มแก้ไข */}
+              {open && (
+                <div style={{ padding:'4px 20px 20px', background:'#f7fbf9' }}>
+                  <Field label="ลิงก์เว็บไซต์แบรนด์" hint="เว้นว่างได้ — ถ้าไม่ใส่ กดที่รูปจะเป็นการขยายดูรูปเหมือนเดิม">
+                    <div style={{ display:'flex', gap:'10px', alignItems:'center' }}>
+                      <input value={url} onChange={e => setField(b.name, 'url', e.target.value)}
+                        placeholder="https://www.example.com"
+                        style={{ ...inputCss, borderColor: invalid ? '#e57373' : '#e2e6e3' }}/>
+                      {url.trim() && !invalid && (
+                        <a href={url.trim()} target="_blank" rel="noopener noreferrer" title="ทดสอบเปิดลิงก์"
+                          style={{ flexShrink:0, fontSize:'13px', fontWeight:'700', color:'#0d6b5c', textDecoration:'none', whiteSpace:'nowrap' }}>ทดสอบ ↗</a>
+                      )}
+                    </div>
+                  </Field>
+
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'14px' }}>
+                    <Field label="ชื่อที่แสดง" hint={`เว้นว่าง = ใช้ "${b.name}"`}>
+                      <input value={r.label || ''} onChange={e => setField(b.name, 'label', e.target.value)}
+                        placeholder={b.name} maxLength={60} style={inputCss}/>
+                    </Field>
+                    <Field label="ข้อความปุ่มด้านล่าง" hint={`เว้นว่าง = "เยี่ยมชมเว็บไซต์ ${r.label || b.name}"`}>
+                      <input value={r.cta || ''} onChange={e => setField(b.name, 'cta', e.target.value)}
+                        placeholder="เยี่ยมชมเว็บไซต์" maxLength={40} style={inputCss}/>
+                    </Field>
+                  </div>
+
+                  <label style={{ display:'flex', alignItems:'center', gap:'9px', fontSize:'14px', color:'#444', cursor:'pointer', marginTop:'4px' }}>
+                    <input type="checkbox" checked={!!r.hidden} onChange={e => setField(b.name, 'hidden', e.target.checked)}
+                      style={{ width:'16px', height:'16px', cursor:'pointer' }}/>
+                    ซ่อนหน้านี้ไม่ให้แสดงในแคตตาล็อก
+                  </label>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ── แถบล่างแคตตาล็อก ── */}
+      <div style={cardCss}>
+        <div style={{ fontSize:'16px', fontWeight:'800', color:'#222', marginBottom:'12px' }}>แถบล่างหน้ากระดาษแคตตาล็อก</div>
+        <Field label="ข้อความบนแถบเขียว" hint='เว้นว่าง = "KiRD SAENG SAWANG · CATALOG" (แถบนี้จะแสดงเฉพาะแบรนด์ที่ไม่ได้ใส่ลิงก์)'>
+          <input value={footer} onChange={e => setFooter(e.target.value)}
+            placeholder="KiRD SAENG SAWANG · CATALOG" maxLength={80} style={inputCss}/>
+        </Field>
+      </div>
+
+      {/* ── ข้อมูลติดต่อ ── */}
+      <div style={cardCss}>
+        <div style={{ fontSize:'16px', fontWeight:'800', color:'#222', marginBottom:'6px' }}>ข้อมูลติดต่อ</div>
+        <p style={{ fontSize:'13.5px', color:'#777', lineHeight:'1.8', marginBottom:'16px' }}>
+          ใช้ร่วมกันในหน้า “ติดต่อเรา” และฟุตเตอร์ท้ายเว็บ — เว้นว่างช่องไหนไว้ ช่องนั้นจะใช้ค่าเดิมที่ตั้งไว้ในเว็บ
+        </p>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'14px' }}>
+          <Field label="เบอร์โทรศัพท์">
+            <input value={contact.phone} onChange={e => setContact(c => ({ ...c, phone:e.target.value }))}
+              placeholder="02-894-4007" maxLength={60} style={inputCss}/>
+          </Field>
+          <Field label="เวลาทำการ">
+            <input value={contact.hours} onChange={e => setContact(c => ({ ...c, hours:e.target.value }))}
+              placeholder="จันทร์ – เสาร์ 08:30 – 17:30 น." maxLength={120} style={inputCss}/>
+          </Field>
+          <Field label="LINE ID">
+            <input value={contact.lineId} onChange={e => setContact(c => ({ ...c, lineId:e.target.value }))}
+              placeholder="@kirdsaengsawang" maxLength={60} style={inputCss}/>
+          </Field>
+          <Field label="ลิงก์เพิ่มเพื่อนไลน์">
+            <input value={contact.lineUrl} onChange={e => setContact(c => ({ ...c, lineUrl:e.target.value }))}
+              placeholder="https://lin.ee/..." maxLength={300} style={inputCss}/>
+          </Field>
+        </div>
+        <Field label="ที่อยู่บริษัท">
+          <textarea value={contact.address} onChange={e => setContact(c => ({ ...c, address:e.target.value }))}
+            placeholder="87/11-12 ซอยเอกชัย 76 แยก 2 แขวงคลองบางพราน เขตบางบอน กรุงเทพมหานคร 10150"
+            maxLength={300} rows={2} style={{ ...inputCss, resize:'vertical', lineHeight:'1.7' }}/>
+        </Field>
+      </div>
+
+      <button onClick={save} disabled={saving}
+        style={{ background: saving ? '#9bb8b1' : '#0d6b5c', color:'#fff', border:'none', borderRadius:'7px', padding:'12px 30px', fontSize:'15px', fontWeight:'700', cursor: saving ? 'default' : 'pointer', fontFamily:'Inter, Noto Sans Thai, sans-serif' }}>
+        {saving ? 'กำลังบันทึก…' : 'บันทึกการตั้งค่า'}
+      </button>
+    </div>
   );
 }
 
@@ -3289,6 +3812,148 @@ function HPAdminPanel({ onLogout, onNavigate, user, embedded }) {
   );
 }
 
+// ผู้ช่วย AI ตอบคำถามลูกค้า — ตอบความรู้เรื่องไฟฟ้า ส่วนราคา/สต็อกส่งต่อไปที่ไลน์ OA
+function HPChatWidget() {
+  const LINE = 'https://lin.ee/rAFJt2QD';
+  const GREET = 'สวัสดีครับ 👋 ผมเป็นผู้ช่วยของเกิดแสงสว่าง ถามเรื่องอุปกรณ์ไฟฟ้าได้เลยครับ เช่น เลือกเบรกเกอร์ ขนาดสายไฟ หรือตู้ไฟแบบไหนเหมาะกับงาน';
+  const SUGGEST = ['เลือกขนาดเบรกเกอร์ยังไง', 'สายไฟ 2.5 sq.mm. ใช้กับอะไรได้', 'ตู้ MDB กับตู้โหลดต่างกันยังไง'];
+
+  const [open, setOpen]       = useState(false);
+  const [msgs, setMsgs]       = useState([{ role:'assistant', content: GREET }]);
+  const [input, setInput]     = useState('');
+  const [busy, setBusy]       = useState(false);
+  const [err, setErr]         = useState('');
+  const bodyRef = React.useRef(null);
+
+  useEffect(() => {
+    if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
+  }, [msgs, busy, open]);
+
+  const send = async (text) => {
+    const q = (text != null ? text : input).trim();
+    if (!q || busy) return;
+    setErr(''); setInput('');
+    // ส่งเฉพาะบทสนทนาจริง ไม่รวมข้อความทักทายที่ฝั่งเราสร้างเอง
+    const next = [...msgs, { role:'user', content:q }];
+    setMsgs(next);
+    setBusy(true);
+    try {
+      const r = await fetch('/api/chat', {
+        method:'POST', headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify({ messages: next.filter(m => m.content !== GREET) }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.error || 'ระบบขัดข้องชั่วคราว');
+      setMsgs(m => [...m, { role:'assistant', content: data.reply }]);
+    } catch (e) {
+      setErr(e.message);
+    }
+    setBusy(false);
+  };
+
+  const bubble = (m, i) => (
+    <div key={i} style={{ display:'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start', marginBottom:'10px' }}>
+      <div style={{ maxWidth:'82%', padding:'10px 14px', borderRadius: m.role === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+                    background: m.role === 'user' ? '#0d6b5c' : '#f1f5f3', color: m.role === 'user' ? '#fff' : '#26332e',
+                    fontSize:'14.5px', lineHeight:'1.75', whiteSpace:'pre-wrap', wordBreak:'break-word' }}>
+        {m.content}
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      {/* ปุ่มเปิดแชท */}
+      {!open && (
+        <button onClick={() => setOpen(true)} aria-label="คุยกับผู้ช่วย"
+          style={{ position:'fixed', left:'18px', bottom:'18px', zIndex:9998, display:'flex', alignItems:'center', gap:'9px',
+                   background:'#0d6b5c', color:'#fff', border:'none', borderRadius:'999px', padding:'13px 20px',
+                   fontSize:'14.5px', fontWeight:'700', cursor:'pointer', boxShadow:'0 8px 24px rgba(13,107,92,0.4)',
+                   fontFamily:'Inter, Noto Sans Thai, sans-serif' }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/>
+          </svg>
+          สอบถามข้อมูล
+        </button>
+      )}
+
+      {/* หน้าต่างแชท */}
+      {open && (
+        <div style={{ position:'fixed', left:'18px', bottom:'18px', zIndex:9998, width:'min(380px, calc(100vw - 36px))',
+                      height:'min(560px, calc(100vh - 100px))', background:'#fff', borderRadius:'18px',
+                      boxShadow:'0 18px 48px rgba(6,53,46,0.28)', border:'1px solid #e4ede9',
+                      display:'flex', flexDirection:'column', overflow:'hidden' }}>
+
+          {/* หัวหน้าต่าง */}
+          <div style={{ background:'#0d6b5c', color:'#fff', padding:'14px 16px', display:'flex', alignItems:'center', gap:'11px', flexShrink:0 }}>
+            <img src="assets/logo-kss-trans.png" alt="" style={{ width:'30px', height:'30px', objectFit:'contain', filter:'brightness(0) invert(1)' }}/>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontSize:'14.5px', fontWeight:'800' }}>ผู้ช่วยเกิดแสงสว่าง</div>
+              <div style={{ fontSize:'11.5px', opacity:0.85 }}>ตอบคำถามเรื่องอุปกรณ์ไฟฟ้า</div>
+            </div>
+            <button onClick={() => setOpen(false)} aria-label="ปิด"
+              style={{ background:'transparent', border:'none', color:'#fff', fontSize:'20px', cursor:'pointer', lineHeight:1, padding:'2px 4px' }}>✕</button>
+          </div>
+
+          {/* ข้อความ */}
+          <div ref={bodyRef} style={{ flex:1, overflowY:'auto', padding:'16px', background:'#fbfdfc' }}>
+            {msgs.map(bubble)}
+            {busy && (
+              <div style={{ fontSize:'13px', color:'#8fa39a', padding:'4px 2px' }}>กำลังพิมพ์…</div>
+            )}
+            {err && (
+              <div style={{ background:'#fdecea', border:'1px solid #f5c6cb', color:'#b3261e', borderRadius:'10px', padding:'10px 12px', fontSize:'13px', lineHeight:'1.7' }}>
+                {err}
+                <div style={{ marginTop:'6px' }}>
+                  <a href={LINE} target="_blank" rel="noopener noreferrer" style={{ color:'#06c755', fontWeight:'700' }}>ทักไลน์ @kirdsaengsawang →</a>
+                </div>
+              </div>
+            )}
+            {/* คำถามยอดฮิต — แสดงเฉพาะตอนยังไม่ได้เริ่มคุย */}
+            {msgs.length === 1 && !busy && (
+              <div style={{ display:'flex', flexWrap:'wrap', gap:'7px', marginTop:'6px' }}>
+                {SUGGEST.map(s => (
+                  <button key={s} onClick={() => send(s)}
+                    style={{ background:'#fff', border:'1px solid #cfe3dc', color:'#0d6b5c', borderRadius:'999px',
+                             padding:'7px 13px', fontSize:'12.5px', fontWeight:'600', cursor:'pointer',
+                             fontFamily:'Inter, Noto Sans Thai, sans-serif' }}>{s}</button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* ขอใบเสนอราคา — ราคา/สต็อกต้องคุยกับทีมงานจริง ไม่ให้ AI ตอบ */}
+          <a href={LINE} target="_blank" rel="noopener noreferrer"
+            style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:'8px', background:'#06c755', color:'#fff',
+                     padding:'11px', fontSize:'13.5px', fontWeight:'700', textDecoration:'none', flexShrink:0 }}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 5.92 2 10.8c0 3.27 1.96 6.16 4.95 7.87L6 21l3.24-1.62c.88.24 1.81.37 2.76.37 5.52 0 10-3.92 10-8.75S17.52 2 12 2z"/></svg>
+            ขอใบเสนอราคาทางไลน์
+          </a>
+
+          {/* ช่องพิมพ์ */}
+          <div style={{ display:'flex', gap:'8px', padding:'11px', borderTop:'1px solid #eef3f0', background:'#fff', flexShrink:0 }}>
+            <input value={input} onChange={e => setInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+              maxLength={1000} placeholder="พิมพ์คำถามที่นี่…" disabled={busy}
+              style={{ flex:1, minWidth:0, padding:'10px 13px', fontSize:'14px', border:'1px solid #dde7e2',
+                       borderRadius:'999px', outline:'none', fontFamily:'Inter, Noto Sans Thai, sans-serif' }}/>
+            <button onClick={() => send()} disabled={busy || !input.trim()} aria-label="ส่ง"
+              style={{ width:'40px', height:'40px', flexShrink:0, borderRadius:'50%', border:'none',
+                       background: (busy || !input.trim()) ? '#c3d4cd' : '#0d6b5c', color:'#fff',
+                       cursor: (busy || !input.trim()) ? 'default' : 'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+            </button>
+          </div>
+
+          <div style={{ fontSize:'10.5px', color:'#9fb0a8', textAlign:'center', padding:'0 12px 9px', background:'#fff', lineHeight:'1.5' }}>
+            ผู้ช่วย AI อาจตอบผิดพลาดได้ · ราคาและสต็อกกรุณาสอบถามทางไลน์
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 function HPApp() {
   const [page,           setPage]          = useState('home');
   const [activeCategory, setActiveCategory] = useState('all');
@@ -3313,6 +3978,8 @@ function HPApp() {
     if (p === 'ค้าส่ง')         { setPage('wholesale'); window.scrollTo(0,0); return; }
     if (p === 'ติดต่อเรา' || p === 'ติดต่อ') { setPage('contact'); window.scrollTo(0,0); return; }
     if (p === 'เกร็ดความรู้') { setPage('knowledge'); window.scrollTo(0,0); return; }
+    if (p === 'mdb-article') { setPage('mdb-article'); window.scrollTo(0,0); return; }
+    if (p === 'loadcenter3p-article') { setPage('loadcenter3p-article'); window.scrollTo(0,0); return; }
     if (p === 'แคตตาล็อก') { setPage('catalog'); window.scrollTo(0,0); return; }
     if (p === 'สินค้าตามแบรนด์') { setPage('brands'); window.scrollTo(0,0); return; }
     if (p === 'member') { setPage('member'); window.scrollTo(0,0); return; }
@@ -3338,7 +4005,9 @@ function HPApp() {
         {page === 'shop' && <HPCategoryProductsPage activeCategory={activeCategory} onSelectProduct={onSelectProduct}/>}
         {page === 'wholesale' && <HPWholesalePage/>}
         {page === 'contact' && <HPContactPage/>}
-        {page === 'knowledge' && <HPKnowledgePage/>}
+        {page === 'knowledge' && <HPKnowledgePage onCategoryChange={onCategoryChange} onNavigate={onNavigate}/>}
+        {page === 'mdb-article' && <HPMdbArticlePage onNavigate={onNavigate} onCategoryChange={onCategoryChange}/>}
+        {page === 'loadcenter3p-article' && <HPLoadCenter3PArticlePage onNavigate={onNavigate} onCategoryChange={onCategoryChange}/>}
         {page === 'catalog' && <HPCatalogPage/>}
         {page === 'brands' && <HPBrandProductsPage onSelectProduct={onSelectProduct}/>}
         {page === 'product-detail' && <HPProductDetailPage product={selectedProduct} onBack={() => onNavigate('สินค้าตามแบรนด์')} onSelectProduct={onSelectProduct} onNavigate={onNavigate}/>}
@@ -3346,8 +4015,9 @@ function HPApp() {
         {page === 'cart' && <HPCartPage cartItems={cart} onClear={() => setCart([])}/>}
         {page === 'admin' && <HPAdminPage onNavigate={onNavigate}/>}
       </main>
-      <HPFooter onCategoryChange={onCategoryChange}/>
-      <div style={{ position:'fixed', right:'18px', bottom:'18px', display:'flex', flexDirection:'column', alignItems:'center', gap:'6px', background:'#fff', borderRadius:'12px', boxShadow:'0 6px 20px rgba(0,0,0,0.18)', padding:'8px', zIndex:9999 }}>
+      <HPFooter onCategoryChange={onCategoryChange} onNavigate={onNavigate}/>
+      <HPChatWidget/>
+      <div className="hp-zoom-ctrl" style={{ position:'fixed', right:'18px', bottom:'18px', display:'flex', flexDirection:'column', alignItems:'center', gap:'6px', background:'#fff', borderRadius:'12px', boxShadow:'0 6px 20px rgba(0,0,0,0.18)', padding:'8px', zIndex:9999 }}>
         <button onClick={zoomIn} title="ซูมเข้า" style={{ width:'36px', height:'36px', borderRadius:'8px', border:'1px solid #e2e8f0', background:'#f8fafc', fontSize:'18px', fontWeight:'700', color:'#06352e', cursor:'pointer' }}>+</button>
         <button onClick={zoomReset} title="รีเซ็ตขนาด" style={{ width:'36px', height:'28px', borderRadius:'8px', border:'1px solid #e2e8f0', background:'#f8fafc', fontSize:'11px', fontWeight:'700', color:'#7a8a82', cursor:'pointer' }}>{Math.round(zoom * 100)}%</button>
         <button onClick={zoomOut} title="ซูมออก" style={{ width:'36px', height:'36px', borderRadius:'8px', border:'1px solid #e2e8f0', background:'#f8fafc', fontSize:'18px', fontWeight:'700', color:'#06352e', cursor:'pointer' }}>−</button>
