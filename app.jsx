@@ -103,6 +103,14 @@ const HP_CIRCLE_CATEGORIES = [
 ];
 HP_CIRCLE_CATEGORIES.forEach(c => { if (c.keywords) HP_CATEGORY_KEYWORDS[c.id] = c.keywords; });
 
+// หาข้อมูลแบรนด์ (โลโก้/ชื่อเต็ม) จากค่า brand ที่ติดมากับสินค้า
+// สินค้าบางแบรนด์ (YAZAKI, BCC, THAI UNION ฯลฯ) ยังไม่มีใน HP_BRAND_TABS จึงคืน null ได้
+function hpBrandInfo(brand) {
+  if (!brand || typeof HP_BRAND_TABS === 'undefined') return null;
+  const key = String(brand).trim().toUpperCase();
+  return HP_BRAND_TABS.find(t => String(t.key).toUpperCase() === key) || null;
+}
+
 function hpCategoryLabel(catId) {
   return HP_CATEGORIES.find(c => c.id === catId)?.label
       || HP_FOOTER_CATEGORIES.find(c => c.id === catId)?.label
@@ -1900,6 +1908,7 @@ function HPProductDetailPage({ product, onBack, onSelectProduct, onNavigate }) {
   if (!product) return null;
   const images = product.images && product.images.length ? product.images : (product.img ? [product.img] : []);
   const related = HP_ALL_BRAND_PRODUCTS.filter(p => p.brand === product.brand && p.code !== product.code);
+  const brandTab = hpBrandInfo(product.brand);
   return (
     <section style={{ background:'#fff', padding:'30px 0 56px', minHeight:'75vh' }}>
       <div style={{ maxWidth:'1000px', margin:'0 auto', padding:'0 20px' }}>
@@ -1908,7 +1917,22 @@ function HPProductDetailPage({ product, onBack, onSelectProduct, onNavigate }) {
         </div>
 
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'44px', alignItems:'start' }}>
-          <HPProductGallery images={images} title={`${product.code} · ${product.name}`}/>
+          {/* วางโลโก้แบรนด์ทับมุมขวาบนของรูปสินค้า ให้รู้ทันทีว่าเป็นยี่ห้ออะไร */}
+          <div style={{ position:'relative' }}>
+            <HPProductGallery images={images} title={`${product.code} · ${product.name}`}/>
+            <div style={{ position:'absolute', top:'14px', right:'14px', zIndex:3, background:'rgba(255,255,255,0.94)',
+                          border:'1px solid #eef0f2', borderRadius:'10px', padding: brandTab && brandTab.logo ? '8px 12px' : '6px 13px',
+                          boxShadow:'0 2px 10px rgba(6,53,46,0.08)', display:'flex', alignItems:'center', justifyContent:'center',
+                          maxWidth:'120px', minHeight:'34px' }}
+                 title={brandTab ? (brandTab.fullName || brandTab.label) : product.brand}>
+              {brandTab && brandTab.logo
+                // แบรนด์ที่ยังไม่มีไฟล์โลโก้ (เช่น YAZAKI, BCC) ให้แสดงเป็นชื่อแทน จะได้ไม่เป็นกรอบว่าง
+                ? <img src={brandTab.logo} alt={brandTab.label || product.brand}
+                    style={{ maxWidth:'100%', maxHeight:'34px', objectFit:'contain', display:'block' }}
+                    onError={e => { e.target.style.display = 'none'; }}/>
+                : <span style={{ fontSize:'12px', fontWeight:'800', color:'#0d5c50', whiteSpace:'nowrap', letterSpacing:'0.02em' }}>{product.brand}</span>}
+            </div>
+          </div>
 
           <div>
             <div style={{ display:'flex', alignItems:'center', gap:'8px', marginBottom:'10px', flexWrap:'wrap' }}>
