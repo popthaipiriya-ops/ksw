@@ -107,7 +107,11 @@ HP_CIRCLE_CATEGORIES.forEach(c => { if (c.keywords) HP_CATEGORY_KEYWORDS[c.id] =
 // (สินค้าอยู่รวมในหมวดสายไฟทั่วไป — เพิ่มเข้า HP_BRAND_TABS ตรงๆ ไม่ได้ เพราะหน้านั้นจะหา
 // กลุ่มสินค้าของแท็บใหม่ไม่เจอแล้วพัง) ใช้เฉพาะแสดงโลโก้ในหน้ารายละเอียดสินค้าเท่านั้น
 const HP_BRAND_LOGO_EXTRA = {
-  YAZAKI: { label:'YAZAKI', fullName:'YAZAKI (ยาซากิ)', logo:'assets/brand-yazaki.png' },
+  YAZAKI:      { label:'YAZAKI',      fullName:'YAZAKI (ยาซากิ)',          logo:'assets/brand-yazaki.png' },
+  BCC:         { label:'BCC',         fullName:'Bangkok Cable Co., Ltd.',  logo:'assets/brand-bcc.png' },
+  'THAI UNION':{ label:'THAI UNION',  fullName:'Thai Union',               logo:'assets/brand-thaiunion.png' },
+  UNITED:      { label:'UNITED',      fullName:'สายไฟฟ้า ยูไนเต็ด',        logo:'assets/brand-united.png' },
+  // NNN: ลิงก์ที่ได้รับมาเป็นหน้ารายการสินค้าของ DoHome ไม่มีไฟล์โลโก้ให้ดึง — รอลิงก์โลโก้จริง
 };
 
 // หาข้อมูลแบรนด์ (โลโก้/ชื่อเต็ม) จากค่า brand ที่ติดมากับสินค้า
