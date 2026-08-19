@@ -4012,49 +4012,6 @@ function HPAdminPanel({ onLogout, onNavigate, user, embedded }) {
 }
 
 // ผู้ช่วย AI รับเรื่องลูกค้า — ถามความต้องการ แล้วส่งต่อให้ทีมงานทางไลน์ OA
-// มาสคอตผู้ช่วย — ช่างไฟใส่หมวกวิศวกร (วาดเป็น SVG จะได้คมทุกขนาดและไม่ต้องโหลดรูปเพิ่ม)
-function HPEngineerIcon({ size = 26 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" aria-hidden="true" style={{ flexShrink:0, display:'block' }}>
-      {/* กรอบวงกลมขาวแบบรูปโปรไฟล์ — ตัดตัวมาสคอตให้อยู่ในวง แล้วขยายหน้าให้ใหญ่เต็มวง */}
-      <defs>
-        <clipPath id="hpEngRing"><circle cx="24" cy="24" r="23"/></clipPath>
-      </defs>
-      <circle cx="24" cy="24" r="23" fill="#fff"/>
-      <g clipPath="url(#hpEngRing)" transform="translate(2.4 2.6) scale(0.9)">
-      {/* ไหล่ — เสื้อกรมท่า ปกแดง (โผล่แค่ช่วงล่างเพื่อให้ใบหน้าใหญ่ อ่านออกตอนย่อเหลือ 28px) */}
-      <path d="M4 48c0-7.8 9-12.4 20-12.4S44 40.2 44 48z" fill="#22314e"/>
-      <path d="M17.6 36.2 24 43.6l6.4-7.4c1.8.4 3.4 1 4.8 1.7L24 48 12.8 37.9c1.4-.7 3-1.3 4.8-1.7z" fill="#e0433a"/>
-      {/* คอ */}
-      <path d="M19.6 30h8.8v7.6c0 2.4-8.8 2.4-8.8 0z" fill="#e8ab7d"/>
-      {/* ใบหู */}
-      <ellipse cx="9.6" cy="25.6" rx="2.8" ry="3.5" fill="#f3c096"/>
-      <ellipse cx="38.4" cy="25.6" rx="2.8" ry="3.5" fill="#f3c096"/>
-      {/* ผมข้างหู */}
-      <path d="M9.6 15h3.6v11a1.8 1.8 0 0 1-3.6 0z" fill="#33261e"/>
-      <path d="M34.8 15h3.6v11a1.8 1.8 0 0 1-3.6 0z" fill="#33261e"/>
-      {/* ใบหน้า */}
-      <ellipse cx="24" cy="24" rx="13.2" ry="14" fill="#f6c9a0"/>
-      {/* ตา */}
-      <ellipse cx="18.4" cy="24.6" rx="4.1" ry="4.6" fill="#fff"/>
-      <ellipse cx="29.6" cy="24.6" rx="4.1" ry="4.6" fill="#fff"/>
-      <circle cx="19" cy="25" r="2.5" fill="#2b2118"/>
-      <circle cx="30.2" cy="25" r="2.5" fill="#2b2118"/>
-      <circle cx="19.9" cy="23.9" r="0.9" fill="#fff"/>
-      <circle cx="31.1" cy="23.9" r="0.9" fill="#fff"/>
-      {/* จมูกและปากยิ้ม */}
-      <path d="M24 27.4v2.2" stroke="#d9a075" strokeWidth="1.8" strokeLinecap="round"/>
-      <path d="M17.8 32c1.7 3.4 10.7 3.4 12.4 0z" fill="#7a2f2a"/>
-      <path d="M19 32h10c-1.2 2.9-8.8 2.9-10 0z" fill="#fff"/>
-      {/* หมวกนิรภัย */}
-      <path d="M12.6 13.4C12.6 6 17.7 0.4 24 0.4S35.4 6 35.4 13.4z" fill="#f7b93f"/>
-      <path d="M24 0.9v12.5M17.6 2.6c-1.7 3-2.5 7-2.5 11M30.4 2.6c1.7 3 2.5 7 2.5 11" stroke="#e0921a" strokeWidth="1.8" strokeLinecap="round"/>
-      <rect x="2.6" y="12.4" width="42.8" height="5.4" rx="2.7" fill="#f5a623"/>
-      <rect x="2.6" y="15.2" width="42.8" height="2.6" rx="1.3" fill="#e0921a"/>
-      </g>
-    </svg>
-  );
-}
 
 function HPChatWidget() {
   const LINE = HP_LINE_URL;
@@ -4218,11 +4175,10 @@ function HPChatWidget() {
       {/* ปุ่มเปิดแชท */}
       {!open && (
         <button onClick={() => setOpen(true)} aria-label="คุยกับผู้ช่วย"
-          style={{ position:'fixed', left:'18px', bottom:'18px', zIndex:9998, display:'flex', alignItems:'center', gap:'9px',
-                   background:'#0d6b5c', color:'#fff', border:'none', borderRadius:'999px', padding:'13px 20px',
+          style={{ position:'fixed', left:'18px', bottom:'18px', zIndex:9998,
+                   background:'#0d6b5c', color:'#fff', border:'none', borderRadius:'999px', padding:'13px 22px',
                    fontSize:'14.5px', fontWeight:'700', cursor:'pointer', boxShadow:'0 8px 24px rgba(13,107,92,0.4)',
                    fontFamily:'Inter, Noto Sans Thai, sans-serif' }}>
-          <HPEngineerIcon size={28}/>
           สอบถามข้อมูล
         </button>
       )}
