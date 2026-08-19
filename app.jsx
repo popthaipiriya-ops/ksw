@@ -103,12 +103,22 @@ const HP_CIRCLE_CATEGORIES = [
 ];
 HP_CIRCLE_CATEGORIES.forEach(c => { if (c.keywords) HP_CATEGORY_KEYWORDS[c.id] = c.keywords; });
 
+// โลโก้สำหรับแบรนด์ที่ไม่มีแท็บของตัวเองในหน้า "สินค้าตามแบรนด์"
+// (สินค้าอยู่รวมในหมวดสายไฟทั่วไป — เพิ่มเข้า HP_BRAND_TABS ตรงๆ ไม่ได้ เพราะหน้านั้นจะหา
+// กลุ่มสินค้าของแท็บใหม่ไม่เจอแล้วพัง) ใช้เฉพาะแสดงโลโก้ในหน้ารายละเอียดสินค้าเท่านั้น
+const HP_BRAND_LOGO_EXTRA = {
+  YAZAKI: { label:'YAZAKI', fullName:'YAZAKI (ยาซากิ)', logo:'assets/brand-yazaki.png' },
+};
+
 // หาข้อมูลแบรนด์ (โลโก้/ชื่อเต็ม) จากค่า brand ที่ติดมากับสินค้า
-// สินค้าบางแบรนด์ (YAZAKI, BCC, THAI UNION ฯลฯ) ยังไม่มีใน HP_BRAND_TABS จึงคืน null ได้
+// สินค้าบางแบรนด์ (BCC, THAI UNION ฯลฯ) ยังไม่มีโลโก้เลยที่ไหน จึงคืน null ได้
 function hpBrandInfo(brand) {
-  if (!brand || typeof HP_BRAND_TABS === 'undefined') return null;
+  if (!brand) return null;
   const key = String(brand).trim().toUpperCase();
-  return HP_BRAND_TABS.find(t => String(t.key).toUpperCase() === key) || null;
+  const fromTabs = (typeof HP_BRAND_TABS !== 'undefined')
+    ? HP_BRAND_TABS.find(t => String(t.key).toUpperCase() === key)
+    : null;
+  return fromTabs || HP_BRAND_LOGO_EXTRA[key] || null;
 }
 
 function hpCategoryLabel(catId) {
