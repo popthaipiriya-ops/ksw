@@ -48,6 +48,19 @@
     .hp-scroll-hide { scrollbar-width:none; -ms-overflow-style:none; }
     .hp-scroll-hide::-webkit-scrollbar { display:none; }
 
+    /* ปุ่มเปิดแชทลอย — วงแหวนเรืองจางชวนสังเกต + จุดแดงกะพริบบนไอคอน + เด้งเข้ามาตอนโหลดหน้า */
+    @keyframes hp-chat-pulse { 0% { transform:scale(0.92); opacity:0.55; } 70% { transform:scale(1.55); opacity:0; } 100% { transform:scale(1.55); opacity:0; } }
+    @keyframes hp-chat-pop   { 0% { transform:scale(0.6) translateY(14px); opacity:0; } 60% { transform:scale(1.06) translateY(-2px); opacity:1; } 100% { transform:scale(1) translateY(0); opacity:1; } }
+    @keyframes hp-chat-blink { 0%,100% { opacity:1; } 50% { opacity:0.35; } }
+    .hp-chat-launcher { animation:hp-chat-pop 0.5s cubic-bezier(.34,1.56,.64,1) both; }
+    .hp-chat-launcher button { transition:transform 0.2s ease, box-shadow 0.2s ease; }
+    .hp-chat-launcher button:hover { transform:translateY(-3px) scale(1.03); box-shadow:0 16px 34px rgba(13,107,92,0.5); }
+    .hp-chat-ring { position:absolute; inset:0; border-radius:999px; background:#0d9488; animation:hp-chat-pulse 2.6s ease-out infinite; pointer-events:none; }
+    .hp-chat-dot { position:absolute; top:-2px; right:-2px; width:8px; height:8px; border-radius:50%; background:#f5a623; border:1.5px solid #0d6b5c; animation:hp-chat-blink 1.8s ease-in-out infinite; }
+    @media (prefers-reduced-motion: reduce) {
+      .hp-chat-launcher, .hp-chat-ring, .hp-chat-dot { animation:none !important; }
+    }
+
     @keyframes hp-marquee { from { transform:translateX(0); } to { transform:translateX(-50%); } }
     .hp-brand-track { animation:hp-marquee 26s linear infinite; }
     .hp-brand-track:hover { animation-play-state:paused; }

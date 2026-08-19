@@ -4172,15 +4172,25 @@ function HPChatWidget() {
 
   return (
     <>
-      {/* ปุ่มเปิดแชท */}
+      {/* ปุ่มเปิดแชท — วงแหวนเรืองจางๆ ชวนสังเกต + ไอคอนแชทเรียบๆ (ไม่ใช้มาสคอตแล้ว) */}
       {!open && (
-        <button onClick={() => setOpen(true)} aria-label="คุยกับผู้ช่วย"
-          style={{ position:'fixed', left:'18px', bottom:'18px', zIndex:9998,
-                   background:'#0d6b5c', color:'#fff', border:'none', borderRadius:'999px', padding:'13px 22px',
-                   fontSize:'14.5px', fontWeight:'700', cursor:'pointer', boxShadow:'0 8px 24px rgba(13,107,92,0.4)',
-                   fontFamily:'Inter, Noto Sans Thai, sans-serif' }}>
-          สอบถามข้อมูล
-        </button>
+        <div className="hp-chat-launcher" style={{ position:'fixed', left:'18px', bottom:'18px', zIndex:9998 }}>
+          <span className="hp-chat-ring" aria-hidden="true"/>
+          <button onClick={() => setOpen(true)} aria-label="คุยกับผู้ช่วย"
+            style={{ position:'relative', display:'flex', alignItems:'center', gap:'10px',
+                     background:'linear-gradient(135deg, #0d9488 0%, #0d6b5c 100%)', color:'#fff', border:'none',
+                     borderRadius:'999px', padding:'13px 22px 13px 18px', fontSize:'14.5px', fontWeight:'700',
+                     cursor:'pointer', boxShadow:'0 10px 28px rgba(13,107,92,0.42)',
+                     fontFamily:'Inter, Noto Sans Thai, sans-serif' }}>
+            <span style={{ position:'relative', width:'22px', height:'22px', flexShrink:0 }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/>
+              </svg>
+              <span className="hp-chat-dot" aria-hidden="true"/>
+            </span>
+            สอบถามข้อมูล
+          </button>
+        </div>
       )}
 
       {/* หน้าต่างแชท */}
