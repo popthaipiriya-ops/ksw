@@ -51,6 +51,12 @@
     @keyframes hp-marquee { from { transform:translateX(0); } to { transform:translateX(-50%); } }
     .hp-brand-track { animation:hp-marquee 26s linear infinite; }
     .hp-brand-track:hover { animation-play-state:paused; }
+    /* โลโก้แบรนด์ขนาดใหญ่บนเดสก์ท็อป — จอมือถือย่อลงไม่ให้กินพื้นที่จนเกินไป */
+    @media (max-width: 700px) {
+      .hp-brand-track { gap:44px !important; }
+      .hp-brand-item  { height:104px !important; width:190px !important; }
+      .hp-brand-item img { max-height:96px !important; max-width:190px !important; }
+    }
 
     @keyframes hp-pageflip { from { opacity:0; transform:rotateY(8deg) translateX(14px); } to { opacity:1; transform:rotateY(0) translateX(0); } }
     .hp-page-flip { animation:hp-pageflip 0.35s ease-out both; transform-origin:left center; }

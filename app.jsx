@@ -1069,13 +1069,13 @@ function HPBrandStrip() {
         </div>
       </div>
       <div style={{ position:'relative', WebkitMaskImage:'linear-gradient(90deg, transparent 0%, #000 6%, #000 94%, transparent 100%)', maskImage:'linear-gradient(90deg, transparent 0%, #000 6%, #000 94%, transparent 100%)' }}>
-        <div className="hp-brand-track" style={{ display:'flex', alignItems:'center', width:'max-content', gap:'64px' }}>
+        <div className="hp-brand-track" style={{ display:'flex', alignItems:'center', width:'max-content', gap:'72px' }}>
           {track.map((b, idx) => (
-            <div key={b.key + idx}
-              style={{ height:'100px', width:'200px', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', transition:'transform 0.15s ease, opacity 0.15s ease', opacity:0.85 }}
+            <div key={b.key + idx} className="hp-brand-item"
+              style={{ height:'150px', width:'290px', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', transition:'transform 0.15s ease, opacity 0.15s ease', opacity:0.85 }}
               onMouseEnter={e => { e.currentTarget.style.transform='translateY(-4px)'; e.currentTarget.style.opacity='1'; }}
               onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.opacity='0.85'; }}>
-              <img loading="lazy" decoding="async" src={b.src} alt={b.key} style={{ maxHeight:'90px', maxWidth:'200px', objectFit:'contain' }}/>
+              <img loading="lazy" decoding="async" src={b.src} alt={b.key} style={{ maxHeight:'140px', maxWidth:'290px', objectFit:'contain' }}/>
             </div>
           ))}
         </div>
