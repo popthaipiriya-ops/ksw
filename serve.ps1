@@ -30,6 +30,44 @@ $CHAT_RATE_WIN  = 60 * 60 * 1000  # ต่อ 1 ชั่วโมง
 $ChatRate       = @{}             # นับจำนวนครั้งในหน่วยความจำ (รีเซ็ตเมื่อรีสตาร์ทเซิร์ฟเวอร์)
 $LINE_URL       = 'https://lin.ee/rAFJt2QD'
 
+# คีย์ Anthropic สำหรับทดสอบในเครื่อง
+# ใช้ตัวแปรสภาพแวดล้อมก่อน ถ้าไม่มีค่อยอ่านจากไฟล์ .data\anthropic.key
+# (.data ถูก .gitignore ไว้แล้ว คีย์จึงไม่หลุดขึ้น GitHub)
+# อ่านทุกครั้งที่มีคนแชท เพื่อให้วางไฟล์คีย์แล้วใช้ได้เลยโดยไม่ต้องรีสตาร์ท
+# ส่งลิสต์ความต้องการเข้าไลน์ OA ของบริษัท (LINE Messaging API)
+# ต้องมี access token ของ Messaging API + ไอดีผู้รับ (userId หรือ groupId)
+# ตั้งผ่าน env: LINE_CHANNEL_ACCESS_TOKEN / LINE_TO
+# หรือไฟล์ .data\line.json = { "token": "...", "to": "..." }  (.data ไม่ขึ้น git)
+$LEAD_RATE_MAX = 10                # ส่งลิสต์ได้กี่ครั้งต่อ IP
+$LEAD_RATE_WIN = 60 * 60 * 1000    # ต่อ 1 ชั่วโมง
+$LeadRate      = @{}
+function Get-LinePush {
+  $token = $env:LINE_CHANNEL_ACCESS_TOKEN
+  $to    = $env:LINE_TO
+  if (-not $token -or -not $to) {
+    $lf = Join-Path $data 'line.json'
+    if (Test-Path -LiteralPath $lf) {
+      try {
+        $o = ([System.IO.File]::ReadAllText($lf, [System.Text.Encoding]::UTF8)) | ConvertFrom-Json
+        if (-not $token) { $token = [string]$o.token }
+        if (-not $to)    { $to    = [string]$o.to }
+      } catch {}
+    }
+  }
+  if (-not $token -or -not $to) { return $null }
+  return @{ token=$token; to=$to }
+}
+
+function Get-AnthropicKey {
+  if ($env:ANTHROPIC_API_KEY) { return $env:ANTHROPIC_API_KEY }
+  $kf = Join-Path $data 'anthropic.key'
+  if (Test-Path -LiteralPath $kf) {
+    $k = ([System.IO.File]::ReadAllText($kf, [System.Text.Encoding]::UTF8)).Trim()
+    if ($k) { return $k }
+  }
+  return $null
+}
+
 $CHAT_SYSTEM = @'
 คุณคือผู้ช่วยตอบคำถามลูกค้าของ "บริษัท เกิดแสงสว่าง จำกัด" (KiRD SAENG SAWANG CO.,LTD.)
 ร้านจำหน่ายอุปกรณ์ไฟฟ้าครบวงจร ทั้งปลีกและส่ง ย่านบางบอน กรุงเทพฯ
@@ -58,18 +96,26 @@ Schneider Electric · Reckon · SOKAWA · Lucky Misu · ท่อน้ำไท
 
 ขั้นตอนการคุย
 1. ทักทายแล้วถามว่าลูกค้าต้องการอะไร (หาสินค้า / อยากได้ราคา / ปรึกษาเรื่องไฟฟ้า)
-2. ถามข้อมูลที่จำเป็นแบบสั้นๆ ครั้งละ 1 คำถาม ห้ามยิงคำถามรัวเป็นชุด เช่น
-   - ต้องการสินค้าอะไร หรือทำงานแบบไหน
-   - ปริมาณ/ขนาด/จำนวน เท่าไร (ถ้าเกี่ยวข้อง)
+2. เก็บข้อมูลให้ครบ ถามครั้งละ 1 คำถาม ห้ามยิงคำถามรัวเป็นชุด สิ่งที่ต้องได้คือ
+   - สินค้า/รุ่นที่ต้องการ (ถ้าลูกค้าไม่รู้รุ่น ให้ถามลักษณะงานหรือขนาดที่ใช้แทน)
+   - จำนวนที่ต้องการ
    - ใช้กับงานอะไร เช่น บ้าน อาคาร โรงงาน
-3. พอได้ข้อมูลพอสมควรแล้ว (ปกติลูกค้าตอบ 2-3 ครั้ง) ให้สรุปแล้วส่งต่อไลน์ทันที
-   ห้ามถามวนไปเรื่อยๆ ถ้าลูกค้าบอกข้อมูลครบตั้งแต่ข้อความแรก ให้ข้ามไปสรุปได้เลย
+   - ชื่อผู้ติดต่อ และเบอร์โทรหรือไอดีไลน์ (ถามครั้งเดียว ถ้าลูกค้าไม่สะดวกให้ข้ามไป ห้ามคะยั้นคะยอ)
+3. ได้ครบแล้ว หรือลูกค้าไม่อยากให้ข้อมูลเพิ่มแล้ว ให้สรุปทันที ห้ามถามวนไปเรื่อยๆ
+   ถ้าลูกค้าบอกข้อมูลครบตั้งแต่ข้อความแรก ให้ข้ามไปสรุปได้เลย
 
 วิธีส่งต่อ (สำคัญมาก ต้องทำตามเป๊ะ)
-เมื่อพร้อมส่งต่อ ให้ปิดท้ายข้อความด้วยบรรทัดนี้ โดยขึ้นบรรทัดใหม่:
-สรุปให้ทีมงาน: <สรุปความต้องการของลูกค้าสั้นๆ ในบรรทัดเดียว>
-แล้วบอกลูกค้าว่าให้กดปุ่มสีเขียวด้านล่างเพื่อทักไลน์ ทีมงานจะดูแลต่อให้
-ใช้บรรทัด "สรุปให้ทีมงาน:" เฉพาะตอนจะส่งต่อจริงเท่านั้น ห้ามใส่ทุกข้อความ
+เมื่อพร้อมส่งต่อ ให้ปิดท้ายข้อความด้วยบล็อกนี้ ขึ้นบรรทัดใหม่ และต้องเป็นส่วนสุดท้ายของข้อความ
+สรุปให้ทีมงาน:
+- สินค้า/รุ่น: ...
+- จำนวน: ...
+- ใช้กับงาน: ...
+- ชื่อผู้ติดต่อ: ...
+- เบอร์/ไลน์: ...
+- รายละเอียดเพิ่มเติม: ...
+หัวข้อไหนไม่มีข้อมูล ให้ใส่ว่า "ไม่ได้ระบุ" ห้ามแต่งข้อมูลเอง
+ก่อนบล็อกสรุป ให้บอกลูกค้าว่ากดปุ่มสีเขียวด้านล่างเพื่อส่งลิสต์นี้ให้ทีมงานทางไลน์
+ใช้บล็อก "สรุปให้ทีมงาน:" เฉพาะตอนจะส่งต่อจริงเท่านั้น ห้ามใส่ทุกข้อความ
 
 กฎเหล็ก
 - ตอบเป็นภาษาไทยเสมอ สุภาพ เป็นกันเอง กระชับ (ปกติ 2-4 ประโยค)
@@ -90,6 +136,7 @@ $fUsers   = Join-Path $data "users.json"
 $fQuotes  = Join-Path $data "quotes.json"
 $fProds   = Join-Path $data "products.json"
 $fSetting = Join-Path $data "settings.json"
+$fLeads   = Join-Path $data "leads.json"
 $fSecret  = Join-Path $data "secret.key"
 
 function Read-Json([string]$path, $fallback) {
@@ -345,8 +392,10 @@ while ($listener.IsListening) {
 
       # ---------- ผู้ช่วย AI ตอบลูกค้า (เปิดสาธารณะ ลูกค้าหน้าเว็บใช้ได้เลย) ----------
       if ($ep -eq '/chat' -and $method -eq 'POST') {
-        if (-not $env:ANTHROPIC_API_KEY) {
-          Send-Json $res @{ error='ยังไม่ได้ตั้งค่า ANTHROPIC_API_KEY กรุณาทักไลน์ @kirdsaengsawang'; lineUrl=$LINE_URL } 503; continue
+        $apiKey = Get-AnthropicKey
+        if (-not $apiKey) {
+          Write-Host "chat: ยังไม่มีคีย์ — ใส่คีย์ที่ .data\anthropic.key หรือตั้ง `$env:ANTHROPIC_API_KEY แล้วลองใหม่" -ForegroundColor Yellow
+          Send-Json $res @{ error='ตอนนี้ผู้ช่วยยังใช้งานไม่ได้ รบกวนทักไลน์ @kirdsaengsawang นะครับ'; lineUrl=$LINE_URL } 503; continue
         }
 
         # จำกัดจำนวนครั้งต่อ IP กันค่าใช้จ่ายบานปลาย
@@ -378,6 +427,25 @@ while ($listener.IsListening) {
           Send-Json $res @{ error='รูปแบบข้อความไม่ถูกต้อง' } 400; continue
         }
 
+        # บริบทสินค้า — ส่งมาจากหน้าสินค้าตามแบรนด์ ผู้ช่วยจะได้รู้ว่าลูกค้ากำลังดูรุ่นไหนอยู่
+        $sysBlocks = @(@{ type='text'; text=$CHAT_SYSTEM; cache_control=@{ type='ephemeral' } })
+        if ($b.product) {
+          $labels = [ordered]@{ code='รุ่น/รหัส'; name='ชื่อสินค้า'; brand='แบรนด์'; cat='หมวดหมู่'; series='ซีรีส์' }
+          $lines = @()
+          foreach ($k in $labels.Keys) {
+            $v = [string]$b.product.$k
+            if (-not $v.Trim()) { continue }
+            if ($v.Length -gt 120) { $v = $v.Substring(0, 120) }
+            $lines += ("{0}: {1}" -f $labels[$k], $v)
+          }
+          if ($lines.Count -gt 0) {
+            $ctx = "ตอนนี้ลูกค้าเปิดหน้าสินค้าตัวนี้อยู่ ถ้าลูกค้าไม่ได้ระบุเป็นอย่างอื่น ให้ถือว่าคุยเรื่องสินค้าตัวนี้`r`n" +
+                   ($lines -join "`r`n") +
+                   "`r`nให้ถามความต้องการเพิ่ม เช่น จำนวนที่ต้องการ และงานที่จะเอาไปใช้ แล้วสรุปส่งทีมงาน โดยต้องมีรุ่น/รหัสสินค้าอยู่ในบรรทัดสรุปเสมอ"
+            $sysBlocks += @{ type='text'; text=$ctx }
+          }
+        }
+
         try {
           [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
           $payload = @{
@@ -386,13 +454,13 @@ while ($listener.IsListening) {
             fallbacks  = 'default'
             thinking   = @{ type='adaptive' }
             output_config = @{ effort='low' }
-            system     = @(@{ type='text'; text=$CHAT_SYSTEM; cache_control=@{ type='ephemeral' } })
+            system     = $sysBlocks
             messages   = $msgs
           }
           $jsonBody  = ConvertTo-Json -InputObject $payload -Depth 12 -Compress
           $bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($jsonBody)
           $headers = @{
-            'x-api-key'         = $env:ANTHROPIC_API_KEY
+            'x-api-key'         = $apiKey
             'anthropic-version' = '2023-06-01'
             'anthropic-beta'    = 'server-side-fallback-2026-07-01'
           }
@@ -411,6 +479,57 @@ while ($listener.IsListening) {
         } catch {
           Write-Host ("chat error: {0}" -f $_.Exception.Message) -ForegroundColor Red
           Send-Json $res @{ error='ระบบผู้ช่วยขัดข้องชั่วคราว รบกวนทักไลน์ @kirdsaengsawang นะครับ'; lineUrl=$LINE_URL } 502; continue
+        }
+      }
+
+      # ---------- ส่งลิสต์ความต้องการของลูกค้าเข้าไลน์บริษัท (เปิดสาธารณะ) ----------
+      if ($ep -eq '/lead' -and $method -eq 'POST') {
+        $ip = [string]$req.RemoteEndPoint.Address
+        $now = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        $rec = $LeadRate[$ip]
+        if ($null -eq $rec -or ($now - [int64]$rec.start) -gt $LEAD_RATE_WIN) { $rec = @{ start=$now; count=0 } }
+        if ([int]$rec.count -ge $LEAD_RATE_MAX) {
+          Send-Json $res @{ error='ส่งบ่อยเกินไป รบกวนทักไลน์ @kirdsaengsawang โดยตรงนะครับ'; lineUrl=$LINE_URL } 429; continue
+        }
+        $rec.count = [int]$rec.count + 1
+        $LeadRate[$ip] = $rec
+
+        $b = Read-Body $req
+        $summary = Trim-Max $b.summary 2000
+        if (-not $summary) { Send-Json $res @{ error='ไม่มีข้อมูลที่จะส่ง' } 400; continue }
+        $prodTxt = ''
+        if ($b.product -and (Trim-Max $b.product.code 80)) {
+          $prodTxt = "สินค้าที่ลูกค้าเปิดดู: " + (Trim-Max $b.product.code 80)
+          $pn = Trim-Max $b.product.name 120
+          if ($pn) { $prodTxt += " · $pn" }
+          $prodTxt += "`r`n"
+        }
+
+        # เก็บลิสต์ไว้ในเครื่องเสมอ ต่อให้ส่งไลน์ไม่ผ่านก็ยังไม่หาย
+        try {
+          $leads = @(Read-Json $fLeads @())
+          $leads += @{ at=(Get-Date).ToString('yyyy-MM-dd HH:mm:ss'); ip=$ip; product=$prodTxt.Trim(); summary=$summary }
+          if ($leads.Count -gt 500) { $leads = $leads[($leads.Count - 500)..($leads.Count - 1)] }
+          Write-Json $fLeads $leads
+        } catch { Write-Host ("lead save error: {0}" -f $_.Exception.Message) -ForegroundColor Yellow }
+
+        $push = Get-LinePush
+        if (-not $push) {
+          Write-Host "lead: ยังไม่ได้ตั้งค่า LINE_CHANNEL_ACCESS_TOKEN / LINE_TO — เก็บลงไฟล์อย่างเดียว" -ForegroundColor Yellow
+          Send-Json $res @{ ok=$true; sent=$false; lineUrl=$LINE_URL } 200; continue
+        }
+        try {
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+          $text = "ลูกค้าใหม่จากหน้าเว็บ`r`n$prodTxt$summary"
+          $payload = @{ to=$push.to; messages=@(@{ type='text'; text=$text }) }
+          $bytes = [System.Text.Encoding]::UTF8.GetBytes((ConvertTo-Json -InputObject $payload -Depth 8 -Compress))
+          Invoke-WebRequest -Uri 'https://api.line.me/v2/bot/message/push' -Method Post `
+            -Headers @{ 'Authorization' = "Bearer $($push.token)" } -Body $bytes `
+            -ContentType 'application/json; charset=utf-8' -UseBasicParsing -TimeoutSec 30 | Out-Null
+          Send-Json $res @{ ok=$true; sent=$true; lineUrl=$LINE_URL } 200; continue
+        } catch {
+          Write-Host ("lead push error: {0}" -f $_.Exception.Message) -ForegroundColor Red
+          Send-Json $res @{ ok=$true; sent=$false; lineUrl=$LINE_URL } 200; continue
         }
       }
 

@@ -116,6 +116,9 @@
     @media (max-width: 980px) {
       .hp-nav-desktop { display:none !important; }
       .hp-burger      { display:flex !important; }
+      /* เมนูกลางถูกซ่อนแล้ว ไม่ต้องใช้กริด 3 ช่อง — กลับไปเป็นแถวเดียว
+         ให้โลโก้ใช้พื้นที่ได้เต็ม แล้วดันปุ่มขวาไปสุดขอบด้วย margin-left:auto */
+      .hp-header-row  { display:flex !important; }
     }
     @media (max-width: 560px) {
       .hp-brand-name  { font-size:14px !important; }

@@ -396,7 +396,20 @@ const HP_HERO_SLIDES = [{
 
 // ─── HEADER ───────────────────────────────────────────────────────────────────
 
+// หน้าไหนตรงกับเมนูตัวไหน — ใช้ไฮไลต์เมนูตามหน้าที่เปิดอยู่
+const HP_PAGE_NAV = {
+  home: 'หน้าแรก',
+  brands: 'สินค้าตามแบรนด์',
+  'product-detail': 'สินค้าตามแบรนด์',
+  shop: 'สินค้าตามแบรนด์',
+  knowledge: 'เกร็ดความรู้',
+  'mdb-article': 'เกร็ดความรู้',
+  'loadcenter3p-article': 'เกร็ดความรู้',
+  catalog: 'แคตตาล็อก',
+  contact: 'ติดต่อเรา'
+};
 function HPMainHeader({
+  page,
   cartCount,
   onNavigate,
   onSearch
@@ -405,12 +418,67 @@ function HPMainHeader({
   const [openMenu, setOpenMenu] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileSub, setMobileSub] = useState(null);
+  const [scrolled, setScrolled] = useState(false);
   // กดเมนูบนมือถือแล้วต้องปิดแผงเสมอ ไม่งั้นแผงจะค้างทับหน้าใหม่
   const goMobile = t => {
     setMobileOpen(false);
     setMobileSub(null);
     onNavigate(t);
   };
+  useEffect(() => {
+    // แถบเมนูติดขอบบนอยู่แล้ว (sticky) — พอเลื่อนลงให้หดตัวลงนิดและเพิ่มเงา
+    // จะได้รู้สึกว่าแถบลอยอยู่เหนือเนื้อหา ไม่ใช่ส่วนหนึ่งของหน้า
+    // setState เฉพาะตอนข้ามเส้น 24px เท่านั้น จะได้ไม่ re-render ทุกครั้งที่เลื่อน
+    const onScroll = () => setScrolled(prev => {
+      const now = window.scrollY > 24;
+      return now === prev ? prev : now;
+    });
+    onScroll();
+    window.addEventListener('scroll', onScroll, {
+      passive: true
+    });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // ไฮไลต์เมนูตามส่วนที่กำลังดูอยู่ (เฉพาะหน้าแรกที่มีหลายส่วนในหน้าเดียว)
+  // หน้าอื่นไฮไลต์ตามหน้าที่เปิดอยู่ตรงๆ ไม่ต้องเฝ้าดูการเลื่อน
+  const [spyNav, setSpyNav] = useState('');
+  useEffect(() => {
+    setSpyNav('');
+    if (page !== 'home') return;
+    const zones = [...document.querySelectorAll('[data-hpnav]')];
+    if (!zones.length) return;
+    // เทียบจากเส้นใต้แถบเมนูลงมา 1 ส่วน 3 ของจอ — ตรงกับจุดที่สายตาคนอ่านอยู่
+    const pick = () => {
+      // เลื่อนสุดหน้าแล้วให้ไฮไลต์ส่วนสุดท้าย เพราะเส้นเทียบจะไปไม่ถึง
+      const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
+      const line = window.innerHeight / 3;
+      let found = atBottom ? zones[zones.length - 1].dataset.hpnav : '';
+      if (!found) {
+        for (const z of zones) {
+          const r = z.getBoundingClientRect();
+          if (r.top <= line && r.bottom > line) {
+            found = z.dataset.hpnav;
+            break;
+          }
+        }
+      }
+      setSpyNav(prev => found && found !== prev ? found : prev);
+    };
+    pick();
+    window.addEventListener('scroll', pick, {
+      passive: true
+    });
+    window.addEventListener('resize', pick);
+    return () => {
+      window.removeEventListener('scroll', pick);
+      window.removeEventListener('resize', pick);
+    };
+  }, [page]);
+  // ใช้ค่าจากการเลื่อนเฉพาะตอนอยู่หน้าแรกเท่านั้น
+  // ถ้าเช็คแค่ spyNav ค่าจากหน้าแรกจะค้างมาไฮไลต์ผิดเมนูตอนเปลี่ยนหน้า
+  // (เกิดจากจังหวะที่ scroll event ของ scrollTo(0,0) มาถึงก่อน effect จะถอด listener)
+  const activeNav = (page === 'home' ? spyNav : '') || HP_PAGE_NAV[page] || '';
   useEffect(() => {
     // ปิดแผงอัตโนมัติถ้าผู้ใช้ขยายจอกลับเป็นเดสก์ท็อป ไม่งั้นแผงจะค้างอยู่ทั้งที่เมนูปกติกลับมาแล้ว
     const onResize = () => {
@@ -497,9 +565,10 @@ function HPMainHeader({
   }), /*#__PURE__*/React.createElement("div", {
     style: {
       background: '#ffffff',
-      padding: '14px 0',
-      boxShadow: '0 2px 14px rgba(15,77,42,0.07)',
-      borderBottom: '1px solid #eef3ef'
+      padding: scrolled ? '7px 0' : '14px 0',
+      boxShadow: scrolled ? '0 4px 20px rgba(15,77,42,0.14)' : '0 2px 14px rgba(15,77,42,0.07)',
+      borderBottom: '1px solid #eef3ef',
+      transition: 'padding 0.22s ease, box-shadow 0.22s ease'
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "hp-header-row",
@@ -507,7 +576,8 @@ function HPMainHeader({
       maxWidth: '1240px',
       margin: '0 auto',
       padding: '0 20px',
-      display: 'flex',
+      display: 'grid',
+      gridTemplateColumns: '1fr auto 1fr',
       alignItems: 'center',
       gap: '14px'
     }
@@ -522,19 +592,20 @@ function HPMainHeader({
     onClick: () => onNavigate('home')
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      width: '46px',
-      height: '46px',
+      width: scrolled ? '38px' : '46px',
+      height: scrolled ? '38px' : '46px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      flexShrink: 0
+      flexShrink: 0,
+      transition: 'width 0.22s ease, height 0.22s ease'
     }
   }, /*#__PURE__*/React.createElement("img", {
     src: "assets/logo-kss.jpg",
     alt: "KSS",
     style: {
-      width: '46px',
-      height: '46px',
+      width: '100%',
+      height: '100%',
       objectFit: 'contain'
     }
   })), /*#__PURE__*/React.createElement("div", {
@@ -567,110 +638,112 @@ function HPMainHeader({
   }, "\u0E1A\u0E23\u0E34\u0E29\u0E31\u0E17 \u0E40\u0E01\u0E34\u0E14\u0E41\u0E2A\u0E07\u0E2A\u0E27\u0E48\u0E32\u0E07 \u0E08\u0E33\u0E01\u0E31\u0E14"))), /*#__PURE__*/React.createElement("nav", {
     className: "hp-nav-desktop",
     style: {
-      flex: 1,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       gap: '2px'
     }
-  }, navLinks.map(n => /*#__PURE__*/React.createElement("div", {
-    key: n.label,
+  }, navLinks.map(n => {
+    const isActive = activeNav === n.label;
+    return /*#__PURE__*/React.createElement("div", {
+      key: n.label,
+      style: {
+        position: 'relative'
+      },
+      onMouseEnter: () => n.submenu && setOpenMenu(n.label),
+      onMouseLeave: () => n.submenu && setOpenMenu(null)
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: scrolled ? '2px' : '5px',
+        padding: scrolled ? '3px 12px' : '7px 12px',
+        fontSize: '12.5px',
+        fontWeight: isActive ? '700' : '600',
+        color: isActive ? '#0d5c50' : '#5a7a66',
+        background: isActive ? '#eaf6f5' : 'transparent',
+        boxShadow: isActive ? 'inset 0 -2.5px 0 #8bc83f' : 'none',
+        cursor: 'pointer',
+        whiteSpace: 'nowrap',
+        borderRadius: '9px',
+        transition: 'all 0.2s'
+      },
+      onMouseEnter: e => {
+        e.currentTarget.style.background = '#eaf6f5';
+        e.currentTarget.style.color = '#0d5c50';
+      },
+      onMouseLeave: e => {
+        e.currentTarget.style.background = isActive ? '#eaf6f5' : 'transparent';
+        e.currentTarget.style.color = isActive ? '#0d5c50' : '#5a7a66';
+      },
+      onClick: () => onNavigate(n.target || n.label)
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "22",
+      height: "22",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "1.9",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }, n.icon), !n.hideLabel && n.label), n.submenu && openMenu === n.label && /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: 'absolute',
+        top: '100%',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        background: '#fff',
+        borderRadius: '12px',
+        boxShadow: '0 12px 30px rgba(15,77,42,0.14)',
+        border: '1px solid #eef3ef',
+        padding: '8px',
+        minWidth: '260px',
+        zIndex: 50
+      }
+    }, n.submenu.map(s => /*#__PURE__*/React.createElement("div", {
+      key: s.label,
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '10px',
+        padding: '10px 14px',
+        fontSize: '13px',
+        fontWeight: '600',
+        color: '#3a4a42',
+        cursor: 'pointer',
+        borderRadius: '8px',
+        whiteSpace: 'nowrap',
+        textAlign: 'left'
+      },
+      onMouseEnter: e => {
+        e.currentTarget.style.background = '#eaf6f5';
+        e.currentTarget.style.color = '#0d5c50';
+      },
+      onMouseLeave: e => {
+        e.currentTarget.style.background = 'transparent';
+        e.currentTarget.style.color = '#3a4a42';
+      },
+      onClick: () => {
+        setOpenMenu(null);
+        onNavigate(s.target);
+      }
+    }, /*#__PURE__*/React.createElement("span", null, s.label), s.badge && /*#__PURE__*/React.createElement("span", {
+      style: {
+        background: '#f05a20',
+        color: '#fff',
+        fontSize: '11px',
+        fontWeight: '700',
+        padding: '3px 10px',
+        borderRadius: '999px',
+        flexShrink: 0
+      }
+    }, "Member")))));
+  })), /*#__PURE__*/React.createElement("div", {
     style: {
-      position: 'relative'
-    },
-    onMouseEnter: () => n.submenu && setOpenMenu(n.label),
-    onMouseLeave: () => n.submenu && setOpenMenu(null)
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      gap: '5px',
-      padding: '7px 12px',
-      fontSize: '12.5px',
-      fontWeight: '600',
-      color: '#5a7a66',
-      cursor: 'pointer',
-      whiteSpace: 'nowrap',
-      borderRadius: '9px',
-      transition: 'all 0.15s'
-    },
-    onMouseEnter: e => {
-      e.currentTarget.style.background = '#eaf6f5';
-      e.currentTarget.style.color = '#0d5c50';
-    },
-    onMouseLeave: e => {
-      e.currentTarget.style.background = 'transparent';
-      e.currentTarget.style.color = '#5a7a66';
-    },
-    onClick: () => onNavigate(n.target || n.label)
-  }, /*#__PURE__*/React.createElement("svg", {
-    width: "22",
-    height: "22",
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "1.9",
-    strokeLinecap: "round",
-    strokeLinejoin: "round"
-  }, n.icon), !n.hideLabel && n.label), n.submenu && openMenu === n.label && /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: 'absolute',
-      top: '100%',
-      left: '50%',
-      transform: 'translateX(-50%)',
-      background: '#fff',
-      borderRadius: '12px',
-      boxShadow: '0 12px 30px rgba(15,77,42,0.14)',
-      border: '1px solid #eef3ef',
-      padding: '8px',
-      minWidth: '260px',
-      zIndex: 50
-    }
-  }, n.submenu.map(s => /*#__PURE__*/React.createElement("div", {
-    key: s.label,
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: '10px',
-      padding: '10px 14px',
-      fontSize: '13px',
-      fontWeight: '600',
-      color: '#3a4a42',
-      cursor: 'pointer',
-      borderRadius: '8px',
-      whiteSpace: 'nowrap',
-      textAlign: 'left'
-    },
-    onMouseEnter: e => {
-      e.currentTarget.style.background = '#eaf6f5';
-      e.currentTarget.style.color = '#0d5c50';
-    },
-    onMouseLeave: e => {
-      e.currentTarget.style.background = 'transparent';
-      e.currentTarget.style.color = '#3a4a42';
-    },
-    onClick: () => {
-      setOpenMenu(null);
-      onNavigate(s.target);
-    }
-  }, /*#__PURE__*/React.createElement("span", null, s.label), s.badge && /*#__PURE__*/React.createElement("span", {
-    style: {
-      background: '#f05a20',
-      color: '#fff',
-      fontSize: '11px',
-      fontWeight: '700',
-      padding: '3px 10px',
-      borderRadius: '999px',
-      flexShrink: 0
-    }
-  }, "Member"))))))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1
-    }
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
+      gridColumn: '3',
+      marginLeft: 'auto',
       display: 'flex',
       alignItems: 'center',
       gap: '8px',
@@ -803,8 +876,9 @@ function HPMainHeader({
       gap: '12px',
       padding: '13px 12px',
       fontSize: '15px',
-      fontWeight: '600',
-      color: '#3a4a42',
+      fontWeight: activeNav === n.label ? '800' : '600',
+      color: activeNav === n.label ? '#0d5c50' : '#3a4a42',
+      background: activeNav === n.label ? '#eaf6f5' : 'transparent',
       cursor: 'pointer',
       borderRadius: '10px'
     },
@@ -867,6 +941,7 @@ function HPMainHeader({
   }, "\u2022 ", s.label))))))));
 }
 function HPHeader({
+  page,
   cartCount,
   onNavigate,
   onCategoryChange,
@@ -879,6 +954,7 @@ function HPHeader({
       zIndex: 100
     }
   }, /*#__PURE__*/React.createElement(HPMainHeader, {
+    page: page,
     cartCount: cartCount,
     onNavigate: onNavigate,
     onSearch: onSearch
@@ -3347,6 +3423,9 @@ function HPBrandStrip() {
   }, {
     key: 'schneider',
     src: 'assets/schneider-electric.svg'
+  }, {
+    key: 'racer',
+    src: 'assets/brand-racer.png'
   }];
   const track = [...brands, ...brands];
   return /*#__PURE__*/React.createElement("section", {
@@ -4471,9 +4550,12 @@ function HPWholesalePage() {
     }
   }, "\u0E08\u0E31\u0E19\u0E17\u0E23\u0E4C \u2013 \u0E40\u0E2A\u0E32\u0E23\u0E4C 08:30 \u2013 17:30 \u0E19."))))));
 }
+
+// embedded = ถูกวางอยู่ในหน้าเดียว (one-page) จึงไม่ต้องมีเบรดครัมบ์ "หน้าหลัก ›"
 function HPKnowledgePage({
   onCategoryChange,
-  onNavigate
+  onNavigate,
+  embedded
 }) {
   const KI = {
     award: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
@@ -4599,7 +4681,7 @@ function HPKnowledgePage({
       margin: '0 auto',
       padding: '0 20px'
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, !embedded && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: '14px',
       color: '#888',
@@ -6072,6 +6154,71 @@ function HPProductGallery({
     onClose: () => setOpen(false)
   }));
 }
+const HP_LINE_URL = 'https://lin.ee/rAFJt2QD';
+function hpCopyText(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).catch(() => {});
+    return;
+  }
+  // clipboard API ใช้ไม่ได้ถ้าไม่ได้เปิดผ่าน https (เช่นตอนทดสอบในเครื่อง)
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+  } catch {}
+  document.body.removeChild(ta);
+}
+
+// lin.ee ส่งข้อความล่วงหน้าไม่ได้ จึงคัดลอกข้อมูลสินค้าไว้ให้ลูกค้าวางในไลน์แทน
+function hpProductLineText(p) {
+  return 'สวัสดีครับ สนใจสินค้าจากหน้าเว็บครับ\n' + 'รุ่น: ' + p.code + '\n' + (p.name ? p.name + '\n' : '') + (p.brand ? 'แบรนด์: ' + p.brand + '\n' : '') + 'รบกวนขอราคาและรายละเอียดครับ';
+}
+
+// เปิดผู้ช่วย AI พร้อมบริบทสินค้า — วิดเจ็ตแชทถูกเรนเดอร์ที่ระดับ HPApp จึงสื่อสารผ่าน event
+function hpAskAboutProduct(p) {
+  window.dispatchEvent(new CustomEvent('hp-ask-product', {
+    detail: p
+  }));
+}
+function HPProductLineButton({
+  product
+}) {
+  return /*#__PURE__*/React.createElement("a", {
+    href: HP_LINE_URL,
+    target: "_blank",
+    rel: "noopener noreferrer",
+    onClick: e => {
+      e.stopPropagation();
+      hpCopyText(hpProductLineText(product));
+    },
+    title: `ทักไลน์เรื่อง ${product.code}`,
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '9px',
+      background: '#06c755',
+      color: '#fff',
+      fontWeight: '700',
+      textDecoration: 'none',
+      fontSize: '14.5px',
+      padding: '13px 28px',
+      borderRadius: '999px',
+      boxShadow: '0 6px 18px rgba(6,199,85,0.3)'
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "18",
+    height: "18",
+    viewBox: "0 0 24 24",
+    fill: "#fff"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M12 2C6.48 2 2 5.92 2 10.8c0 3.27 1.96 6.16 4.95 7.87L6 21l3.24-1.62c.88.24 1.81.37 2.76.37 5.52 0 10-3.92 10-8.75S17.52 2 12 2z"
+  })), "\u0E2A\u0E2D\u0E1A\u0E16\u0E32\u0E21\u0E23\u0E32\u0E04\u0E32/\u0E2A\u0E31\u0E48\u0E07\u0E0B\u0E37\u0E49\u0E2D\u0E17\u0E32\u0E07 LINE");
+}
 function HPProductDetailPage({
   product,
   onBack,
@@ -6246,31 +6393,36 @@ function HPProductDetailPage({
       gap: '12px',
       flexWrap: 'wrap'
     }
-  }, /*#__PURE__*/React.createElement("a", {
-    href: "https://lin.ee/rAFJt2QD",
-    target: "_blank",
-    rel: "noopener noreferrer",
+  }, /*#__PURE__*/React.createElement(HPProductLineButton, {
+    product: product
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: () => hpAskAboutProduct(product),
     style: {
       display: 'inline-flex',
       alignItems: 'center',
       gap: '9px',
-      background: '#06c755',
+      background: '#0d6b5c',
       color: '#fff',
       fontWeight: '700',
       fontSize: '14.5px',
       padding: '13px 28px',
       borderRadius: '999px',
-      textDecoration: 'none',
-      boxShadow: '0 6px 18px rgba(6,199,85,0.3)'
+      border: 'none',
+      cursor: 'pointer',
+      fontFamily: 'Inter, Noto Sans Thai, sans-serif'
     }
   }, /*#__PURE__*/React.createElement("svg", {
-    width: "18",
-    height: "18",
+    width: "17",
+    height: "17",
     viewBox: "0 0 24 24",
-    fill: "#fff"
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
   }, /*#__PURE__*/React.createElement("path", {
-    d: "M12 2C6.48 2 2 5.92 2 10.8c0 3.27 1.96 6.16 4.95 7.87L6 21l3.24-1.62c.88.24 1.81.37 2.76.37 5.52 0 10-3.92 10-8.75S17.52 2 12 2z"
-  })), "\u0E2A\u0E2D\u0E1A\u0E16\u0E32\u0E21\u0E23\u0E32\u0E04\u0E32/\u0E2A\u0E31\u0E48\u0E07\u0E0B\u0E37\u0E49\u0E2D\u0E17\u0E32\u0E07 LINE"), /*#__PURE__*/React.createElement("button", {
+    d: "M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"
+  })), "\u0E2A\u0E2D\u0E1A\u0E16\u0E32\u0E21\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E19\u0E35\u0E49"), /*#__PURE__*/React.createElement("button", {
     onClick: () => onNavigate && onNavigate('แคตตาล็อก'),
     style: {
       display: 'inline-flex',
@@ -6369,11 +6521,18 @@ function HPProductDetailPage({
     }
   }, p.name))))))));
 }
+
+// embedded = อยู่ในหน้าเดียว จึงโชว์ตัวอย่างแบรนด์ละไม่กี่รายการ
+// ถ้าเทสินค้าทั้ง 6,000 รายการลงหน้าแรก หน้าจะยาว 400,000 px เลื่อนผ่านไปส่วนอื่นไม่ไหว
+const HP_BRAND_PREVIEW_COUNT = 5;
 function HPBrandProductsPage({
-  onSelectProduct
+  onSelectProduct,
+  embedded,
+  onViewAll,
+  initialBrand
 }) {
   const [zoomProduct, setZoomProduct] = useState(null);
-  const [selectedBrand, setSelectedBrand] = useState('all');
+  const [selectedBrand, setSelectedBrand] = useState(initialBrand || 'all');
   const [collapsed, setCollapsed] = useState({});
   const toggleCat = key => setCollapsed(prev => ({
     ...prev,
@@ -6433,7 +6592,7 @@ function HPBrandProductsPage({
       margin: '0 auto',
       padding: '0 20px'
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, !embedded && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: '14px',
       color: '#888',
@@ -6451,7 +6610,7 @@ function HPBrandProductsPage({
       gap: '28px',
       alignItems: 'flex-start'
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, !embedded && /*#__PURE__*/React.createElement("div", {
     className: "hp-brand-sidebar",
     style: {
       width: '250px',
@@ -6546,6 +6705,148 @@ function HPBrandProductsPage({
     products.forEach(p => {
       if (!categories.includes(p.cat)) categories.push(p.cat);
     });
+    const card = (p, i) => {
+      const thumb = p.images && p.images[0] || p.img;
+      return /*#__PURE__*/React.createElement("div", {
+        key: i,
+        style: {
+          background: '#fff',
+          border: '1px solid #eef0f2',
+          borderRadius: '12px',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          cursor: 'pointer',
+          transition: 'box-shadow 0.18s ease, transform 0.18s ease'
+        },
+        onMouseEnter: e => {
+          e.currentTarget.style.boxShadow = '0 10px 22px rgba(0,0,0,0.09)';
+          e.currentTarget.style.transform = 'translateY(-3px)';
+        },
+        onMouseLeave: e => {
+          e.currentTarget.style.boxShadow = 'none';
+          e.currentTarget.style.transform = 'translateY(0)';
+        },
+        onClick: () => onSelectProduct(p)
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          height: '140px',
+          background: '#f9fafb',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '12px',
+          position: 'relative'
+        }
+      }, /*#__PURE__*/React.createElement("img", {
+        loading: "lazy",
+        decoding: "async",
+        src: thumb,
+        style: {
+          maxWidth: '100%',
+          maxHeight: '100%',
+          objectFit: 'contain'
+        },
+        onError: e => e.target.style.display = 'none'
+      }), /*#__PURE__*/React.createElement("div", {
+        onClick: e => {
+          e.stopPropagation();
+          setZoomProduct(p);
+        },
+        title: "\u0E14\u0E39\u0E23\u0E39\u0E1B\u0E02\u0E19\u0E32\u0E14\u0E43\u0E2B\u0E0D\u0E48",
+        style: {
+          position: 'absolute',
+          bottom: '6px',
+          right: '6px',
+          width: '26px',
+          height: '26px',
+          borderRadius: '50%',
+          background: 'rgba(13,92,80,0.85)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }
+      }, /*#__PURE__*/React.createElement("svg", {
+        width: "13",
+        height: "13",
+        viewBox: "0 0 24 24",
+        fill: "none",
+        stroke: "#fff",
+        strokeWidth: "2.4",
+        strokeLinecap: "round",
+        strokeLinejoin: "round"
+      }, /*#__PURE__*/React.createElement("circle", {
+        cx: "11",
+        cy: "11",
+        r: "7"
+      }), /*#__PURE__*/React.createElement("path", {
+        d: "M11 8v6M8 11h6"
+      }), /*#__PURE__*/React.createElement("path", {
+        d: "M21 21l-4.35-4.35"
+      })))), /*#__PURE__*/React.createElement("div", {
+        style: {
+          padding: '11px 12px 13px',
+          borderTop: '1px solid #f2f4f2'
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: '12.5px',
+          fontWeight: '800',
+          color: '#0d9488',
+          marginBottom: '3px'
+        }
+      }, p.code), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: '11.5px',
+          color: '#667',
+          lineHeight: '1.4',
+          marginBottom: '8px',
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden'
+        }
+      }, p.name), /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: '11.5px',
+          color: '#0d5c50',
+          fontWeight: '700'
+        }
+      }, "\u0E14\u0E39\u0E23\u0E32\u0E22\u0E25\u0E30\u0E40\u0E2D\u0E35\u0E22\u0E14 \u2192"), /*#__PURE__*/React.createElement("button", {
+        onClick: e => {
+          e.stopPropagation();
+          hpAskAboutProduct(p);
+        },
+        style: {
+          width: '100%',
+          marginTop: '10px',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '6px',
+          background: '#fff',
+          color: '#0d6b5c',
+          border: '1px solid #cfe3dc',
+          borderRadius: '999px',
+          padding: '7px 8px',
+          fontSize: '11.5px',
+          fontWeight: '700',
+          cursor: 'pointer',
+          fontFamily: 'Inter, Noto Sans Thai, sans-serif'
+        }
+      }, /*#__PURE__*/React.createElement("svg", {
+        width: "13",
+        height: "13",
+        viewBox: "0 0 24 24",
+        fill: "none",
+        stroke: "currentColor",
+        strokeWidth: "2",
+        strokeLinecap: "round",
+        strokeLinejoin: "round"
+      }, /*#__PURE__*/React.createElement("path", {
+        d: "M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"
+      })), "\u0E2A\u0E2D\u0E1A\u0E16\u0E32\u0E21")));
+    };
     return /*#__PURE__*/React.createElement("div", {
       key: brandTab.key,
       id: `brand-${brandTab.key}`,
@@ -6591,8 +6892,8 @@ function HPBrandProductsPage({
         color: '#889',
         marginTop: '2px'
       }
-    }, brandTab.desc))), selectedBrand === 'all' && /*#__PURE__*/React.createElement("button", {
-      onClick: () => setSelectedBrand(brandTab.key),
+    }, brandTab.desc))), (embedded || selectedBrand === 'all') && /*#__PURE__*/React.createElement("button", {
+      onClick: () => embedded ? onViewAll && onViewAll(brandTab.key) : setSelectedBrand(brandTab.key),
       style: {
         fontSize: '13px',
         fontWeight: '700',
@@ -6604,7 +6905,14 @@ function HPBrandProductsPage({
         cursor: 'pointer',
         whiteSpace: 'nowrap'
       }
-    }, "\u0E14\u0E39\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E31\u0E49\u0E07\u0E2B\u0E21\u0E14 \u2192")), categories.map((cat, ci) => {
+    }, "\u0E14\u0E39\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E31\u0E49\u0E07\u0E2B\u0E21\u0E14 ", embedded ? `(${products.length} รายการ)` : '', " \u2192")), embedded ? /*#__PURE__*/React.createElement("div", {
+      className: "hp-product-grid",
+      style: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(5, 1fr)',
+        gap: '16px'
+      }
+    }, products.slice(0, HP_BRAND_PREVIEW_COUNT).map(card)) : categories.map((cat, ci) => {
       const catKey = `${brandTab.key}-${cat}`;
       const isCollapsed = !!collapsed[catKey];
       const catProducts = products.filter(p => p.cat === cat);
@@ -6661,115 +6969,7 @@ function HPBrandProductsPage({
           gap: '16px',
           marginBottom: '8px'
         }
-      }, catProducts.map((p, i) => {
-        const thumb = p.images && p.images[0] || p.img;
-        return /*#__PURE__*/React.createElement("div", {
-          key: i,
-          style: {
-            background: '#fff',
-            border: '1px solid #eef0f2',
-            borderRadius: '12px',
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column',
-            cursor: 'pointer',
-            transition: 'box-shadow 0.18s ease, transform 0.18s ease'
-          },
-          onMouseEnter: e => {
-            e.currentTarget.style.boxShadow = '0 10px 22px rgba(0,0,0,0.09)';
-            e.currentTarget.style.transform = 'translateY(-3px)';
-          },
-          onMouseLeave: e => {
-            e.currentTarget.style.boxShadow = 'none';
-            e.currentTarget.style.transform = 'translateY(0)';
-          },
-          onClick: () => onSelectProduct(p)
-        }, /*#__PURE__*/React.createElement("div", {
-          style: {
-            height: '140px',
-            background: '#f9fafb',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '12px',
-            position: 'relative'
-          }
-        }, /*#__PURE__*/React.createElement("img", {
-          loading: "lazy",
-          decoding: "async",
-          src: thumb,
-          style: {
-            maxWidth: '100%',
-            maxHeight: '100%',
-            objectFit: 'contain'
-          },
-          onError: e => e.target.style.display = 'none'
-        }), /*#__PURE__*/React.createElement("div", {
-          onClick: e => {
-            e.stopPropagation();
-            setZoomProduct(p);
-          },
-          title: "\u0E14\u0E39\u0E23\u0E39\u0E1B\u0E02\u0E19\u0E32\u0E14\u0E43\u0E2B\u0E0D\u0E48",
-          style: {
-            position: 'absolute',
-            bottom: '6px',
-            right: '6px',
-            width: '26px',
-            height: '26px',
-            borderRadius: '50%',
-            background: 'rgba(13,92,80,0.85)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }
-        }, /*#__PURE__*/React.createElement("svg", {
-          width: "13",
-          height: "13",
-          viewBox: "0 0 24 24",
-          fill: "none",
-          stroke: "#fff",
-          strokeWidth: "2.4",
-          strokeLinecap: "round",
-          strokeLinejoin: "round"
-        }, /*#__PURE__*/React.createElement("circle", {
-          cx: "11",
-          cy: "11",
-          r: "7"
-        }), /*#__PURE__*/React.createElement("path", {
-          d: "M11 8v6M8 11h6"
-        }), /*#__PURE__*/React.createElement("path", {
-          d: "M21 21l-4.35-4.35"
-        })))), /*#__PURE__*/React.createElement("div", {
-          style: {
-            padding: '11px 12px 13px',
-            borderTop: '1px solid #f2f4f2'
-          }
-        }, /*#__PURE__*/React.createElement("div", {
-          style: {
-            fontSize: '12.5px',
-            fontWeight: '800',
-            color: '#0d9488',
-            marginBottom: '3px'
-          }
-        }, p.code), /*#__PURE__*/React.createElement("div", {
-          style: {
-            fontSize: '11.5px',
-            color: '#667',
-            lineHeight: '1.4',
-            marginBottom: '8px',
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden'
-          }
-        }, p.name), /*#__PURE__*/React.createElement("span", {
-          style: {
-            fontSize: '11.5px',
-            color: '#0d5c50',
-            fontWeight: '700'
-          }
-        }, "\u0E14\u0E39\u0E23\u0E32\u0E22\u0E25\u0E30\u0E40\u0E2D\u0E35\u0E22\u0E14 \u2192")));
-      })));
+      }, catProducts.map(card)));
     }));
   })))), zoomProduct && /*#__PURE__*/React.createElement(HPImageZoomRotateModal, {
     frames: zoomProduct.images && zoomProduct.images.length ? zoomProduct.images : [zoomProduct.img],
@@ -6900,7 +7100,9 @@ const HP_CATALOG_BRANDS = [{
   product: 'assets/nano led.png',
   hideLogoBar: true
 }];
-function HPCatalogPage() {
+function HPCatalogPage({
+  embedded
+}) {
   const [page, setPage] = useState(0);
   const [zoomOpen, setZoomOpen] = useState(false);
   // แคตตาล็อกตั้งค่าได้จากระบบหลังบ้าน (หน้า "ตั้งค่าเว็บไซต์") ไม่ต้องแก้โค้ด
@@ -6974,7 +7176,7 @@ function HPCatalogPage() {
       margin: '0 auto',
       padding: '0 20px'
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, !embedded && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: '14px',
       color: '#888',
@@ -7339,7 +7541,9 @@ function HPCatalogPage() {
     onClose: () => setZoomOpen(false)
   }));
 }
-function HPContactPage() {
+function HPContactPage({
+  embedded
+}) {
   const mapUrl = 'https://www.google.com/maps/place/%E0%B9%84%E0%B8%97%E0%B8%A2%E0%B8%9E%E0%B8%B4%E0%B8%A3%E0%B8%B4%E0%B8%A2%E0%B8%B0/data=!4m2!3m1!1s0x30e2bd6acd643603:0x9149d67fc97ac02b!18m1!1e1?utm_source=mstt_1&entry=gps';
   const items = [{
     label: 'โทรศัพท์',
@@ -7385,7 +7589,7 @@ function HPContactPage() {
       margin: '0 auto',
       padding: '0 20px'
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, !embedded && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: '14px',
       color: '#888',
@@ -12376,60 +12580,285 @@ function HPAdminPanel({
 }
 
 // ผู้ช่วย AI รับเรื่องลูกค้า — ถามความต้องการ แล้วส่งต่อให้ทีมงานทางไลน์ OA
+// มาสคอตผู้ช่วย — ช่างไฟใส่หมวกวิศวกร (วาดเป็น SVG จะได้คมทุกขนาดและไม่ต้องโหลดรูปเพิ่ม)
+function HPEngineerIcon({
+  size = 26
+}) {
+  return /*#__PURE__*/React.createElement("svg", {
+    width: size,
+    height: size,
+    viewBox: "0 0 48 48",
+    fill: "none",
+    "aria-hidden": "true",
+    style: {
+      flexShrink: 0,
+      display: 'block'
+    }
+  }, /*#__PURE__*/React.createElement("defs", null, /*#__PURE__*/React.createElement("clipPath", {
+    id: "hpEngRing"
+  }, /*#__PURE__*/React.createElement("circle", {
+    cx: "24",
+    cy: "24",
+    r: "23"
+  }))), /*#__PURE__*/React.createElement("circle", {
+    cx: "24",
+    cy: "24",
+    r: "23",
+    fill: "#fff"
+  }), /*#__PURE__*/React.createElement("g", {
+    clipPath: "url(#hpEngRing)",
+    transform: "translate(2.4 2.6) scale(0.9)"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M4 48c0-7.8 9-12.4 20-12.4S44 40.2 44 48z",
+    fill: "#22314e"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M17.6 36.2 24 43.6l6.4-7.4c1.8.4 3.4 1 4.8 1.7L24 48 12.8 37.9c1.4-.7 3-1.3 4.8-1.7z",
+    fill: "#e0433a"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M19.6 30h8.8v7.6c0 2.4-8.8 2.4-8.8 0z",
+    fill: "#e8ab7d"
+  }), /*#__PURE__*/React.createElement("ellipse", {
+    cx: "9.6",
+    cy: "25.6",
+    rx: "2.8",
+    ry: "3.5",
+    fill: "#f3c096"
+  }), /*#__PURE__*/React.createElement("ellipse", {
+    cx: "38.4",
+    cy: "25.6",
+    rx: "2.8",
+    ry: "3.5",
+    fill: "#f3c096"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M9.6 15h3.6v11a1.8 1.8 0 0 1-3.6 0z",
+    fill: "#33261e"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M34.8 15h3.6v11a1.8 1.8 0 0 1-3.6 0z",
+    fill: "#33261e"
+  }), /*#__PURE__*/React.createElement("ellipse", {
+    cx: "24",
+    cy: "24",
+    rx: "13.2",
+    ry: "14",
+    fill: "#f6c9a0"
+  }), /*#__PURE__*/React.createElement("ellipse", {
+    cx: "18.4",
+    cy: "24.6",
+    rx: "4.1",
+    ry: "4.6",
+    fill: "#fff"
+  }), /*#__PURE__*/React.createElement("ellipse", {
+    cx: "29.6",
+    cy: "24.6",
+    rx: "4.1",
+    ry: "4.6",
+    fill: "#fff"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "19",
+    cy: "25",
+    r: "2.5",
+    fill: "#2b2118"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "30.2",
+    cy: "25",
+    r: "2.5",
+    fill: "#2b2118"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "19.9",
+    cy: "23.9",
+    r: "0.9",
+    fill: "#fff"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "31.1",
+    cy: "23.9",
+    r: "0.9",
+    fill: "#fff"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M24 27.4v2.2",
+    stroke: "#d9a075",
+    strokeWidth: "1.8",
+    strokeLinecap: "round"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M17.8 32c1.7 3.4 10.7 3.4 12.4 0z",
+    fill: "#7a2f2a"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M19 32h10c-1.2 2.9-8.8 2.9-10 0z",
+    fill: "#fff"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M12.6 13.4C12.6 6 17.7 0.4 24 0.4S35.4 6 35.4 13.4z",
+    fill: "#f7b93f"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M24 0.9v12.5M17.6 2.6c-1.7 3-2.5 7-2.5 11M30.4 2.6c1.7 3 2.5 7 2.5 11",
+    stroke: "#e0921a",
+    strokeWidth: "1.8",
+    strokeLinecap: "round"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "2.6",
+    y: "12.4",
+    width: "42.8",
+    height: "5.4",
+    rx: "2.7",
+    fill: "#f5a623"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "2.6",
+    y: "15.2",
+    width: "42.8",
+    height: "2.6",
+    rx: "1.3",
+    fill: "#e0921a"
+  })));
+}
 function HPChatWidget() {
-  const LINE = 'https://lin.ee/rAFJt2QD';
+  const LINE = HP_LINE_URL;
   const SUMMARY_TAG = 'สรุปให้ทีมงาน:';
   const GREET = 'สวัสดีครับ 👋 ผมเป็นผู้ช่วยของเกิดแสงสว่าง\nไม่ทราบว่าวันนี้ต้องการอะไรครับ? บอกมาคร่าวๆ ได้เลย เดี๋ยวผมสรุปส่งให้ทีมงานดูแลต่อทางไลน์ครับ';
   const SUGGEST = ['อยากได้ราคา/ใบเสนอราคา', 'หาสินค้าอยู่', 'ปรึกษาเรื่องระบบไฟ'];
+  const SUGGEST_PRODUCT = ['อยากได้ราคารุ่นนี้', 'ต้องการหลายชิ้น', 'มีของพร้อมส่งไหม'];
+  const FORM_STEPS = [{
+    key: 'item',
+    label: 'สินค้า/รุ่น',
+    q: 'ต้องการสินค้าอะไรครับ? บอกรุ่นหรือลักษณะงานคร่าวๆ ได้เลยครับ'
+  }, {
+    key: 'qty',
+    label: 'จำนวน',
+    q: 'ต้องการจำนวนเท่าไรครับ?'
+  }, {
+    key: 'usage',
+    label: 'ใช้กับงาน',
+    q: 'เอาไปใช้กับงานแบบไหนครับ เช่น บ้าน อาคาร โรงงาน'
+  }, {
+    key: 'name',
+    label: 'ชื่อผู้ติดต่อ',
+    q: 'ขอชื่อผู้ติดต่อด้วยครับ'
+  }, {
+    key: 'tel',
+    label: 'เบอร์/ไลน์',
+    q: 'ขอเบอร์โทรหรือไอดีไลน์ไว้ติดต่อกลับครับ (ถ้าไม่สะดวก พิมพ์ว่า ข้าม ได้เลย)'
+  }];
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState([{
     role: 'assistant',
-    content: GREET
+    content: GREET,
+    intro: true
   }]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState('');
   const [copied, setCopied] = useState(false);
+  const [product, setProduct] = useState(null);
+  // โหมดเก็บข้อมูลสำรอง — ใช้เมื่อผู้ช่วย AI ไม่พร้อม (ยังไม่ได้ตั้งคีย์ / โควตาหมด / เน็ตล่ม)
+  // ถามทีละข้อจนครบแล้วสร้างลิสต์รูปแบบเดียวกับที่ AI สร้าง ปุ่มส่งไลน์จึงทำงานได้เหมือนกัน
+  const [form, setForm] = useState(null); // { step, data }
   const bodyRef = React.useRef(null);
 
-  // ดึงบรรทัดสรุปจากข้อความล่าสุดของผู้ช่วย — ใช้ให้ลูกค้าคัดลอกไปวางในไลน์
-  // ทีมงานจะได้เห็นเลยว่าลูกค้าต้องการอะไร ไม่ต้องเริ่มถามใหม่
+  // เปิดแชทจากหน้าสินค้า — เริ่มบทสนทนาใหม่โดยผูกกับสินค้าตัวที่ลูกค้ากดมา
+  useEffect(() => {
+    const onAsk = e => {
+      const p = e.detail;
+      if (!p) return;
+      setProduct(p);
+      setInput('');
+      setForm(null);
+      setMsgs([{
+        role: 'assistant',
+        intro: true,
+        content: 'สวัสดีครับ 👋 สนใจ ' + p.code + (p.name ? ' (' + p.name + ')' : '') + ' ใช่ไหมครับ\n' + 'ไม่ทราบว่าต้องการแบบไหนครับ? บอกจำนวนที่ต้องการหรืองานที่จะเอาไปใช้คร่าวๆ ได้เลย เดี๋ยวผมสรุปส่งให้ทีมงานดูแลต่อทางไลน์ครับ'
+      }]);
+      setOpen(true);
+    };
+    window.addEventListener('hp-ask-product', onAsk);
+    return () => window.removeEventListener('hp-ask-product', onAsk);
+  }, []);
+
+  // ดึงลิสต์สรุปจากข้อความล่าสุดของผู้ช่วย (ทุกบรรทัดหลังหัวข้อ "สรุปให้ทีมงาน:")
+  // ลิสต์นี้คือสิ่งที่จะยิงเข้าไลน์บริษัท ทีมงานจะได้เห็นครบโดยไม่ต้องเริ่มถามใหม่
   const summary = (() => {
     for (let i = msgs.length - 1; i >= 0; i--) {
       const m = msgs[i];
       if (m.role !== 'assistant') continue;
       const at = m.content.indexOf(SUMMARY_TAG);
-      if (at >= 0) return m.content.slice(at + SUMMARY_TAG.length).split('\n')[0].trim();
+      if (at >= 0) return m.content.slice(at + SUMMARY_TAG.length).trim();
     }
     return '';
   })();
-  const copySummary = async () => {
-    const text = 'สวัสดีครับ ผมคุยกับผู้ช่วยหน้าเว็บมาแล้ว\nความต้องการ: ' + summary;
+
+  // '' = ยังไม่ได้ส่ง · 'sent' = เข้าไลน์บริษัทแล้ว · 'copy' = ส่งเองไม่ได้ คัดลอกไว้ให้วางแทน
+  const [sendState, setSendState] = useState('');
+  const [sending, setSending] = useState(false);
+  useEffect(() => {
+    setSendState('');
+  }, [summary]);
+  const leadText = () => 'สวัสดีครับ ผมคุยกับผู้ช่วยหน้าเว็บมาแล้ว\n' + (product ? 'สินค้าที่สนใจ: ' + product.code + (product.name ? ' · ' + product.name : '') + '\n' : '') + summary;
+  const sendLead = async () => {
+    if (sending || !summary) return;
+    setSending(true);
+    let sent = false;
     try {
-      await navigator.clipboard.writeText(text);
-    } catch {
-      // บางเบราว์เซอร์ไม่ให้ใช้ clipboard API ถ้าไม่ได้เปิดผ่าน https
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.style.position = 'fixed';
-      ta.style.opacity = '0';
-      document.body.appendChild(ta);
-      ta.select();
-      try {
-        document.execCommand('copy');
-      } catch {}
-      document.body.removeChild(ta);
+      const r = await fetch('/api/lead', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          summary,
+          product: product ? {
+            code: product.code,
+            name: product.name
+          } : undefined
+        })
+      });
+      const data = await r.json().catch(() => ({}));
+      sent = !!(r.ok && data.sent);
+    } catch {}
+    // ส่งเข้าไลน์ไม่ได้ (ยังไม่ได้ตั้งค่า หรือเน็ตล่ม) — คัดลอกไว้ให้ลูกค้าวางเองแทน จะได้ไม่เสียเรื่อง
+    if (!sent) {
+      hpCopyText(leadText());
+      setCopied(true);
     }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
+    setSendState(sent ? 'sent' : 'copy');
+    setSending(false);
   };
   useEffect(() => {
     if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
   }, [msgs, busy, open]);
+
+  // ---- โหมดเก็บข้อมูลสำรอง (ไม่ต้องพึ่ง AI) ----
+  const formValue = v => {
+    const s = (v || '').trim();
+    return !s || /^(ข้าม|ไม่ระบุ|ไม่มี|-|—)$/i.test(s) ? 'ไม่ได้ระบุ' : s;
+  };
+  const askStep = (data, step) => {
+    while (step < FORM_STEPS.length && data[FORM_STEPS[step].key]) step++;
+    if (step < FORM_STEPS.length) {
+      setForm({
+        step,
+        data
+      });
+      setMsgs(m => [...m, {
+        role: 'assistant',
+        content: FORM_STEPS[step].q
+      }]);
+      return;
+    }
+    // ครบแล้ว — สร้างลิสต์รูปแบบเดียวกับที่ AI สร้าง ปุ่มส่งไลน์จะจับได้เหมือนกัน
+    setForm(null);
+    const list = FORM_STEPS.map(s => `- ${s.label}: ${formValue(data[s.key])}`).join('\n');
+    setMsgs(m => [...m, {
+      role: 'assistant',
+      content: 'ขอบคุณครับ 🙏 ผมสรุปตามนี้นะครับ กดปุ่มสีเขียวด้านล่างเพื่อส่งให้ทีมงานได้เลย\n\n' + SUMMARY_TAG + '\n' + list
+    }]);
+  };
+  const startForm = firstText => {
+    const data = {};
+    if (product) data.item = product.code + (product.name ? ' · ' + product.name : '');else if (firstText && !SUGGEST.includes(firstText) && !SUGGEST_PRODUCT.includes(firstText)) data.item = firstText;
+    setMsgs(m => [...m, {
+      role: 'assistant',
+      content: 'ขออภัยครับ ตอนนี้ผู้ช่วยอัจฉริยะไม่พร้อมใช้งาน ผมขอเก็บข้อมูลสั้นๆ แทน แล้วส่งให้ทีมงานดูแลต่อทางไลน์นะครับ'
+    }]);
+    askStep(data, 0);
+  };
   const send = async text => {
     const q = (text != null ? text : input).trim();
     if (!q || busy) return;
-    setErr('');
     setInput('');
     // ส่งเฉพาะบทสนทนาจริง ไม่รวมข้อความทักทายที่ฝั่งเราสร้างเอง
     const next = [...msgs, {
@@ -12437,6 +12866,15 @@ function HPChatWidget() {
       content: q
     }];
     setMsgs(next);
+
+    // อยู่ในโหมดเก็บข้อมูลอยู่แล้ว — ไม่ต้องยิงไปหลังบ้าน เก็บคำตอบแล้วถามข้อถัดไป
+    if (form) {
+      askStep({
+        ...form.data,
+        [FORM_STEPS[form.step].key]: q
+      }, form.step + 1);
+      return;
+    }
     setBusy(true);
     try {
       const r = await fetch('/api/chat', {
@@ -12445,7 +12883,17 @@ function HPChatWidget() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          messages: next.filter(m => m.content !== GREET)
+          messages: next.filter(m => !m.intro).map(m => ({
+            role: m.role,
+            content: m.content
+          })),
+          product: product ? {
+            code: product.code,
+            name: product.name,
+            brand: product.brand,
+            cat: product.cat,
+            series: product.series
+          } : undefined
         })
       });
       const data = await r.json().catch(() => ({}));
@@ -12455,7 +12903,8 @@ function HPChatWidget() {
         content: data.reply
       }]);
     } catch (e) {
-      setErr(e.message);
+      // ผู้ช่วย AI ใช้ไม่ได้ ไม่ปล่อยให้ลูกค้าเจอทางตัน — สลับไปเก็บข้อมูลเองแทน
+      startForm(q);
     }
     setBusy(false);
   };
@@ -12501,18 +12950,9 @@ function HPChatWidget() {
       boxShadow: '0 8px 24px rgba(13,107,92,0.4)',
       fontFamily: 'Inter, Noto Sans Thai, sans-serif'
     }
-  }, /*#__PURE__*/React.createElement("svg", {
-    width: "20",
-    height: "20",
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2",
-    strokeLinecap: "round",
-    strokeLinejoin: "round"
-  }, /*#__PURE__*/React.createElement("path", {
-    d: "M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"
-  })), "\u0E2A\u0E2D\u0E1A\u0E16\u0E32\u0E21\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25"), open && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(HPEngineerIcon, {
+    size: 28
+  }), "\u0E2A\u0E2D\u0E1A\u0E16\u0E32\u0E21\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25"), open && /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'fixed',
       left: '18px',
@@ -12574,6 +13014,64 @@ function HPChatWidget() {
       lineHeight: 1,
       padding: '2px 4px'
     }
+  }, "\u2715")), product && /*#__PURE__*/React.createElement("div", {
+    style: {
+      flexShrink: 0,
+      display: 'flex',
+      alignItems: 'center',
+      gap: '9px',
+      background: '#eef7f4',
+      borderBottom: '1px solid #dcebe5',
+      padding: '8px 12px'
+    }
+  }, /*#__PURE__*/React.createElement("img", {
+    src: product.images && product.images[0] || product.img,
+    alt: "",
+    style: {
+      width: '30px',
+      height: '30px',
+      objectFit: 'contain',
+      background: '#fff',
+      borderRadius: '6px',
+      flexShrink: 0
+    },
+    onError: e => {
+      e.target.style.display = 'none';
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '12px',
+      fontWeight: '800',
+      color: '#0d5c50',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap'
+    }
+  }, product.code), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '11px',
+      color: '#6b7f77',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap'
+    }
+  }, product.name)), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setProduct(null),
+    "aria-label": "\u0E25\u0E49\u0E32\u0E07\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E35\u0E48\u0E40\u0E25\u0E37\u0E2D\u0E01",
+    style: {
+      background: 'transparent',
+      border: 'none',
+      color: '#6b7f77',
+      fontSize: '15px',
+      cursor: 'pointer',
+      lineHeight: 1,
+      padding: '2px 4px'
+    }
   }, "\u2715")), /*#__PURE__*/React.createElement("div", {
     ref: bodyRef,
     style: {
@@ -12588,36 +13086,14 @@ function HPChatWidget() {
       color: '#8fa39a',
       padding: '4px 2px'
     }
-  }, "\u0E01\u0E33\u0E25\u0E31\u0E07\u0E1E\u0E34\u0E21\u0E1E\u0E4C\u2026"), err && /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: '#fdecea',
-      border: '1px solid #f5c6cb',
-      color: '#b3261e',
-      borderRadius: '10px',
-      padding: '10px 12px',
-      fontSize: '13px',
-      lineHeight: '1.7'
-    }
-  }, err, /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: '6px'
-    }
-  }, /*#__PURE__*/React.createElement("a", {
-    href: LINE,
-    target: "_blank",
-    rel: "noopener noreferrer",
-    style: {
-      color: '#06c755',
-      fontWeight: '700'
-    }
-  }, "\u0E17\u0E31\u0E01\u0E44\u0E25\u0E19\u0E4C @kirdsaengsawang \u2192"))), msgs.length === 1 && !busy && /*#__PURE__*/React.createElement("div", {
+  }, "\u0E01\u0E33\u0E25\u0E31\u0E07\u0E1E\u0E34\u0E21\u0E1E\u0E4C\u2026"), msgs.length === 1 && !busy && /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       flexWrap: 'wrap',
       gap: '7px',
       marginTop: '6px'
     }
-  }, SUGGEST.map(s => /*#__PURE__*/React.createElement("button", {
+  }, (product ? SUGGEST_PRODUCT : SUGGEST).map(s => /*#__PURE__*/React.createElement("button", {
     key: s,
     onClick: () => send(s),
     style: {
@@ -12636,7 +13112,9 @@ function HPChatWidget() {
       flexShrink: 0,
       background: '#fff8e8',
       borderTop: '1px solid #f2e3bf',
-      padding: '11px 13px'
+      padding: '11px 13px',
+      maxHeight: '42%',
+      overflowY: 'auto'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -12645,31 +13123,102 @@ function HPChatWidget() {
       color: '#9a6b00',
       marginBottom: '5px'
     }
-  }, "\u0E2A\u0E23\u0E38\u0E1B\u0E2A\u0E48\u0E07\u0E43\u0E2B\u0E49\u0E17\u0E35\u0E21\u0E07\u0E32\u0E19"), /*#__PURE__*/React.createElement("div", {
+  }, "\u0E25\u0E34\u0E2A\u0E15\u0E4C\u0E17\u0E35\u0E48\u0E08\u0E30\u0E2A\u0E48\u0E07\u0E43\u0E2B\u0E49\u0E17\u0E35\u0E21\u0E07\u0E32\u0E19"), /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: '13px',
+      fontSize: '12.5px',
       color: '#4a3a10',
-      lineHeight: '1.6',
-      marginBottom: '8px'
+      lineHeight: '1.65',
+      marginBottom: '9px',
+      whiteSpace: 'pre-wrap'
     }
-  }, summary), /*#__PURE__*/React.createElement("button", {
-    onClick: copySummary,
+  }, summary), sendState === 'sent' ? /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
-      width: '100%',
-      background: copied ? '#0d6b5c' : '#fff',
-      color: copied ? '#fff' : '#9a6b00',
-      border: '1px solid ' + (copied ? '#0d6b5c' : '#e4cf9a'),
-      borderRadius: '7px',
-      padding: '8px',
+      background: '#e8f8f1',
+      border: '1px solid #b9e4d3',
+      color: '#0d6b5c',
+      borderRadius: '8px',
+      padding: '9px 10px',
       fontSize: '12.5px',
       fontWeight: '700',
-      cursor: 'pointer',
-      fontFamily: 'Inter, Noto Sans Thai, sans-serif'
+      textAlign: 'center',
+      marginBottom: '7px'
     }
-  }, copied ? '✔ คัดลอกแล้ว — ไปวางในไลน์ได้เลย' : 'คัดลอกข้อความไปวางในไลน์')), /*#__PURE__*/React.createElement("a", {
+  }, "\u2714 \u0E2A\u0E48\u0E07\u0E25\u0E34\u0E2A\u0E15\u0E4C\u0E40\u0E02\u0E49\u0E32\u0E44\u0E25\u0E19\u0E4C\u0E1A\u0E23\u0E34\u0E29\u0E31\u0E17\u0E41\u0E25\u0E49\u0E27 \u0E17\u0E35\u0E21\u0E07\u0E32\u0E19\u0E08\u0E30\u0E15\u0E34\u0E14\u0E15\u0E48\u0E2D\u0E01\u0E25\u0E31\u0E1A\u0E04\u0E23\u0E31\u0E1A"), /*#__PURE__*/React.createElement("a", {
     href: LINE,
     target: "_blank",
     rel: "noopener noreferrer",
+    style: {
+      display: 'block',
+      textAlign: 'center',
+      fontSize: '12.5px',
+      fontWeight: '700',
+      color: '#06c755',
+      textDecoration: 'none'
+    }
+  }, "\u0E40\u0E1B\u0E34\u0E14\u0E44\u0E25\u0E19\u0E4C\u0E40\u0E1E\u0E37\u0E48\u0E2D\u0E04\u0E38\u0E22\u0E01\u0E31\u0E1A\u0E17\u0E35\u0E21\u0E07\u0E32\u0E19\u0E15\u0E48\u0E2D \u2192")) : sendState === 'copy' ? /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '12px',
+      color: '#8a6a10',
+      lineHeight: '1.6',
+      marginBottom: '7px'
+    }
+  }, copied ? 'คัดลอกลิสต์ไว้ให้แล้ว' : '', " \u0E01\u0E14\u0E40\u0E1B\u0E34\u0E14\u0E44\u0E25\u0E19\u0E4C\u0E41\u0E25\u0E49\u0E27\u0E27\u0E32\u0E07\u0E43\u0E19\u0E41\u0E0A\u0E17\u0E44\u0E14\u0E49\u0E40\u0E25\u0E22\u0E04\u0E23\u0E31\u0E1A"), /*#__PURE__*/React.createElement("a", {
+    href: LINE,
+    target: "_blank",
+    rel: "noopener noreferrer",
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '8px',
+      background: '#06c755',
+      color: '#fff',
+      borderRadius: '8px',
+      padding: '10px',
+      fontSize: '13px',
+      fontWeight: '700',
+      textDecoration: 'none'
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "16",
+    height: "16",
+    viewBox: "0 0 24 24",
+    fill: "currentColor"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M12 2C6.48 2 2 5.92 2 10.8c0 3.27 1.96 6.16 4.95 7.87L6 21l3.24-1.62c.88.24 1.81.37 2.76.37 5.52 0 10-3.92 10-8.75S17.52 2 12 2z"
+  })), "\u0E40\u0E1B\u0E34\u0E14\u0E44\u0E25\u0E19\u0E4C\u0E41\u0E25\u0E49\u0E27\u0E27\u0E32\u0E07\u0E25\u0E34\u0E2A\u0E15\u0E4C")) : /*#__PURE__*/React.createElement("button", {
+    onClick: sendLead,
+    disabled: sending,
+    style: {
+      width: '100%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '8px',
+      background: sending ? '#8ed9b0' : '#06c755',
+      color: '#fff',
+      border: 'none',
+      borderRadius: '8px',
+      padding: '11px',
+      fontSize: '13.5px',
+      fontWeight: '700',
+      cursor: sending ? 'default' : 'pointer',
+      fontFamily: 'Inter, Noto Sans Thai, sans-serif'
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "17",
+    height: "17",
+    viewBox: "0 0 24 24",
+    fill: "currentColor"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M12 2C6.48 2 2 5.92 2 10.8c0 3.27 1.96 6.16 4.95 7.87L6 21l3.24-1.62c.88.24 1.81.37 2.76.37 5.52 0 10-3.92 10-8.75S17.52 2 12 2z"
+  })), sending ? 'กำลังส่ง…' : 'ส่งลิสต์นี้ให้ทีมงานทางไลน์')), !summary && /*#__PURE__*/React.createElement("a", {
+    href: LINE,
+    target: "_blank",
+    rel: "noopener noreferrer",
+    onClick: () => {
+      if (product) hpCopyText(hpProductLineText(product));
+    },
     style: {
       display: 'flex',
       alignItems: 'center',
@@ -12690,7 +13239,7 @@ function HPChatWidget() {
     fill: "currentColor"
   }, /*#__PURE__*/React.createElement("path", {
     d: "M12 2C6.48 2 2 5.92 2 10.8c0 3.27 1.96 6.16 4.95 7.87L6 21l3.24-1.62c.88.24 1.81.37 2.76.37 5.52 0 10-3.92 10-8.75S17.52 2 12 2z"
-  })), summary ? 'ทักไลน์ให้ทีมงานดูแลต่อ' : 'คุยกับทีมงานทางไลน์'), /*#__PURE__*/React.createElement("div", {
+  })), "\u0E04\u0E38\u0E22\u0E01\u0E31\u0E1A\u0E17\u0E35\u0E21\u0E07\u0E32\u0E19\u0E17\u0E32\u0E07\u0E44\u0E25\u0E19\u0E4C"), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       gap: '8px',
@@ -12762,11 +13311,66 @@ function HPChatWidget() {
     }
   }, "\u0E1C\u0E39\u0E49\u0E0A\u0E48\u0E27\u0E22 AI \u0E2D\u0E32\u0E08\u0E15\u0E2D\u0E1A\u0E1C\u0E34\u0E14\u0E1E\u0E25\u0E32\u0E14\u0E44\u0E14\u0E49 \xB7 \u0E23\u0E32\u0E04\u0E32\u0E41\u0E25\u0E30\u0E2A\u0E15\u0E47\u0E2D\u0E01\u0E01\u0E23\u0E38\u0E13\u0E32\u0E2A\u0E2D\u0E1A\u0E16\u0E32\u0E21\u0E17\u0E32\u0E07\u0E44\u0E25\u0E19\u0E4C")));
 }
+
+// ─── หน้าเดียวจบ (one-page) ───────────────────────────────────────────────────
+// แต่ละส่วนถูกวางเรียงในหน้าแรก เลื่อนลงไล่ได้ตั้งแต่ต้นจนจบ
+const HP_SECTIONS = {
+  'หน้าแรก': 'sec-home',
+  'home': 'sec-home',
+  'สินค้าตามแบรนด์': 'sec-brands',
+  'เกร็ดความรู้': 'sec-knowledge',
+  'แคตตาล็อก': 'sec-catalog',
+  'ติดต่อเรา': 'sec-contact',
+  'ติดต่อ': 'sec-contact'
+};
+
+// ส่วนที่หนักมาก (สินค้า 6,000 รายการ) จะยังไม่เรนเดอร์จนกว่าจะเลื่อนมาใกล้
+// ถ้าเรนเดอร์ทุกส่วนตั้งแต่เปิดหน้า หน้าแรกจะอืดทันที
+// พอเข้ามาในจอแล้วค่อยเฟดขึ้นมา ตามที่ขอไว้ว่าให้เนื้อหาค่อยๆ ปรากฏ
+function HPRevealSection({
+  id,
+  nav,
+  minHeight = 420,
+  children
+}) {
+  const ref = React.useRef(null);
+  const [shown, setShown] = useState(false); // ถึงคิวเรนเดอร์แล้วหรือยัง
+  const [visible, setVisible] = useState(false); // เฟดขึ้นมาแล้วหรือยัง
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    // rootMargin เผื่อไว้ 600px ให้เรนเดอร์ก่อนถึงจริง จะได้ไม่เห็นช่องว่างตอนเลื่อนเร็ว
+    const io = new IntersectionObserver(entries => {
+      if (entries.some(e => e.isIntersecting)) {
+        setShown(true);
+        requestAnimationFrame(() => setVisible(true));
+        io.disconnect();
+      }
+    }, {
+      rootMargin: '600px 0px'
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return /*#__PURE__*/React.createElement("div", {
+    ref: ref,
+    id: id,
+    "data-hpnav": nav,
+    style: {
+      scrollMarginTop: '86px',
+      minHeight: shown ? 0 : minHeight,
+      opacity: visible ? 1 : 0,
+      transform: visible ? 'none' : 'translateY(18px)',
+      transition: 'opacity 0.45s ease, transform 0.45s ease'
+    }
+  }, shown ? children : null);
+}
 function HPApp() {
   const [page, setPage] = useState('home');
   const [activeCategory, setActiveCategory] = useState('all');
   const [cart, setCart] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [brandFilter, setBrandFilter] = useState('all'); // แบรนด์ที่เลือกมาจากหน้าเดียว
   const [zoom, setZoom] = useState(() => {
     const saved = parseFloat(localStorage.getItem('kss_zoom'));
     return !isNaN(saved) && saved >= 0.7 && saved <= 1.5 ? saved : 1;
@@ -12778,7 +13382,37 @@ function HPApp() {
   const zoomIn = () => setZoom(z => Math.min(1.5, Math.round((z + 0.1) * 10) / 10));
   const zoomOut = () => setZoom(z => Math.max(0.7, Math.round((z - 0.1) * 10) / 10));
   const zoomReset = () => setZoom(1);
+
+  // เลื่อนไปยังส่วนในหน้าเดียว — ถ้ายังไม่เรนเดอร์ (ส่วนหนักถูกหน่วงไว้) ให้ลองซ้ำจนกว่าจะเจอ
+  const scrollToSection = (id, tries = 0) => {
+    const el = document.getElementById(id);
+    if (!el) {
+      if (tries < 20) setTimeout(() => scrollToSection(id, tries + 1), 80);
+      return;
+    }
+    el.scrollIntoView({
+      behavior: tries ? 'auto' : 'smooth',
+      block: 'start'
+    });
+    // ส่วนล่างๆ อาจขยับหลังเนื้อหาโหลดเสร็จ เลยเล็งซ้ำอีกรอบให้ตรงหัวข้อ
+    if (tries < 6) setTimeout(() => {
+      const r = el.getBoundingClientRect();
+      if (Math.abs(r.top - 86) > 40) scrollToSection(id, tries + 1);
+    }, 260);
+  };
   const onNavigate = p => {
+    // เมนูหลัก 5 ตัวอยู่ในหน้าเดียวกันหมดแล้ว กดแล้วเลื่อนไปหาส่วนนั้นแทนการเปลี่ยนหน้า
+    const secId = HP_SECTIONS[p];
+    if (secId) {
+      if (page !== 'home') {
+        setPage('home');
+        setTimeout(() => scrollToSection(secId), 60);
+      } else if (secId === 'sec-home') window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });else scrollToSection(secId);
+      return;
+    }
     if (p === 'home' || p === 'หน้าแรก') {
       setPage('home');
       window.scrollTo(0, 0);
@@ -12865,6 +13499,7 @@ function HPApp() {
       flexDirection: 'column'
     }
   }, /*#__PURE__*/React.createElement(HPHeader, {
+    page: page,
     cartCount: cart.length,
     onNavigate: onNavigate,
     onCategoryChange: onCategoryChange,
@@ -12873,14 +13508,55 @@ function HPApp() {
     style: {
       flex: 1
     }
-  }, page === 'home' && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(HPHero, {
+  }, page === 'home' && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    id: "sec-home",
+    "data-hpnav": "\u0E2B\u0E19\u0E49\u0E32\u0E41\u0E23\u0E01",
+    style: {
+      scrollMarginTop: '86px'
+    }
+  }, /*#__PURE__*/React.createElement(HPHero, {
     onNavigate: onNavigate,
     onCategoryChange: onCategoryChange
   }), /*#__PURE__*/React.createElement(HPServiceBar, {
     onNavigate: onNavigate
   }), /*#__PURE__*/React.createElement(HPCategoryShowcase, {
     onCategoryChange: onCategoryChange
-  }), /*#__PURE__*/React.createElement(HPProductGuide, null), /*#__PURE__*/React.createElement(HPBrandStrip, null)), page === 'shop' && /*#__PURE__*/React.createElement(HPCategoryProductsPage, {
+  }), /*#__PURE__*/React.createElement(HPProductGuide, null), /*#__PURE__*/React.createElement(HPBrandStrip, null)), /*#__PURE__*/React.createElement(HPRevealSection, {
+    id: "sec-brands",
+    nav: "\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E15\u0E32\u0E21\u0E41\u0E1A\u0E23\u0E19\u0E14\u0E4C",
+    minHeight: 620
+  }, /*#__PURE__*/React.createElement(HPBrandProductsPage, {
+    onSelectProduct: onSelectProduct,
+    embedded: true,
+    onViewAll: brandKey => {
+      setBrandFilter(brandKey);
+      setPage('brands');
+      // เลื่อนขึ้นบนสุดซ้ำหลังเรนเดอร์ด้วย ไม่งั้นเบราว์เซอร์จะยึดตำแหน่งเดิมไว้ (scroll anchoring)
+      window.scrollTo(0, 0);
+      requestAnimationFrame(() => window.scrollTo(0, 0));
+      setTimeout(() => window.scrollTo(0, 0), 120);
+    }
+  })), /*#__PURE__*/React.createElement(HPRevealSection, {
+    id: "sec-knowledge",
+    nav: "\u0E40\u0E01\u0E23\u0E47\u0E14\u0E04\u0E27\u0E32\u0E21\u0E23\u0E39\u0E49",
+    minHeight: 520
+  }, /*#__PURE__*/React.createElement(HPKnowledgePage, {
+    onCategoryChange: onCategoryChange,
+    onNavigate: onNavigate,
+    embedded: true
+  })), /*#__PURE__*/React.createElement(HPRevealSection, {
+    id: "sec-catalog",
+    nav: "\u0E41\u0E04\u0E15\u0E15\u0E32\u0E25\u0E47\u0E2D\u0E01",
+    minHeight: 520
+  }, /*#__PURE__*/React.createElement(HPCatalogPage, {
+    embedded: true
+  })), /*#__PURE__*/React.createElement(HPRevealSection, {
+    id: "sec-contact",
+    nav: "\u0E15\u0E34\u0E14\u0E15\u0E48\u0E2D\u0E40\u0E23\u0E32",
+    minHeight: 520
+  }, /*#__PURE__*/React.createElement(HPContactPage, {
+    embedded: true
+  }))), page === 'shop' && /*#__PURE__*/React.createElement(HPCategoryProductsPage, {
     activeCategory: activeCategory,
     onSelectProduct: onSelectProduct
   }), page === 'wholesale' && /*#__PURE__*/React.createElement(HPWholesalePage, null), page === 'contact' && /*#__PURE__*/React.createElement(HPContactPage, null), page === 'knowledge' && /*#__PURE__*/React.createElement(HPKnowledgePage, {
@@ -12893,7 +13569,9 @@ function HPApp() {
     onNavigate: onNavigate,
     onCategoryChange: onCategoryChange
   }), page === 'catalog' && /*#__PURE__*/React.createElement(HPCatalogPage, null), page === 'brands' && /*#__PURE__*/React.createElement(HPBrandProductsPage, {
-    onSelectProduct: onSelectProduct
+    key: brandFilter,
+    onSelectProduct: onSelectProduct,
+    initialBrand: brandFilter
   }), page === 'product-detail' && /*#__PURE__*/React.createElement(HPProductDetailPage, {
     product: selectedProduct,
     onBack: () => onNavigate('สินค้าตามแบรนด์'),

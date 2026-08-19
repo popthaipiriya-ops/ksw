@@ -47,18 +47,26 @@ Schneider Electric · Reckon · SOKAWA · Lucky Misu · ท่อน้ำไท
 
 ขั้นตอนการคุย
 1. ทักทายแล้วถามว่าลูกค้าต้องการอะไร (หาสินค้า / อยากได้ราคา / ปรึกษาเรื่องไฟฟ้า)
-2. ถามข้อมูลที่จำเป็นแบบสั้นๆ ครั้งละ 1 คำถาม ห้ามยิงคำถามรัวเป็นชุด เช่น
-   - ต้องการสินค้าอะไร หรือทำงานแบบไหน
-   - ปริมาณ/ขนาด/จำนวน เท่าไร (ถ้าเกี่ยวข้อง)
+2. เก็บข้อมูลให้ครบ ถามครั้งละ 1 คำถาม ห้ามยิงคำถามรัวเป็นชุด สิ่งที่ต้องได้คือ
+   - สินค้า/รุ่นที่ต้องการ (ถ้าลูกค้าไม่รู้รุ่น ให้ถามลักษณะงานหรือขนาดที่ใช้แทน)
+   - จำนวนที่ต้องการ
    - ใช้กับงานอะไร เช่น บ้าน อาคาร โรงงาน
-3. พอได้ข้อมูลพอสมควรแล้ว (ปกติลูกค้าตอบ 2-3 ครั้ง) ให้สรุปแล้วส่งต่อไลน์ทันที
-   ห้ามถามวนไปเรื่อยๆ ถ้าลูกค้าบอกข้อมูลครบตั้งแต่ข้อความแรก ให้ข้ามไปสรุปได้เลย
+   - ชื่อผู้ติดต่อ และเบอร์โทรหรือไอดีไลน์ (ถามครั้งเดียว ถ้าลูกค้าไม่สะดวกให้ข้ามไป ห้ามคะยั้นคะยอ)
+3. ได้ครบแล้ว หรือลูกค้าไม่อยากให้ข้อมูลเพิ่มแล้ว ให้สรุปทันที ห้ามถามวนไปเรื่อยๆ
+   ถ้าลูกค้าบอกข้อมูลครบตั้งแต่ข้อความแรก ให้ข้ามไปสรุปได้เลย
 
 วิธีส่งต่อ (สำคัญมาก ต้องทำตามเป๊ะ)
-เมื่อพร้อมส่งต่อ ให้ปิดท้ายข้อความด้วยบรรทัดนี้ โดยขึ้นบรรทัดใหม่:
-สรุปให้ทีมงาน: <สรุปความต้องการของลูกค้าสั้นๆ ในบรรทัดเดียว>
-แล้วบอกลูกค้าว่าให้กดปุ่มสีเขียวด้านล่างเพื่อทักไลน์ ทีมงานจะดูแลต่อให้
-ใช้บรรทัด "สรุปให้ทีมงาน:" เฉพาะตอนจะส่งต่อจริงเท่านั้น ห้ามใส่ทุกข้อความ
+เมื่อพร้อมส่งต่อ ให้ปิดท้ายข้อความด้วยบล็อกนี้ ขึ้นบรรทัดใหม่ และต้องเป็นส่วนสุดท้ายของข้อความ
+สรุปให้ทีมงาน:
+- สินค้า/รุ่น: ...
+- จำนวน: ...
+- ใช้กับงาน: ...
+- ชื่อผู้ติดต่อ: ...
+- เบอร์/ไลน์: ...
+- รายละเอียดเพิ่มเติม: ...
+หัวข้อไหนไม่มีข้อมูล ให้ใส่ว่า "ไม่ได้ระบุ" ห้ามแต่งข้อมูลเอง
+ก่อนบล็อกสรุป ให้บอกลูกค้าว่ากดปุ่มสีเขียวด้านล่างเพื่อส่งลิสต์นี้ให้ทีมงานทางไลน์
+ใช้บล็อก "สรุปให้ทีมงาน:" เฉพาะตอนจะส่งต่อจริงเท่านั้น ห้ามใส่ทุกข้อความ
 
 กฎเหล็ก
 - ตอบเป็นภาษาไทยเสมอ สุภาพ เป็นกันเอง กระชับ (ปกติ 2-4 ประโยค)
@@ -116,6 +124,20 @@ async function chatRateOk(ip) {
     rec = { start: now, count: 0 };
   }
   if (rec.count >= CHAT_RATE_MAX) return false;
+  rec.count += 1;
+  await writeJson(key, rec);
+  return true;
+}
+
+// ส่งลิสต์ความต้องการเข้าไลน์ OA — จำกัดจำนวนแยกจากแชท เพราะ endpoint คนละตัว
+const LEAD_RATE_MAX = 10;
+const LEAD_RATE_WIN = 60 * 60 * 1000;
+async function leadRateOk(ip) {
+  const key = 'ratelimit/lead/' + (ip || 'unknown').replace(/[^a-zA-Z0-9.:_-]/g, '_');
+  const now = Date.now();
+  let rec = await readJson(key, null);
+  if (!rec || typeof rec.start !== 'number' || now - rec.start > LEAD_RATE_WIN) rec = { start: now, count: 0 };
+  if (rec.count >= LEAD_RATE_MAX) return false;
   rec.count += 1;
   await writeJson(key, rec);
   return true;
@@ -296,6 +318,20 @@ export default async (req) => {
       if (!messages.length || messages[messages.length - 1].role !== 'user')
         return json({ error:'รูปแบบข้อความไม่ถูกต้อง' }, 400);
 
+      // บริบทสินค้า — ส่งมาจากหน้าสินค้าตามแบรนด์ ผู้ช่วยจะได้รู้ว่าลูกค้ากำลังดูรุ่นไหนอยู่
+      const system = [{ type:'text', text: CHAT_SYSTEM, cache_control: { type:'ephemeral' } }];
+      const prod = body.product;
+      if (prod && typeof prod === 'object') {
+        const labels = { code:'รุ่น/รหัส', name:'ชื่อสินค้า', brand:'แบรนด์', cat:'หมวดหมู่', series:'ซีรีส์' };
+        const lines = Object.keys(labels)
+          .filter(k => typeof prod[k] === 'string' && prod[k].trim())
+          .map(k => `${labels[k]}: ${prod[k].slice(0, 120)}`);
+        if (lines.length) system.push({ type:'text', text:
+          'ตอนนี้ลูกค้าเปิดหน้าสินค้าตัวนี้อยู่ ถ้าลูกค้าไม่ได้ระบุเป็นอย่างอื่น ให้ถือว่าคุยเรื่องสินค้าตัวนี้\n' +
+          lines.join('\n') +
+          '\nให้ถามความต้องการเพิ่ม เช่น จำนวนที่ต้องการ และงานที่จะเอาไปใช้ แล้วสรุปส่งทีมงาน โดยต้องมีรุ่น/รหัสสินค้าอยู่ในบรรทัดสรุปเสมอ' });
+      }
+
       try {
         const anthropic = new Anthropic();
         const resp = await anthropic.beta.messages.create({
@@ -305,7 +341,7 @@ export default async (req) => {
           fallbacks: 'default',
           thinking: { type: 'adaptive' },
           output_config: { effort: 'low' },
-          system: [{ type:'text', text: CHAT_SYSTEM, cache_control: { type:'ephemeral' } }],
+          system,
           messages,
         });
 
@@ -317,6 +353,50 @@ export default async (req) => {
       } catch (e) {
         console.error('chat error:', e);
         return json({ error:'ระบบผู้ช่วยขัดข้องชั่วคราว รบกวนทักไลน์ @kirdsaengsawang นะครับ', lineUrl: LINE_URL }, 502);
+      }
+    }
+
+    // ---------- ส่งลิสต์ความต้องการของลูกค้าเข้าไลน์บริษัท (เปิดสาธารณะ) ----------
+    // ต้องตั้ง LINE_CHANNEL_ACCESS_TOKEN (Messaging API) + LINE_TO (userId/groupId ผู้รับ)
+    // ถ้ายังไม่ได้ตั้ง จะเก็บลิสต์ไว้ก่อนแล้วตอบ sent:false ให้หน้าเว็บสลับไปโหมดคัดลอกแทน
+    if (path === '/lead' && method === 'POST') {
+      const ip = clientIp(req);
+      if (!(await leadRateOk(ip)))
+        return json({ error:'ส่งบ่อยเกินไป รบกวนทักไลน์ @kirdsaengsawang โดยตรงนะครับ', lineUrl: LINE_URL }, 429);
+
+      const body = await req.json().catch(() => ({}));
+      const summary = typeof body.summary === 'string' ? body.summary.trim().slice(0, 2000) : '';
+      if (!summary) return json({ error:'ไม่มีข้อมูลที่จะส่ง' }, 400);
+
+      const p = body.product && typeof body.product === 'object' ? body.product : null;
+      const code = p && typeof p.code === 'string' ? p.code.trim().slice(0, 80) : '';
+      const pname = p && typeof p.name === 'string' ? p.name.trim().slice(0, 120) : '';
+      const prodTxt = code ? `สินค้าที่ลูกค้าเปิดดู: ${code}${pname ? ' · ' + pname : ''}\n` : '';
+
+      // เก็บลิสต์ไว้เสมอ ต่อให้ส่งไลน์ไม่ผ่านก็ยังตามอ่านย้อนหลังได้
+      try {
+        const leads = await readJson('leads', []);
+        leads.push({ at: new Date().toISOString(), ip, product: prodTxt.trim(), summary });
+        await writeJson('leads', leads.slice(-500));
+      } catch (e) { console.error('lead save error:', e); }
+
+      const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+      const to    = process.env.LINE_TO;
+      if (!token || !to) {
+        console.warn('lead: ยังไม่ได้ตั้ง LINE_CHANNEL_ACCESS_TOKEN / LINE_TO — เก็บลิสต์อย่างเดียว');
+        return json({ ok:true, sent:false, lineUrl: LINE_URL });
+      }
+      try {
+        const r = await fetch('https://api.line.me/v2/bot/message/push', {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ to, messages:[{ type:'text', text:`ลูกค้าใหม่จากหน้าเว็บ\n${prodTxt}${summary}` }] }),
+        });
+        if (!r.ok) throw new Error(`LINE push ${r.status} ${await r.text()}`);
+        return json({ ok:true, sent:true, lineUrl: LINE_URL });
+      } catch (e) {
+        console.error('lead push error:', e);
+        return json({ ok:true, sent:false, lineUrl: LINE_URL });
       }
     }
 
