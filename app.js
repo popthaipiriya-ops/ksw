@@ -6280,39 +6280,41 @@ function HPProductDetailPage({
       gap: '44px',
       alignItems: 'start'
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
-      position: 'relative'
-    }
-  }, /*#__PURE__*/React.createElement(HPProductGallery, {
-    images: images,
-    title: `${product.code} · ${product.name}`
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: 'absolute',
-      top: '14px',
-      right: '14px',
-      zIndex: 3,
-      background: 'rgba(255,255,255,0.94)',
-      border: '1px solid #eef0f2',
-      borderRadius: '10px',
-      padding: brandTab && brandTab.logo ? '8px 12px' : '6px 13px',
-      boxShadow: '0 2px 10px rgba(6,53,46,0.08)',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center',
-      maxWidth: '120px',
-      minHeight: '34px'
+      justifyContent: 'flex-end',
+      marginBottom: '10px',
+      minHeight: '30px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '8px',
+      background: '#fff',
+      border: '1px solid #eef0f2',
+      borderRadius: '999px',
+      padding: brandTab && brandTab.logo ? '5px 14px' : '6px 15px'
     },
     title: brandTab ? brandTab.fullName || brandTab.label : product.brand
-  }, brandTab && brandTab.logo
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: '10.5px',
+      fontWeight: '700',
+      color: '#9aa8a0',
+      letterSpacing: '0.04em',
+      textTransform: 'uppercase'
+    }
+  }, "\u0E41\u0E1A\u0E23\u0E19\u0E14\u0E4C"), brandTab && brandTab.logo
   // แบรนด์ที่ยังไม่มีไฟล์โลโก้ (เช่น YAZAKI, BCC) ให้แสดงเป็นชื่อแทน จะได้ไม่เป็นกรอบว่าง
   ? /*#__PURE__*/React.createElement("img", {
     src: brandTab.logo,
     alt: brandTab.label || product.brand,
     style: {
-      maxWidth: '100%',
-      maxHeight: '34px',
+      maxWidth: '92px',
+      maxHeight: '26px',
       objectFit: 'contain',
       display: 'block'
     },
@@ -6321,13 +6323,15 @@ function HPProductDetailPage({
     }
   }) : /*#__PURE__*/React.createElement("span", {
     style: {
-      fontSize: '12px',
+      fontSize: '12.5px',
       fontWeight: '800',
       color: '#0d5c50',
-      whiteSpace: 'nowrap',
-      letterSpacing: '0.02em'
+      whiteSpace: 'nowrap'
     }
-  }, product.brand))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, product.brand))), /*#__PURE__*/React.createElement(HPProductGallery, {
+    images: images,
+    title: `${product.code} · ${product.name}`
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'center',

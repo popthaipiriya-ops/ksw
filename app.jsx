@@ -1917,21 +1917,23 @@ function HPProductDetailPage({ product, onBack, onSelectProduct, onNavigate }) {
         </div>
 
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'44px', alignItems:'start' }}>
-          {/* วางโลโก้แบรนด์ทับมุมขวาบนของรูปสินค้า ให้รู้ทันทีว่าเป็นยี่ห้ออะไร */}
-          <div style={{ position:'relative' }}>
-            <HPProductGallery images={images} title={`${product.code} · ${product.name}`}/>
-            <div style={{ position:'absolute', top:'14px', right:'14px', zIndex:3, background:'rgba(255,255,255,0.94)',
-                          border:'1px solid #eef0f2', borderRadius:'10px', padding: brandTab && brandTab.logo ? '8px 12px' : '6px 13px',
-                          boxShadow:'0 2px 10px rgba(6,53,46,0.08)', display:'flex', alignItems:'center', justifyContent:'center',
-                          maxWidth:'120px', minHeight:'34px' }}
-                 title={brandTab ? (brandTab.fullName || brandTab.label) : product.brand}>
-              {brandTab && brandTab.logo
-                // แบรนด์ที่ยังไม่มีไฟล์โลโก้ (เช่น YAZAKI, BCC) ให้แสดงเป็นชื่อแทน จะได้ไม่เป็นกรอบว่าง
-                ? <img src={brandTab.logo} alt={brandTab.label || product.brand}
-                    style={{ maxWidth:'100%', maxHeight:'34px', objectFit:'contain', display:'block' }}
-                    onError={e => { e.target.style.display = 'none'; }}/>
-                : <span style={{ fontSize:'12px', fontWeight:'800', color:'#0d5c50', whiteSpace:'nowrap', letterSpacing:'0.02em' }}>{product.brand}</span>}
+          {/* โลโก้แบรนด์วางไว้เหนือกรอบรูป ไม่ทับตัวสินค้า
+              (เดิมวางทับมุมขวาบนของรูป พอสินค้าบางตัวรูปเต็มกรอบ โลโก้ไปบังตัวสินค้า) */}
+          <div>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'flex-end', marginBottom:'10px', minHeight:'30px' }}>
+              <div style={{ display:'inline-flex', alignItems:'center', gap:'8px', background:'#fff', border:'1px solid #eef0f2',
+                            borderRadius:'999px', padding: brandTab && brandTab.logo ? '5px 14px' : '6px 15px' }}
+                   title={brandTab ? (brandTab.fullName || brandTab.label) : product.brand}>
+                <span style={{ fontSize:'10.5px', fontWeight:'700', color:'#9aa8a0', letterSpacing:'0.04em', textTransform:'uppercase' }}>แบรนด์</span>
+                {brandTab && brandTab.logo
+                  // แบรนด์ที่ยังไม่มีไฟล์โลโก้ (เช่น YAZAKI, BCC) ให้แสดงเป็นชื่อแทน จะได้ไม่เป็นกรอบว่าง
+                  ? <img src={brandTab.logo} alt={brandTab.label || product.brand}
+                      style={{ maxWidth:'92px', maxHeight:'26px', objectFit:'contain', display:'block' }}
+                      onError={e => { e.target.style.display = 'none'; }}/>
+                  : <span style={{ fontSize:'12.5px', fontWeight:'800', color:'#0d5c50', whiteSpace:'nowrap' }}>{product.brand}</span>}
+              </div>
             </div>
+            <HPProductGallery images={images} title={`${product.code} · ${product.name}`}/>
           </div>
 
           <div>
