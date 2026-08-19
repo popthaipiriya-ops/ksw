@@ -790,19 +790,21 @@ function HPServiceBar({ onNavigate }) {
       {/* logo watermark */}
       <img loading="lazy" decoding="async" src="assets/logo-kss.jpg" style={{ position:'absolute', right:'2%', top:'50%', transform:'translateY(-50%)', width:'280px', height:'280px', objectFit:'contain', opacity:0.22, pointerEvents:'none' }}/>
 
-      <div style={{ maxWidth:'1240px', margin:'0 auto', padding:'56px 20px', display:'flex', alignItems:'center', gap:'40px' }}>
-        <div style={{ flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', position:'relative', zIndex:2, width:'380px' }}>
+      {/* จอแคบกว่า 820px จะสลับเป็นเรียงซ้อนแนวตั้งแทน (ดู .hp-service-row ใน index.html)
+          เดิมคอลัมน์รูปกว้างตายตัว 380px กว้างกว่าจอมือถือทั่วไปเอง เลยไปเบียดข้อความจนบีบจนดูเหมือนว่างเปล่า */}
+      <div className="hp-service-row" style={{ maxWidth:'1240px', margin:'0 auto', padding:'56px 20px', display:'flex', alignItems:'center', gap:'40px' }}>
+        <div className="hp-service-media" style={{ flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', position:'relative', zIndex:2, width:'380px' }}>
           <div style={{ position:'absolute', width:'300px', height:'300px', borderRadius:'50%', background:'radial-gradient(circle, rgba(13,148,136,0.14) 0%, transparent 72%)' }}/>
           <img loading="lazy" decoding="async" src="assets/product-display.png" style={{ position:'relative', maxHeight:'250px', maxWidth:'100%', objectFit:'contain', filter:'drop-shadow(0 20px 28px rgba(0,0,0,0.16))' }}/>
         </div>
-        <div style={{ flex:1, position:'relative', zIndex:2 }}>
+        <div className="hp-service-text" style={{ flex:1, minWidth:0, position:'relative', zIndex:2 }}>
           <span style={{ display:'inline-flex', alignItems:'center', gap:'7px', background:'#e8f8f1', border:'1px solid #bfe8da', color:'#0d9488', fontSize:'12px', fontWeight:'700', padding:'6px 16px', borderRadius:'999px', marginBottom:'18px' }}>
             <span style={{ width:'6px', height:'6px', borderRadius:'50%', background:'#0d9488' }}/> ทำไมต้องซื้อกับเรา
           </span>
           <div style={{ fontFamily:'Inter, Noto Sans Thai, sans-serif', fontSize:'32px', fontWeight:'800', color:'#12241d', lineHeight:'1.3', letterSpacing:'-0.4px', marginBottom:'16px', maxWidth:'560px' }}>
             ซื้อกับเรา <span style={{ color:'#0d9488' }}>มั่นใจได้</span><br/>ได้รับสินค้า 100% ทางเรามีหน้าร้านจริง
           </div>
-          <div style={{ display:'flex', flexWrap:'wrap', gap:'10px', marginBottom:'28px' }}>
+          <div className="hp-service-tags" style={{ display:'flex', flexWrap:'wrap', gap:'10px', marginBottom:'28px' }}>
             {['สินค้าของแท้ 100%','มีหน้าร้านจริง','บริการหลังการขาย'].map((t,i) => (
               <span key={i} style={{ display:'inline-flex', alignItems:'center', gap:'6px', background:'#fff', border:'1px solid #e6efe9', color:'#3a4a42', fontSize:'12.5px', fontWeight:'600', padding:'7px 14px', borderRadius:'999px', boxShadow:'0 2px 8px rgba(13,92,80,0.05)' }}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0d9488" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l4 4L19 7"/></svg>

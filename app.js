@@ -2373,6 +2373,7 @@ function HPServiceBar({
       pointerEvents: 'none'
     }
   }), /*#__PURE__*/React.createElement("div", {
+    className: "hp-service-row",
     style: {
       maxWidth: '1240px',
       margin: '0 auto',
@@ -2382,6 +2383,7 @@ function HPServiceBar({
       gap: '40px'
     }
   }, /*#__PURE__*/React.createElement("div", {
+    className: "hp-service-media",
     style: {
       flexShrink: 0,
       display: 'flex',
@@ -2411,8 +2413,10 @@ function HPServiceBar({
       filter: 'drop-shadow(0 20px 28px rgba(0,0,0,0.16))'
     }
   })), /*#__PURE__*/React.createElement("div", {
+    className: "hp-service-text",
     style: {
       flex: 1,
+      minWidth: 0,
       position: 'relative',
       zIndex: 2
     }
@@ -2453,6 +2457,7 @@ function HPServiceBar({
       color: '#0d9488'
     }
   }, "\u0E21\u0E31\u0E48\u0E19\u0E43\u0E08\u0E44\u0E14\u0E49"), /*#__PURE__*/React.createElement("br", null), "\u0E44\u0E14\u0E49\u0E23\u0E31\u0E1A\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 100% \u0E17\u0E32\u0E07\u0E40\u0E23\u0E32\u0E21\u0E35\u0E2B\u0E19\u0E49\u0E32\u0E23\u0E49\u0E32\u0E19\u0E08\u0E23\u0E34\u0E07"), /*#__PURE__*/React.createElement("div", {
+    className: "hp-service-tags",
     style: {
       display: 'flex',
       flexWrap: 'wrap',

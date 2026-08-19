@@ -148,6 +148,15 @@
     /* ปุ่มซูมเป็นของสำหรับเดสก์ท็อป — บนมือถือซูมด้วยนิ้วได้อยู่แล้ว
        และปุ่มนี้ไปทับกล่องแชทผู้ช่วยพอดี จึงซ่อนไปเมื่อจอแคบ */
     @media (max-width: 700px) { .hp-zoom-ctrl { display:none !important; } }
+
+    /* ส่วน "ทำไมต้องซื้อกับเรา" — คอลัมน์รูปกว้างตายตัว 380px กว้างกว่าจอมือถือทั่วไปเอง
+       (375px ก็ยังแคบกว่า) ทำให้ไปเบียดคอลัมน์ข้อความจนบีบจนดูเหมือนว่างเปล่า
+       จอแคบกว่า 820px จึงสลับเป็นเรียงซ้อนแนวตั้งแทน */
+    @media (max-width: 820px) {
+      .hp-service-row  { flex-direction:column !important; text-align:center; gap:28px !important; padding-top:40px !important; padding-bottom:40px !important; }
+      .hp-service-media{ width:100% !important; max-width:280px; }
+      .hp-service-tags { justify-content:center !important; }
+    }
   </style>
 </head>
 <body>
