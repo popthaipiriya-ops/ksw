@@ -518,14 +518,17 @@ function HPCarousel({ onNavigate }) {
 
   // ─── layout: video ────────────────────────────────────────────────────
   if (s.layout === 'video') {
+    // จอแคบ: อัตราส่วน 16/4 เตี้ยเกินไปจนข้อความหัวเรื่อง (สูง ~30px 2 บรรทัด) ล้นออกนอกกรอบด้านบน
+    // เพราะ padding/ฟอนต์เป็นพิกเซลตายตัวไม่ลดตามจอ — ให้ .hp-hero-video ขยายเตี้ย→สูงขึ้นตามความกว้างจอ
+    // (ดู breakpoint ใน index.html) พร้อมย่อ padding/ฟอนต์ให้พอดีกรอบ
     return (
-      <div style={{ flex:1, overflow:'hidden', position:'relative', aspectRatio:'16/4', background:'#000' }}>
+      <div className="hp-hero-video" style={{ flex:1, overflow:'hidden', position:'relative', aspectRatio:'16/4', background:'#000' }}>
         <video src={s.src} autoPlay loop muted playsInline
           style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}/>
         <div style={{ position:'absolute', inset:0, background:'linear-gradient(0deg, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.15) 45%, transparent 70%)', zIndex:2, pointerEvents:'none' }}/>
-        <div style={{ position:'absolute', left:'44px', right:'44px', bottom:'52px', zIndex:3 }}>
-          {s.headline && <div style={{ fontFamily:'Inter, Noto Sans Thai, sans-serif', fontSize:'30px', fontWeight:'800', color:'#fff', lineHeight:'1.25', marginBottom:'8px', textShadow:'0 2px 12px rgba(0,0,0,0.5)' }}>{s.headline}</div>}
-          {s.sub && <div style={{ fontSize:'15px', color:'rgba(255,255,255,0.88)', textShadow:'0 2px 8px rgba(0,0,0,0.5)' }}>{s.sub}</div>}
+        <div className="hp-hero-video-text" style={{ position:'absolute', left:'44px', right:'44px', bottom:'52px', zIndex:3 }}>
+          {s.headline && <div className="hp-hero-headline" style={{ fontFamily:'Inter, Noto Sans Thai, sans-serif', fontSize:'30px', fontWeight:'800', color:'#fff', lineHeight:'1.25', marginBottom:'8px', textShadow:'0 2px 12px rgba(0,0,0,0.5)' }}>{s.headline}</div>}
+          {s.sub && <div className="hp-hero-sub" style={{ fontSize:'15px', color:'rgba(255,255,255,0.88)', textShadow:'0 2px 8px rgba(0,0,0,0.5)' }}>{s.sub}</div>}
         </div>
       </div>
     );

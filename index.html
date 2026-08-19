@@ -61,6 +61,18 @@
       .hp-chat-launcher, .hp-chat-ring, .hp-chat-dot { animation:none !important; }
     }
 
+    /* แบนเนอร์วิดีโอหน้าแรก — 16/4 เตี้ยเกินไปบนจอแคบ ข้อความหัวเรื่องเลยล้นออกนอกกรอบด้านบน
+       ขยายให้สูงขึ้นตามความกว้างจอแคบลง พร้อมย่อ padding/ฟอนต์ให้พอดีกรอบใหม่ */
+    @media (max-width: 900px) {
+      .hp-hero-video { aspect-ratio:16/6 !important; }
+    }
+    @media (max-width: 600px) {
+      .hp-hero-video      { aspect-ratio:4/3 !important; }
+      .hp-hero-video-text { left:20px !important; right:20px !important; bottom:22px !important; }
+      .hp-hero-headline   { font-size:19px !important; margin-bottom:6px !important; }
+      .hp-hero-sub        { font-size:12.5px !important; }
+    }
+
     @keyframes hp-marquee { from { transform:translateX(0); } to { transform:translateX(-50%); } }
     .hp-brand-track { animation:hp-marquee 26s linear infinite; }
     .hp-brand-track:hover { animation-play-state:paused; }

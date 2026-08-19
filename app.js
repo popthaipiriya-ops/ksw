@@ -1226,7 +1226,11 @@ function HPCarousel({
 
   // ─── layout: video ────────────────────────────────────────────────────
   if (s.layout === 'video') {
+    // จอแคบ: อัตราส่วน 16/4 เตี้ยเกินไปจนข้อความหัวเรื่อง (สูง ~30px 2 บรรทัด) ล้นออกนอกกรอบด้านบน
+    // เพราะ padding/ฟอนต์เป็นพิกเซลตายตัวไม่ลดตามจอ — ให้ .hp-hero-video ขยายเตี้ย→สูงขึ้นตามความกว้างจอ
+    // (ดู breakpoint ใน index.html) พร้อมย่อ padding/ฟอนต์ให้พอดีกรอบ
     return /*#__PURE__*/React.createElement("div", {
+      className: "hp-hero-video",
       style: {
         flex: 1,
         overflow: 'hidden',
@@ -1255,6 +1259,7 @@ function HPCarousel({
         pointerEvents: 'none'
       }
     }), /*#__PURE__*/React.createElement("div", {
+      className: "hp-hero-video-text",
       style: {
         position: 'absolute',
         left: '44px',
@@ -1263,6 +1268,7 @@ function HPCarousel({
         zIndex: 3
       }
     }, s.headline && /*#__PURE__*/React.createElement("div", {
+      className: "hp-hero-headline",
       style: {
         fontFamily: 'Inter, Noto Sans Thai, sans-serif',
         fontSize: '30px',
@@ -1273,6 +1279,7 @@ function HPCarousel({
         textShadow: '0 2px 12px rgba(0,0,0,0.5)'
       }
     }, s.headline), s.sub && /*#__PURE__*/React.createElement("div", {
+      className: "hp-hero-sub",
       style: {
         fontSize: '15px',
         color: 'rgba(255,255,255,0.88)',
