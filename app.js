@@ -7806,8 +7806,16 @@ function HPCategoryProductsPage({
   onSelectProduct
 }) {
   const [zoomProduct, setZoomProduct] = useState(null);
-  const filtered = hpProductsInCategory(activeCategory);
+  const [q, setQ] = useState('');
+  const all = hpProductsInCategory(activeCategory);
   const catLabel = hpCategoryLabel(activeCategory);
+  // เปลี่ยนหมวดแล้วต้องล้างคำค้นเสมอ ไม่งั้นเปิดหมวดใหม่มาเจอรายการว่างโดยไม่รู้ว่ามีคำค้นค้างอยู่
+  useEffect(() => {
+    setQ('');
+  }, [activeCategory]);
+  // ค้นจากรหัสรุ่น ชื่อ แบรนด์ และซีรีส์ — ลูกค้าจำได้ไม่เหมือนกัน บางคนจำรุ่น บางคนจำแค่ยี่ห้อ
+  const kw = q.trim().toLowerCase();
+  const filtered = kw ? all.filter(p => [p.code, p.name, p.brand, p.series].some(v => String(v || '').toLowerCase().includes(kw))) : all;
   return /*#__PURE__*/React.createElement("section", {
     style: {
       background: '#f9fafb',
@@ -7832,10 +7840,13 @@ function HPCategoryProductsPage({
       fontWeight: '600'
     }
   }, catLabel)), /*#__PURE__*/React.createElement("div", {
+    className: "hp-cat-head",
     style: {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
+      gap: '14px',
+      flexWrap: 'wrap',
       marginBottom: '20px'
     }
   }, /*#__PURE__*/React.createElement("h1", {
@@ -7844,25 +7855,118 @@ function HPCategoryProductsPage({
       fontWeight: '700',
       color: '#1a1a1a'
     }
-  }, catLabel), /*#__PURE__*/React.createElement("span", {
+  }, catLabel), /*#__PURE__*/React.createElement("div", {
+    className: "hp-cat-search",
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px',
+      flexWrap: 'wrap'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'relative',
+      display: 'flex',
+      alignItems: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "16",
+    height: "16",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "#8fa39a",
+    strokeWidth: "2.2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    style: {
+      position: 'absolute',
+      left: '13px',
+      pointerEvents: 'none'
+    }
+  }, /*#__PURE__*/React.createElement("circle", {
+    cx: "11",
+    cy: "11",
+    r: "7"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M21 21l-4.35-4.35"
+  })), /*#__PURE__*/React.createElement("input", {
+    value: q,
+    onChange: e => setQ(e.target.value),
+    placeholder: `ค้นหาใน${catLabel} เช่น รุ่น ชื่อ ยี่ห้อ`,
+    style: {
+      width: '320px',
+      maxWidth: '100%',
+      padding: '10px 34px 10px 38px',
+      fontSize: '13.5px',
+      border: '1px solid #dde7e2',
+      borderRadius: '999px',
+      outline: 'none',
+      background: '#fff',
+      fontFamily: 'Inter, Noto Sans Thai, sans-serif'
+    },
+    onFocus: e => e.target.style.borderColor = '#0d9488',
+    onBlur: e => e.target.style.borderColor = '#dde7e2'
+  }), q && /*#__PURE__*/React.createElement("button", {
+    onClick: () => setQ(''),
+    "aria-label": "\u0E25\u0E49\u0E32\u0E07\u0E04\u0E33\u0E04\u0E49\u0E19",
+    style: {
+      position: 'absolute',
+      right: '10px',
+      width: '20px',
+      height: '20px',
+      borderRadius: '50%',
+      border: 'none',
+      background: '#e2ece7',
+      color: '#5a7a66',
+      fontSize: '12px',
+      lineHeight: 1,
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
+  }, "\u2715")), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: '13px',
       color: '#0d9488',
       fontWeight: '700',
       background: '#e8f8f1',
       padding: '4px 12px',
-      borderRadius: '999px'
+      borderRadius: '999px',
+      whiteSpace: 'nowrap'
     }
-  }, filtered.length, " \u0E23\u0E32\u0E22\u0E01\u0E32\u0E23")), filtered.length === 0 ? /*#__PURE__*/React.createElement("div", {
+  }, filtered.length, " \u0E23\u0E32\u0E22\u0E01\u0E32\u0E23", kw && all.length !== filtered.length ? ` จาก ${all.length}` : ''))), filtered.length === 0 ? /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: 'center',
-      padding: '60px',
-      color: '#aaa',
+      padding: '60px 20px',
+      color: '#8fa39a',
       fontSize: '15px',
       background: '#fff',
-      borderRadius: '12px'
+      borderRadius: '12px',
+      lineHeight: '1.9'
     }
-  }, "\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E43\u0E19\u0E2B\u0E21\u0E27\u0E14\u0E2B\u0E21\u0E39\u0E48\u0E19\u0E35\u0E49") : /*#__PURE__*/React.createElement("div", {
+  }, kw ? /*#__PURE__*/React.createElement(React.Fragment, null, "\u0E44\u0E21\u0E48\u0E1E\u0E1A\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E35\u0E48\u0E15\u0E23\u0E07\u0E01\u0E31\u0E1A \u201C", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: '#3a4a42'
+    }
+  }, q.trim()), "\u201D \u0E43\u0E19\u0E2B\u0E21\u0E27\u0E14 ", catLabel, /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: '14px'
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setQ(''),
+    style: {
+      background: '#0d6b5c',
+      color: '#fff',
+      border: 'none',
+      borderRadius: '999px',
+      padding: '9px 22px',
+      fontSize: '13.5px',
+      fontWeight: '700',
+      cursor: 'pointer',
+      fontFamily: 'Inter, Noto Sans Thai, sans-serif'
+    }
+  }, "\u0E25\u0E49\u0E32\u0E07\u0E04\u0E33\u0E04\u0E49\u0E19 \u0E14\u0E39\u0E17\u0E31\u0E49\u0E07\u0E2B\u0E21\u0E14 ", all.length, " \u0E23\u0E32\u0E22\u0E01\u0E32\u0E23"))) : 'ยังไม่มีสินค้าในหมวดหมู่นี้') : /*#__PURE__*/React.createElement("div", {
     className: "hp-product-grid",
     style: {
       display: 'grid',

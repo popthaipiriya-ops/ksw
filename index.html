@@ -144,6 +144,14 @@
     /* การ์ดบทความ "บทความอื่นๆ" */
     @media (max-width: 620px) { .hp-more-grid { grid-template-columns:1fr !important; } }
 
+    /* ช่องค้นหาในหน้าหมวดหมู่ — จอแคบให้ลงบรรทัดใหม่และกว้างเต็มแถว จะได้พิมพ์สะดวก */
+    @media (max-width: 720px) {
+      .hp-cat-head   { align-items:flex-start !important; }
+      .hp-cat-search { width:100% !important; }
+      .hp-cat-search > div:first-child { flex:1; }
+      .hp-cat-search input { width:100% !important; }
+    }
+
     /* หน้า "สินค้าตามแบรนด์" — แถบกรองแบรนด์กว้างคงที่ 250px ดันเนื้อหาล้นจอเล็ก
        จึงย้ายมาวางไว้ด้านบนแบบเต็มความกว้างแทน */
     @media (max-width: 900px) {
