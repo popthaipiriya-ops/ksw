@@ -13435,6 +13435,61 @@ function HPApp() {
   const zoomOut = () => setZoom(z => Math.max(0.7, Math.round((z - 0.1) * 10) / 10));
   const zoomReset = () => setZoom(1);
 
+  // ── ผูกการเปลี่ยนหน้ากับปุ่มย้อนกลับของเบราว์เซอร์ ──
+  // เว็บนี้เป็นหน้าเดียว (SPA) ใช้ state ล้วนไม่เคยเปลี่ยน URL เลย ปุ่มย้อนกลับของเบราว์เซอร์/แอปไลน์
+  // จึงไม่มีประวัติให้ย้อน กดแล้วหลุดออกจากเว็บไปเลยแทนที่จะย้อนไปดูสินค้า/หมวดก่อนหน้า
+  // แก้โดย push ประวัติเองทุกครั้งที่เปลี่ยนหน้า แล้วฟัง popstate เพื่อย้อน state กลับให้ตรงกัน
+  // เก็บแค่รหัสสินค้า+แบรนด์ในประวัติ (ไม่เก็บทั้งอ็อบเจกต์) เพราะโค้ดสินค้าซ้ำกันข้ามแบรนด์ได้
+  const goTo = (view, replace) => {
+    const next = {
+      page: 'home',
+      activeCategory: 'all',
+      brandFilter: 'all',
+      productCode: null,
+      productBrand: null,
+      ...view
+    };
+    setPage(next.page);
+    setActiveCategory(next.activeCategory);
+    setBrandFilter(next.brandFilter);
+    setSelectedProduct(next.product || null);
+    const state = {
+      page: next.page,
+      activeCategory: next.activeCategory,
+      brandFilter: next.brandFilter,
+      productCode: next.product ? next.product.code : null,
+      productBrand: next.product ? next.product.brand : null
+    };
+    if (replace) history.replaceState(state, '', location.href);else history.pushState(state, '', location.href);
+  };
+  // popstate (ย้อนกลับ/ไปข้างหน้า) — ตั้ง state ตรงๆ ห้าม push ซ้ำ ไม่งั้นประวัติจะเลื่อนไม่หยุด
+  useEffect(() => {
+    const onPop = e => {
+      const s = e.state || {
+        page: 'home',
+        activeCategory: 'all',
+        brandFilter: 'all',
+        productCode: null,
+        productBrand: null
+      };
+      setPage(s.page || 'home');
+      setActiveCategory(s.activeCategory || 'all');
+      setBrandFilter(s.brandFilter || 'all');
+      setSelectedProduct(s.productCode ? HP_ALL_BRAND_PRODUCTS.find(p => p.code === s.productCode && p.brand === s.productBrand) || null : null);
+      window.scrollTo(0, 0);
+    };
+    // ตั้งจุดเริ่มต้นไว้ตอนโหลดหน้าแรกครั้งเดียว จะได้มี state อ้างอิงเวลากดย้อนกลับไปสุดทาง
+    history.replaceState({
+      page: 'home',
+      activeCategory: 'all',
+      brandFilter: 'all',
+      productCode: null,
+      productBrand: null
+    }, '', location.href);
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
   // เลื่อนไปยังส่วนในหน้าเดียว — ถ้ายังไม่เรนเดอร์ (ส่วนหนักถูกหน่วงไว้) ให้ลองซ้ำจนกว่าจะเจอ
   const scrollToSection = (id, tries = 0) => {
     const el = document.getElementById(id);
@@ -13454,10 +13509,13 @@ function HPApp() {
   };
   const onNavigate = p => {
     // เมนูหลัก 5 ตัวอยู่ในหน้าเดียวกันหมดแล้ว กดแล้วเลื่อนไปหาส่วนนั้นแทนการเปลี่ยนหน้า
+    // แค่เลื่อนดูส่วนในหน้าแรกไม่ถือเป็นการเปลี่ยนหน้าจริง จึงไม่ผลักเข้าประวัติเบราว์เซอร์
     const secId = HP_SECTIONS[p];
     if (secId) {
       if (page !== 'home') {
-        setPage('home');
+        goTo({
+          page: 'home'
+        });
         setTimeout(() => scrollToSection(secId), 60);
       } else if (secId === 'sec-home') window.scrollTo({
         top: 0,
@@ -13466,82 +13524,114 @@ function HPApp() {
       return;
     }
     if (p === 'home' || p === 'หน้าแรก') {
-      setPage('home');
+      goTo({
+        page: 'home'
+      });
       window.scrollTo(0, 0);
       return;
     }
     if (p === 'cart') {
-      setPage('cart');
+      goTo({
+        page: 'cart'
+      });
       window.scrollTo(0, 0);
       return;
     }
     if (p === 'สินค้าทั้งหมด') {
-      setActiveCategory('all');
-      setPage('shop');
+      goTo({
+        page: 'shop',
+        activeCategory: 'all'
+      });
       window.scrollTo(0, 0);
       return;
     }
     if (p === 'ค้าส่ง') {
-      setPage('wholesale');
+      goTo({
+        page: 'wholesale'
+      });
       window.scrollTo(0, 0);
       return;
     }
     if (p === 'ติดต่อเรา' || p === 'ติดต่อ') {
-      setPage('contact');
+      goTo({
+        page: 'contact'
+      });
       window.scrollTo(0, 0);
       return;
     }
     if (p === 'เกร็ดความรู้') {
-      setPage('knowledge');
+      goTo({
+        page: 'knowledge'
+      });
       window.scrollTo(0, 0);
       return;
     }
     if (p === 'mdb-article') {
-      setPage('mdb-article');
+      goTo({
+        page: 'mdb-article'
+      });
       window.scrollTo(0, 0);
       return;
     }
     if (p === 'loadcenter3p-article') {
-      setPage('loadcenter3p-article');
+      goTo({
+        page: 'loadcenter3p-article'
+      });
       window.scrollTo(0, 0);
       return;
     }
     if (p === 'แคตตาล็อก') {
-      setPage('catalog');
+      goTo({
+        page: 'catalog'
+      });
       window.scrollTo(0, 0);
       return;
     }
     if (p === 'สินค้าตามแบรนด์') {
-      setPage('brands');
+      goTo({
+        page: 'brands'
+      });
       window.scrollTo(0, 0);
       return;
     }
     if (p === 'member') {
-      setPage('member');
+      goTo({
+        page: 'member'
+      });
       window.scrollTo(0, 0);
       return;
     }
     if (p === 'admin' || p === 'จัดการสินค้า') {
-      setPage('admin');
+      goTo({
+        page: 'admin'
+      });
       window.scrollTo(0, 0);
       return;
     }
-    setPage(p);
+    goTo({
+      page: p
+    });
   };
   const onCategoryChange = cat => {
-    setActiveCategory(cat);
-    setPage('shop');
+    goTo({
+      page: 'shop',
+      activeCategory: cat
+    });
     window.scrollTo(0, 0);
   };
   const onSearch = () => {
-    setActiveCategory('all');
-    setPage('shop');
+    goTo({
+      page: 'shop',
+      activeCategory: 'all'
+    });
     window.scrollTo(0, 0);
   };
   const onAddToCart = p => setCart(prev => [...prev, p]);
   const onSelectProduct = p => {
-    setSelectedProduct(p);
-    setPage('product-detail');
+    goTo({
+      page: 'product-detail',
+      product: p
+    });
     window.scrollTo(0, 0);
   };
   return /*#__PURE__*/React.createElement("div", {
@@ -13580,8 +13670,10 @@ function HPApp() {
     onSelectProduct: onSelectProduct,
     embedded: true,
     onViewAll: brandKey => {
-      setBrandFilter(brandKey);
-      setPage('brands');
+      goTo({
+        page: 'brands',
+        brandFilter: brandKey
+      });
       // เลื่อนขึ้นบนสุดซ้ำหลังเรนเดอร์ด้วย ไม่งั้นเบราว์เซอร์จะยึดตำแหน่งเดิมไว้ (scroll anchoring)
       window.scrollTo(0, 0);
       requestAnimationFrame(() => window.scrollTo(0, 0));
