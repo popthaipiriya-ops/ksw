@@ -298,8 +298,12 @@ const HP_BRAND_LOGO_EXTRA = {
     label: 'UNITED',
     fullName: 'สายไฟฟ้า ยูไนเต็ด',
     logo: 'assets/brand-united.png'
+  },
+  NNN: {
+    label: 'NNN',
+    fullName: 'TRIPLE N (สายไฟฟ้าทริปเปิ้ลเอ็น)',
+    logo: 'assets/brand-nnn.png'
   }
-  // NNN: ลิงก์ที่ได้รับมาเป็นหน้ารายการสินค้าของ DoHome ไม่มีไฟล์โลโก้ให้ดึง — รอลิงก์โลโก้จริง
 };
 
 // หาข้อมูลแบรนด์ (โลโก้/ชื่อเต็ม) จากค่า brand ที่ติดมากับสินค้า

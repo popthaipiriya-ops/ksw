@@ -111,7 +111,7 @@ const HP_BRAND_LOGO_EXTRA = {
   BCC:         { label:'BCC',         fullName:'Bangkok Cable Co., Ltd.',  logo:'assets/brand-bcc.png' },
   'THAI UNION':{ label:'THAI UNION',  fullName:'Thai Union',               logo:'assets/brand-thaiunion.png' },
   UNITED:      { label:'UNITED',      fullName:'สายไฟฟ้า ยูไนเต็ด',        logo:'assets/brand-united.png' },
-  // NNN: ลิงก์ที่ได้รับมาเป็นหน้ารายการสินค้าของ DoHome ไม่มีไฟล์โลโก้ให้ดึง — รอลิงก์โลโก้จริง
+  NNN:         { label:'NNN',         fullName:'TRIPLE N (สายไฟฟ้าทริปเปิ้ลเอ็น)', logo:'assets/brand-nnn.png' },
 };
 
 // หาข้อมูลแบรนด์ (โลโก้/ชื่อเต็ม) จากค่า brand ที่ติดมากับสินค้า
