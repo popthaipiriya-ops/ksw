@@ -4283,33 +4283,22 @@ const HP_SECTIONS = {
   'ติดต่อเรา':'sec-contact', 'ติดต่อ':'sec-contact',
 };
 
-// ส่วนที่หนักมาก (สินค้า 6,000 รายการ) จะยังไม่เรนเดอร์จนกว่าจะเลื่อนมาใกล้
-// ถ้าเรนเดอร์ทุกส่วนตั้งแต่เปิดหน้า หน้าแรกจะอืดทันที
-// พอเข้ามาในจอแล้วค่อยเฟดขึ้นมา ตามที่ขอไว้ว่าให้เนื้อหาค่อยๆ ปรากฏ
-function HPRevealSection({ id, nav, minHeight = 420, children }) {
-  const ref = React.useRef(null);
-  const [shown, setShown]   = useState(false);   // ถึงคิวเรนเดอร์แล้วหรือยัง
-  const [visible, setVisible] = useState(false); // เฟดขึ้นมาแล้วหรือยัง
+// เดิมรอ IntersectionObserver บอกว่า "เลื่อนมาถึงแล้ว" ค่อยเรนเดอร์ + เฟดขึ้น
+// แต่เบราว์เซอร์ในแอปไลน์ (และ WebView บางตัว) ไม่ยิงสัญญาณนี้ให้ตามปกติ
+// เนื้อหาเลยค้างว่างถาวร — ตัดการพึ่งพา IntersectionObserver ทิ้ง
+// เรนเดอร์เนื้อหาทันทีตอนหน้าโหลดเสร็จเสมอ ยังเฟดขึ้นได้เหมือนเดิมแค่ไม่ผูกกับการเลื่อน
+// (เนื้อหาส่วนนี้เป็นแค่ตัวอย่างสินค้าไม่กี่ชิ้นต่อแบรนด์ ไม่ใช่ทั้ง 6,000 รายการ จึงเบาพอเรนเดอร์รวดเดียวได้)
+function HPRevealSection({ id, nav, children }) {
+  const [visible, setVisible] = useState(false);
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    // rootMargin เผื่อไว้ 600px ให้เรนเดอร์ก่อนถึงจริง จะได้ไม่เห็นช่องว่างตอนเลื่อนเร็ว
-    const io = new IntersectionObserver((entries) => {
-      if (entries.some(e => e.isIntersecting)) {
-        setShown(true);
-        requestAnimationFrame(() => setVisible(true));
-        io.disconnect();
-      }
-    }, { rootMargin:'600px 0px' });
-    io.observe(el);
-    return () => io.disconnect();
+    const raf = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(raf);
   }, []);
   return (
-    <div ref={ref} id={id} data-hpnav={nav}
-      style={{ scrollMarginTop:'86px', minHeight: shown ? 0 : minHeight,
-               opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(18px)',
+    <div id={id} data-hpnav={nav}
+      style={{ scrollMarginTop:'86px', opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(18px)',
                transition:'opacity 0.45s ease, transform 0.45s ease' }}>
-      {shown ? children : null}
+      {children}
     </div>
   );
 }
@@ -4386,7 +4375,7 @@ function HPApp() {
             <HPProductGuide/>
             <HPBrandStrip/>
           </div>
-          <HPRevealSection id="sec-brands" nav="สินค้าตามแบรนด์" minHeight={620}>
+          <HPRevealSection id="sec-brands" nav="สินค้าตามแบรนด์">
             <HPBrandProductsPage onSelectProduct={onSelectProduct} embedded
               onViewAll={(brandKey) => {
                 setBrandFilter(brandKey); setPage('brands');
@@ -4396,13 +4385,13 @@ function HPApp() {
                 setTimeout(() => window.scrollTo(0,0), 120);
               }}/>
           </HPRevealSection>
-          <HPRevealSection id="sec-knowledge" nav="เกร็ดความรู้" minHeight={520}>
+          <HPRevealSection id="sec-knowledge" nav="เกร็ดความรู้">
             <HPKnowledgePage onCategoryChange={onCategoryChange} onNavigate={onNavigate} embedded/>
           </HPRevealSection>
-          <HPRevealSection id="sec-catalog" nav="แคตตาล็อก" minHeight={520}>
+          <HPRevealSection id="sec-catalog" nav="แคตตาล็อก">
             <HPCatalogPage embedded/>
           </HPRevealSection>
-          <HPRevealSection id="sec-contact" nav="ติดต่อเรา" minHeight={520}>
+          <HPRevealSection id="sec-contact" nav="ติดต่อเรา">
             <HPContactPage embedded/>
           </HPRevealSection>
         </>}

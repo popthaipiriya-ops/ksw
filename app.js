@@ -13324,46 +13324,31 @@ const HP_SECTIONS = {
   'ติดต่อ': 'sec-contact'
 };
 
-// ส่วนที่หนักมาก (สินค้า 6,000 รายการ) จะยังไม่เรนเดอร์จนกว่าจะเลื่อนมาใกล้
-// ถ้าเรนเดอร์ทุกส่วนตั้งแต่เปิดหน้า หน้าแรกจะอืดทันที
-// พอเข้ามาในจอแล้วค่อยเฟดขึ้นมา ตามที่ขอไว้ว่าให้เนื้อหาค่อยๆ ปรากฏ
+// เดิมรอ IntersectionObserver บอกว่า "เลื่อนมาถึงแล้ว" ค่อยเรนเดอร์ + เฟดขึ้น
+// แต่เบราว์เซอร์ในแอปไลน์ (และ WebView บางตัว) ไม่ยิงสัญญาณนี้ให้ตามปกติ
+// เนื้อหาเลยค้างว่างถาวร — ตัดการพึ่งพา IntersectionObserver ทิ้ง
+// เรนเดอร์เนื้อหาทันทีตอนหน้าโหลดเสร็จเสมอ ยังเฟดขึ้นได้เหมือนเดิมแค่ไม่ผูกกับการเลื่อน
+// (เนื้อหาส่วนนี้เป็นแค่ตัวอย่างสินค้าไม่กี่ชิ้นต่อแบรนด์ ไม่ใช่ทั้ง 6,000 รายการ จึงเบาพอเรนเดอร์รวดเดียวได้)
 function HPRevealSection({
   id,
   nav,
-  minHeight = 420,
   children
 }) {
-  const ref = React.useRef(null);
-  const [shown, setShown] = useState(false); // ถึงคิวเรนเดอร์แล้วหรือยัง
-  const [visible, setVisible] = useState(false); // เฟดขึ้นมาแล้วหรือยัง
+  const [visible, setVisible] = useState(false);
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    // rootMargin เผื่อไว้ 600px ให้เรนเดอร์ก่อนถึงจริง จะได้ไม่เห็นช่องว่างตอนเลื่อนเร็ว
-    const io = new IntersectionObserver(entries => {
-      if (entries.some(e => e.isIntersecting)) {
-        setShown(true);
-        requestAnimationFrame(() => setVisible(true));
-        io.disconnect();
-      }
-    }, {
-      rootMargin: '600px 0px'
-    });
-    io.observe(el);
-    return () => io.disconnect();
+    const raf = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(raf);
   }, []);
   return /*#__PURE__*/React.createElement("div", {
-    ref: ref,
     id: id,
     "data-hpnav": nav,
     style: {
       scrollMarginTop: '86px',
-      minHeight: shown ? 0 : minHeight,
       opacity: visible ? 1 : 0,
       transform: visible ? 'none' : 'translateY(18px)',
       transition: 'opacity 0.45s ease, transform 0.45s ease'
     }
-  }, shown ? children : null);
+  }, children);
 }
 function HPApp() {
   const [page, setPage] = useState('home');
@@ -13523,8 +13508,7 @@ function HPApp() {
     onCategoryChange: onCategoryChange
   }), /*#__PURE__*/React.createElement(HPProductGuide, null), /*#__PURE__*/React.createElement(HPBrandStrip, null)), /*#__PURE__*/React.createElement(HPRevealSection, {
     id: "sec-brands",
-    nav: "\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E15\u0E32\u0E21\u0E41\u0E1A\u0E23\u0E19\u0E14\u0E4C",
-    minHeight: 620
+    nav: "\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E15\u0E32\u0E21\u0E41\u0E1A\u0E23\u0E19\u0E14\u0E4C"
   }, /*#__PURE__*/React.createElement(HPBrandProductsPage, {
     onSelectProduct: onSelectProduct,
     embedded: true,
@@ -13538,22 +13522,19 @@ function HPApp() {
     }
   })), /*#__PURE__*/React.createElement(HPRevealSection, {
     id: "sec-knowledge",
-    nav: "\u0E40\u0E01\u0E23\u0E47\u0E14\u0E04\u0E27\u0E32\u0E21\u0E23\u0E39\u0E49",
-    minHeight: 520
+    nav: "\u0E40\u0E01\u0E23\u0E47\u0E14\u0E04\u0E27\u0E32\u0E21\u0E23\u0E39\u0E49"
   }, /*#__PURE__*/React.createElement(HPKnowledgePage, {
     onCategoryChange: onCategoryChange,
     onNavigate: onNavigate,
     embedded: true
   })), /*#__PURE__*/React.createElement(HPRevealSection, {
     id: "sec-catalog",
-    nav: "\u0E41\u0E04\u0E15\u0E15\u0E32\u0E25\u0E47\u0E2D\u0E01",
-    minHeight: 520
+    nav: "\u0E41\u0E04\u0E15\u0E15\u0E32\u0E25\u0E47\u0E2D\u0E01"
   }, /*#__PURE__*/React.createElement(HPCatalogPage, {
     embedded: true
   })), /*#__PURE__*/React.createElement(HPRevealSection, {
     id: "sec-contact",
-    nav: "\u0E15\u0E34\u0E14\u0E15\u0E48\u0E2D\u0E40\u0E23\u0E32",
-    minHeight: 520
+    nav: "\u0E15\u0E34\u0E14\u0E15\u0E48\u0E2D\u0E40\u0E23\u0E32"
   }, /*#__PURE__*/React.createElement(HPContactPage, {
     embedded: true
   }))), page === 'shop' && /*#__PURE__*/React.createElement(HPCategoryProductsPage, {
