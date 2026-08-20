@@ -2739,7 +2739,6 @@ function HPCategoryShowcase({
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '18px',
       borderBottom: '1px solid #f2f4f2'
     }
   }, /*#__PURE__*/React.createElement("img", {
@@ -2747,9 +2746,11 @@ function HPCategoryShowcase({
     decoding: "async",
     src: c.img,
     style: {
-      maxWidth: '85%',
-      maxHeight: '100%',
-      objectFit: 'contain'
+      width: '100%',
+      height: '100%',
+      objectFit: 'contain',
+      padding: '10px',
+      boxSizing: 'border-box'
     },
     onError: e => e.target.style.display = 'none'
   })), /*#__PURE__*/React.createElement("div", {

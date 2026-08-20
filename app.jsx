@@ -882,8 +882,8 @@ function HPCategoryShowcase({ onCategoryChange }) {
               style={{ flex:'0 0 auto', width:'250px', borderRadius:'16px', background:'#fff', border:'1px solid #eef0f2', boxShadow:'0 4px 16px rgba(15,77,42,0.06)', overflow:'hidden', cursor:'pointer', scrollSnapAlign:'start', display:'flex', flexDirection:'column', transition:'transform 0.2s ease, box-shadow 0.2s ease' }}
               onMouseEnter={e => { e.currentTarget.style.transform='translateY(-4px)'; e.currentTarget.style.boxShadow='0 14px 30px rgba(15,77,42,0.14)'; }}
               onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.boxShadow='0 4px 16px rgba(15,77,42,0.06)'; }}>
-              <div style={{ height:'160px', background:'#f9fafb', display:'flex', alignItems:'center', justifyContent:'center', padding:'18px', borderBottom:'1px solid #f2f4f2' }}>
-                <img loading="lazy" decoding="async" src={c.img} style={{ maxWidth:'85%', maxHeight:'100%', objectFit:'contain' }} onError={e => e.target.style.display='none'}/>
+              <div style={{ height:'160px', background:'#f9fafb', display:'flex', alignItems:'center', justifyContent:'center', borderBottom:'1px solid #f2f4f2' }}>
+                <img loading="lazy" decoding="async" src={c.img} style={{ width:'100%', height:'100%', objectFit:'contain', padding:'10px', boxSizing:'border-box' }} onError={e => e.target.style.display='none'}/>
               </div>
               <div style={{ padding:'18px 20px 22px', display:'flex', flexDirection:'column' }}>
                 <span style={{ display:'inline-block', alignSelf:'flex-start', background:`${c.accent}14`, color:c.accent, fontSize:'11px', fontWeight:'700', padding:'5px 12px', borderRadius:'999px', marginBottom:'12px' }}>{c.tag}</span>
