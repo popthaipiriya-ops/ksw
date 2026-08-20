@@ -1760,6 +1760,45 @@ function HPImageZoomRotateModal({ src, frames, title, onClose }) {
   const onDown = (e) => { if (zoom <= 1) return; const p = pos(e); drag.current = { x: p.clientX - pan.x, y: p.clientY - pan.y }; setDragging(true); };
   const onMove = (e) => { if (!drag.current) return; const p = pos(e); setPan({ x: p.clientX - drag.current.x, y: p.clientY - drag.current.y }); };
   const onUp   = () => { drag.current = null; setDragging(false); };
+
+  // จีบนิ้วซูมบนมือถือ — เดิมมีแค่ปุ่ม +/− กับลากด้วยนิ้วเดียวตอนซูมแล้ว ไม่รองรับ pinch จริง
+  // touchAction:'none' บน stage ปิดท่าซูมของเบราว์เซอร์ไว้แล้ว (กันหน้าเว็บซูมทั้งหน้าตามไปด้วย)
+  // จึงต้องคำนวณ pinch เองทั้งหมด รวมทั้งยึดจุดกึ่งกลางนิ้วไว้ไม่ให้ภาพกระโดดตอนซูม
+  const pinch = React.useRef(null);
+  const touchDist = (t0, t1) => Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY);
+  const onTouchStart = (e) => {
+    if (e.touches.length === 2) {
+      drag.current = null; setDragging(false);
+      const [t0, t1] = e.touches;
+      pinch.current = {
+        dist: touchDist(t0, t1), zoom,
+        pan: { x: pan.x, y: pan.y },
+        mid: { x: (t0.clientX + t1.clientX) / 2, y: (t0.clientY + t1.clientY) / 2 },
+      };
+    } else {
+      onDown(e);
+    }
+  };
+  const onTouchMove = (e) => {
+    if (e.touches.length === 2 && pinch.current) {
+      const [t0, t1] = e.touches;
+      const scale = touchDist(t0, t1) / pinch.current.dist;
+      const nextZoom = Math.min(4, Math.max(1, Math.round(pinch.current.zoom * scale * 100) / 100));
+      const rect = stage.current.getBoundingClientRect();
+      // ระยะจากกึ่งกลางนิ้ว (ตอนเริ่มจีบ) ถึงกึ่งกลาง stage — จุดอ้างอิงเดียวกับที่ transform-origin ใช้
+      const cx = pinch.current.mid.x - rect.left - rect.width / 2;
+      const cy = pinch.current.mid.y - rect.top - rect.height / 2;
+      const ratio = nextZoom / pinch.current.zoom;
+      setZoom(nextZoom);
+      setPan({ x: cx - (cx - pinch.current.pan.x) * ratio, y: cy - (cy - pinch.current.pan.y) * ratio });
+    } else {
+      onMove(e);
+    }
+  };
+  const onTouchEnd = (e) => {
+    if (e.touches.length < 2) pinch.current = null;
+    if (e.touches.length === 0) onUp();
+  };
   // ต้องผูก wheel เองแบบ passive:false — ถ้าใช้ onWheel ของ React จะเป็น passive
   // ทำให้ preventDefault ไม่ทำงาน แล้วหน้าเว็บด้านหลังจะเลื่อนตามไปด้วยตอนหมุนล้อซูมรูป
   useEffect(() => {
@@ -1788,7 +1827,7 @@ function HPImageZoomRotateModal({ src, frames, title, onClose }) {
                  cursor: zoom > 1 ? (dragging ? 'grabbing' : 'grab') : 'default' }}
         onClick={e => e.stopPropagation()}
         onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
-        onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}>
+        onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
         <img src={list[idx]} draggable={false} alt={title || ''}
              style={{ maxWidth:'100%', maxHeight:'100%', objectFit:'contain', background:'#fff', borderRadius:'10px',
                       transform:`translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
@@ -1835,7 +1874,7 @@ function HPImageZoomRotateModal({ src, frames, title, onClose }) {
           )}
         </div>
         <div style={{ color:'rgba(255,255,255,0.4)', fontSize:'11px' }}>
-          ล้อเมาส์เพื่อซูม{zoom > 1 ? ' · ลากเพื่อเลื่อนดู' : ''}{multi ? ' · ลูกศรซ้าย/ขวาเปลี่ยนรูป' : ''} · Esc เพื่อปิด
+          ล้อเมาส์หรือจีบนิ้วเพื่อซูม{zoom > 1 ? ' · ลากเพื่อเลื่อนดู' : ''}{multi ? ' · ลูกศรซ้าย/ขวาเปลี่ยนรูป' : ''} · Esc เพื่อปิด
         </div>
       </div>
     </div>
