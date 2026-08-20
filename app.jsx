@@ -1098,13 +1098,17 @@ function HPBrandStrip() {
         </div>
       </div>
       <div style={{ position:'relative', WebkitMaskImage:'linear-gradient(90deg, transparent 0%, #000 6%, #000 94%, transparent 100%)', maskImage:'linear-gradient(90deg, transparent 0%, #000 6%, #000 94%, transparent 100%)' }}>
-        <div className="hp-brand-track" style={{ display:'flex', alignItems:'center', width:'max-content', gap:'72px' }}>
+        {/* เดิมกล่องโลโก้กว้างตายตัว 290px เท่ากันทุกใบ แต่โลโก้แต่ละแบรนด์สัดส่วนไม่เท่ากัน
+            (บางอันเป็นแบนเนอร์สี่เหลี่ยมเต็มกล่อง บางอันเป็นไอคอนสี่เหลี่ยมจัตุรัสเล็กอยู่กลางกล่อง)
+            ช่องว่างที่เห็นจริงระหว่างโลโก้เลยไม่เท่ากันทั้งที่ gap เท่ากัน — เอากล่องออก
+            ให้แต่ละโลโก้กว้างเท่าเนื้อรูปจริง ระยะห่างจึงเท่ากันแน่นอนด้วย gap ล้วนๆ */}
+        <div className="hp-brand-track" style={{ display:'flex', alignItems:'center', width:'max-content', gap:'56px' }}>
           {track.map((b, idx) => (
             <div key={b.key + idx} className="hp-brand-item"
-              style={{ height:'150px', width:'290px', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', transition:'transform 0.15s ease, opacity 0.15s ease', opacity:0.85 }}
+              style={{ height:'150px', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', transition:'transform 0.15s ease, opacity 0.15s ease', opacity:0.85 }}
               onMouseEnter={e => { e.currentTarget.style.transform='translateY(-4px)'; e.currentTarget.style.opacity='1'; }}
               onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.opacity='0.85'; }}>
-              <img loading="lazy" decoding="async" src={b.src} alt={b.key} style={{ maxHeight:'140px', maxWidth:'290px', objectFit:'contain' }}/>
+              <img loading="lazy" decoding="async" src={b.src} alt={b.key} style={{ maxHeight:'140px', maxWidth:'240px', objectFit:'contain' }}/>
             </div>
           ))}
         </div>

@@ -3536,14 +3536,13 @@ function HPBrandStrip() {
       display: 'flex',
       alignItems: 'center',
       width: 'max-content',
-      gap: '72px'
+      gap: '56px'
     }
   }, track.map((b, idx) => /*#__PURE__*/React.createElement("div", {
     key: b.key + idx,
     className: "hp-brand-item",
     style: {
       height: '150px',
-      width: '290px',
       flexShrink: 0,
       display: 'flex',
       alignItems: 'center',
@@ -3567,7 +3566,7 @@ function HPBrandStrip() {
     alt: b.key,
     style: {
       maxHeight: '140px',
-      maxWidth: '290px',
+      maxWidth: '240px',
       objectFit: 'contain'
     }
   }))))));
