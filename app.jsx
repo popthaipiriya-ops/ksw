@@ -1867,7 +1867,7 @@ function HPImageZoomRotateModal({ src, frames, title, onClose }) {
               <div key={i} onClick={() => { setIdx(i); reset(); }}
                 style={{ width:'50px', height:'50px', borderRadius:'8px', overflow:'hidden', cursor:'pointer', background:'#fff',
                          border: i === idx ? '2px solid #5fd1c2' : '2px solid rgba(255,255,255,0.2)', opacity: i === idx ? 1 : 0.65 }}>
-                <HPAutoFillImg src={u} style={{ width:'100%', height:'100%', objectFit:'contain' }} onError={e => e.target.style.visibility='hidden'}/>
+                <HPAutoFillImg src={u} style={{ width:'100%', height:'100%', objectFit:'contain', mixBlendMode:'multiply' }} onError={e => e.target.style.visibility='hidden'}/>
               </div>
             ))}
           </div>
@@ -1947,9 +1947,9 @@ function HPProductGallery({ images, title }) {
   return (
     <div>
       <div
-        style={{ height:'380px', background:'#f9fafb', border:'1px solid #eef0f2', borderRadius:'16px', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', cursor:'zoom-in', position:'relative' }}
+        style={{ height:'380px', background:'#fff', border:'1px solid #eef0f2', borderRadius:'16px', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', cursor:'zoom-in', position:'relative' }}
         onClick={() => setOpen(true)}>
-        <HPAutoFillImg src={list[idx]} style={{ width:'100%', height:'100%', objectFit:'contain', padding:'14px', boxSizing:'border-box' }} onError={e => e.target.style.display='none'}/>
+        <HPAutoFillImg src={list[idx]} style={{ width:'100%', height:'100%', objectFit:'contain', padding:'14px', boxSizing:'border-box', mixBlendMode:'multiply' }} onError={e => e.target.style.display='none'}/>
         <div style={{ position:'absolute', top:'12px', left:'14px', display:'flex', alignItems:'center', gap:'6px', background:'rgba(13,92,80,0.9)', color:'#fff', fontSize:'11px', fontWeight:'600', padding:'6px 12px', borderRadius:'999px' }}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="M11 8v6M8 11h6"/><path d="M21 21l-4.35-4.35"/></svg>
           คลิกเพื่อดูรูปขนาดใหญ่
@@ -1965,8 +1965,8 @@ function HPProductGallery({ images, title }) {
         <div style={{ display:'flex', gap:'10px', marginTop:'12px' }}>
           {list.map((src, i) => (
             <div key={i} onClick={() => setIdx(i)}
-              style={{ width:'64px', height:'64px', borderRadius:'10px', border: i===idx ? '2px solid #0d9488' : '1px solid #eef0f2', background:'#f9fafb', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', overflow:'hidden', flexShrink:0 }}>
-              <HPAutoFillImg src={src} style={{ maxWidth:'82%', maxHeight:'82%', objectFit:'contain' }} onError={e => e.target.style.display='none'}/>
+              style={{ width:'64px', height:'64px', borderRadius:'10px', border: i===idx ? '2px solid #0d9488' : '1px solid #eef0f2', background:'#fff', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', overflow:'hidden', flexShrink:0 }}>
+              <HPAutoFillImg src={src} style={{ maxWidth:'82%', maxHeight:'82%', objectFit:'contain', mixBlendMode:'multiply' }} onError={e => e.target.style.display='none'}/>
             </div>
           ))}
         </div>
@@ -2108,8 +2108,8 @@ function HPProductDetailPage({ product, onBack, onSelectProduct, onNavigate }) {
               {related.map((p, i) => (
                 <div key={i} onClick={() => onSelectProduct && onSelectProduct(p)}
                   style={{ minWidth:'200px', maxWidth:'200px', border:'1px solid #eef0f2', borderRadius:'12px', overflow:'hidden', cursor:'pointer', flexShrink:0 }}>
-                  <div style={{ height:'140px', background:'#f9fafb', display:'flex', alignItems:'center', justifyContent:'center', padding:'12px' }}>
-                    <img loading="lazy" decoding="async" src={(p.images && p.images[0]) || p.img} style={{ maxWidth:'100%', maxHeight:'100%', objectFit:'contain' }} onError={e => e.target.style.display='none'}/>
+                  <div style={{ height:'140px', background:'#fff', display:'flex', alignItems:'center', justifyContent:'center', padding:'12px' }}>
+                    <img loading="lazy" decoding="async" src={(p.images && p.images[0]) || p.img} style={{ maxWidth:'100%', maxHeight:'100%', objectFit:'contain', mixBlendMode:'multiply' }} onError={e => e.target.style.display='none'}/>
                   </div>
                   <div style={{ padding:'10px 12px' }}>
                     <div style={{ fontSize:'12.5px', fontWeight:'700', color:'#1a1a1a' }}>{p.code}</div>
@@ -2588,7 +2588,7 @@ function HPCartPage({ cartItems, onClear }) {
             ? <div style={{ textAlign:'center', padding:'60px', color:'#aaa', fontSize:'16px' }}>ตะกร้าของคุณว่างเปล่า</div>
             : cartItems.map((item, i) => (
               <div key={i} style={{ display:'flex', alignItems:'center', gap:'14px', padding:'14px 0', borderBottom:'1px solid #f0f0f0' }}>
-                <img loading="lazy" decoding="async" src={item.img} style={{ width:'56px', height:'56px', objectFit:'contain', background:'#f9fafb', borderRadius:'8px', padding:'4px' }}/>
+                <img loading="lazy" decoding="async" src={item.img} style={{ width:'56px', height:'56px', objectFit:'contain', background:'#fff', borderRadius:'8px', padding:'4px', mixBlendMode:'multiply' }}/>
                 <div style={{ flex:1 }}>
                   <div style={{ fontSize:'14px', fontWeight:'600', color:'#1a1a1a' }}>{item.name}</div>
                   <div style={{ fontSize:'12px', color:'#888' }}>{item.brand}</div>

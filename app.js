@@ -6063,7 +6063,8 @@ function HPImageZoomRotateModal({
     style: {
       width: '100%',
       height: '100%',
-      objectFit: 'contain'
+      objectFit: 'contain',
+      mixBlendMode: 'multiply'
     },
     onError: e => e.target.style.visibility = 'hidden'
   })))), title && /*#__PURE__*/React.createElement("div", {
@@ -6202,7 +6203,7 @@ function HPProductGallery({
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       height: '380px',
-      background: '#f9fafb',
+      background: '#fff',
       border: '1px solid #eef0f2',
       borderRadius: '16px',
       display: 'flex',
@@ -6220,7 +6221,8 @@ function HPProductGallery({
       height: '100%',
       objectFit: 'contain',
       padding: '14px',
-      boxSizing: 'border-box'
+      boxSizing: 'border-box',
+      mixBlendMode: 'multiply'
     },
     onError: e => e.target.style.display = 'none'
   }), /*#__PURE__*/React.createElement("div", {
@@ -6311,7 +6313,7 @@ function HPProductGallery({
       height: '64px',
       borderRadius: '10px',
       border: i === idx ? '2px solid #0d9488' : '1px solid #eef0f2',
-      background: '#f9fafb',
+      background: '#fff',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -6324,7 +6326,8 @@ function HPProductGallery({
     style: {
       maxWidth: '82%',
       maxHeight: '82%',
-      objectFit: 'contain'
+      objectFit: 'contain',
+      mixBlendMode: 'multiply'
     },
     onError: e => e.target.style.display = 'none'
   })))), open && /*#__PURE__*/React.createElement(HPImageZoomRotateModal, {
@@ -6713,7 +6716,7 @@ function HPProductDetailPage({
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       height: '140px',
-      background: '#f9fafb',
+      background: '#fff',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -6726,7 +6729,8 @@ function HPProductDetailPage({
     style: {
       maxWidth: '100%',
       maxHeight: '100%',
-      objectFit: 'contain'
+      objectFit: 'contain',
+      mixBlendMode: 'multiply'
     },
     onError: e => e.target.style.display = 'none'
   })), /*#__PURE__*/React.createElement("div", {
@@ -8375,9 +8379,10 @@ function HPCartPage({
       width: '56px',
       height: '56px',
       objectFit: 'contain',
-      background: '#f9fafb',
+      background: '#fff',
       borderRadius: '8px',
-      padding: '4px'
+      padding: '4px',
+      mixBlendMode: 'multiply'
     }
   }), /*#__PURE__*/React.createElement("div", {
     style: {
