@@ -2735,7 +2735,7 @@ function HPCategoryShowcase({
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       height: '160px',
-      background: `linear-gradient(180deg, ${c.accent}12 0%, #ffffff 100%)`,
+      background: '#fff',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center'
