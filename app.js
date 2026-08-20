@@ -6220,8 +6220,6 @@ function HPProductGallery({
       width: '100%',
       height: '100%',
       objectFit: 'contain',
-      padding: '14px',
-      boxSizing: 'border-box',
       mixBlendMode: 'multiply'
     },
     onError: e => e.target.style.display = 'none'
@@ -6719,8 +6717,7 @@ function HPProductDetailPage({
       background: '#fff',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center',
-      padding: '12px'
+      justifyContent: 'center'
     }
   }, /*#__PURE__*/React.createElement("img", {
     loading: "lazy",
@@ -6968,7 +6965,6 @@ function HPBrandProductsPage({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '12px',
           position: 'relative'
         }
       }, /*#__PURE__*/React.createElement("img", {
@@ -8231,7 +8227,6 @@ function HPCategoryProductsPage({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '12px',
         position: 'relative'
       }
     }, /*#__PURE__*/React.createElement("img", {

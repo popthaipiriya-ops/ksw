@@ -1949,7 +1949,9 @@ function HPProductGallery({ images, title }) {
       <div
         style={{ height:'380px', background:'#fff', border:'1px solid #eef0f2', borderRadius:'16px', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', cursor:'zoom-in', position:'relative' }}
         onClick={() => setOpen(true)}>
-        <HPAutoFillImg src={list[idx]} style={{ width:'100%', height:'100%', objectFit:'contain', padding:'14px', boxSizing:'border-box', mixBlendMode:'multiply' }} onError={e => e.target.style.display='none'}/>
+        {/* เอา padding คงที่ออก — เดิม 14px ทำให้รูปที่เป็นแบนเนอร์เต็มภาพอยู่แล้ว (ไม่ใช่ภาพตัดขาวพื้นขาว)
+            เหลือขอบขาวรอบรูปให้เห็นชัด ส่วนรูปภาพตัดขาวที่มีขอบขาวเยอะ HPAutoFillImg ซูมชดเชยให้อยู่แล้วโดยไม่ต้องพึ่ง padding นี้ */}
+        <HPAutoFillImg src={list[idx]} style={{ width:'100%', height:'100%', objectFit:'contain', mixBlendMode:'multiply' }} onError={e => e.target.style.display='none'}/>
         <div style={{ position:'absolute', top:'12px', left:'14px', display:'flex', alignItems:'center', gap:'6px', background:'rgba(13,92,80,0.9)', color:'#fff', fontSize:'11px', fontWeight:'600', padding:'6px 12px', borderRadius:'999px' }}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="M11 8v6M8 11h6"/><path d="M21 21l-4.35-4.35"/></svg>
           คลิกเพื่อดูรูปขนาดใหญ่
@@ -2108,7 +2110,7 @@ function HPProductDetailPage({ product, onBack, onSelectProduct, onNavigate }) {
               {related.map((p, i) => (
                 <div key={i} onClick={() => onSelectProduct && onSelectProduct(p)}
                   style={{ minWidth:'200px', maxWidth:'200px', border:'1px solid #eef0f2', borderRadius:'12px', overflow:'hidden', cursor:'pointer', flexShrink:0 }}>
-                  <div style={{ height:'140px', background:'#fff', display:'flex', alignItems:'center', justifyContent:'center', padding:'12px' }}>
+                  <div style={{ height:'140px', background:'#fff', display:'flex', alignItems:'center', justifyContent:'center' }}>
                     <img loading="lazy" decoding="async" src={(p.images && p.images[0]) || p.img} style={{ maxWidth:'100%', maxHeight:'100%', objectFit:'contain', mixBlendMode:'multiply' }} onError={e => e.target.style.display='none'}/>
                   </div>
                   <div style={{ padding:'10px 12px' }}>
@@ -2190,7 +2192,7 @@ function HPBrandProductsPage({ onSelectProduct, embedded, onViewAll, initialBran
                   onClick={() => onSelectProduct(p)}>
                   {/* background:'#fff' + mixBlendMode:'multiply' — พื้นขาวของรูปสินค้าจะกลืนไปกับการ์ดพอดี
                       (เดิมพื้นกล่อง f9fafb ต่างเฉดกับพื้นรูปขาวนิดหน่อย ทำให้เห็นขอบกล่องเป็นเส้น) */}
-                  <div style={{ height:'140px', background:'#fff', display:'flex', alignItems:'center', justifyContent:'center', padding:'12px', position:'relative' }}>
+                  <div style={{ height:'140px', background:'#fff', display:'flex', alignItems:'center', justifyContent:'center', position:'relative' }}>
                     <img loading="lazy" decoding="async" src={thumb} style={{ maxWidth:'100%', maxHeight:'100%', objectFit:'contain', mixBlendMode:'multiply' }} onError={e => e.target.style.display='none'}/>
                     <div onClick={e => { e.stopPropagation(); setZoomProduct(p); }} title="ดูรูปขนาดใหญ่"
                       style={{ position:'absolute', bottom:'6px', right:'6px', width:'26px', height:'26px', borderRadius:'50%', background:'rgba(13,92,80,0.85)', display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -2553,7 +2555,7 @@ function HPCategoryProductsPage({ activeCategory, onSelectProduct }) {
                   onMouseEnter={e => { e.currentTarget.style.boxShadow='0 10px 22px rgba(0,0,0,0.09)'; e.currentTarget.style.transform='translateY(-3px)'; }}
                   onMouseLeave={e => { e.currentTarget.style.boxShadow='none'; e.currentTarget.style.transform='translateY(0)'; }}
                   onClick={() => onSelectProduct(p)}>
-                  <div style={{ height:'140px', background:'#fff', display:'flex', alignItems:'center', justifyContent:'center', padding:'12px', position:'relative' }}>
+                  <div style={{ height:'140px', background:'#fff', display:'flex', alignItems:'center', justifyContent:'center', position:'relative' }}>
                     <img loading="lazy" decoding="async" src={thumb} style={{ maxWidth:'100%', maxHeight:'100%', objectFit:'contain', mixBlendMode:'multiply' }} onError={e => e.target.style.display='none'}/>
                     <div onClick={e => { e.stopPropagation(); setZoomProduct(p); }} title="ดูรูปขนาดใหญ่"
                       style={{ position:'absolute', bottom:'6px', right:'6px', width:'26px', height:'26px', borderRadius:'50%', background:'rgba(13,92,80,0.85)', display:'flex', alignItems:'center', justifyContent:'center' }}>
