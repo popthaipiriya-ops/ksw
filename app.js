@@ -2735,11 +2735,10 @@ function HPCategoryShowcase({
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       height: '160px',
-      background: '#f9fafb',
+      background: `linear-gradient(180deg, ${c.accent}12 0%, #ffffff 100%)`,
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center',
-      borderBottom: '1px solid #f2f4f2'
+      justifyContent: 'center'
     }
   }, /*#__PURE__*/React.createElement("img", {
     loading: "lazy",
@@ -2750,7 +2749,8 @@ function HPCategoryShowcase({
       height: '100%',
       objectFit: 'contain',
       padding: '10px',
-      boxSizing: 'border-box'
+      boxSizing: 'border-box',
+      mixBlendMode: 'multiply'
     },
     onError: e => e.target.style.display = 'none'
   })), /*#__PURE__*/React.createElement("div", {
