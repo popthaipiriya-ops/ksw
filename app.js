@@ -6058,9 +6058,7 @@ function HPImageZoomRotateModal({
       border: i === idx ? '2px solid #5fd1c2' : '2px solid rgba(255,255,255,0.2)',
       opacity: i === idx ? 1 : 0.65
     }
-  }, /*#__PURE__*/React.createElement("img", {
-    loading: "lazy",
-    decoding: "async",
+  }, /*#__PURE__*/React.createElement(HPAutoFillImg, {
     src: u,
     style: {
       width: '100%',
@@ -6116,6 +6114,82 @@ function HPImageZoomRotateModal({
     }
   }, "\u0E25\u0E49\u0E2D\u0E40\u0E21\u0E32\u0E2A\u0E4C\u0E2B\u0E23\u0E37\u0E2D\u0E08\u0E35\u0E1A\u0E19\u0E34\u0E49\u0E27\u0E40\u0E1E\u0E37\u0E48\u0E2D\u0E0B\u0E39\u0E21", zoom > 1 ? ' · ลากเพื่อเลื่อนดู' : '', multi ? ' · ลูกศรซ้าย/ขวาเปลี่ยนรูป' : '', " \xB7 Esc \u0E40\u0E1E\u0E37\u0E48\u0E2D\u0E1B\u0E34\u0E14")));
 }
+
+// ตรวจจับขอบเขตเนื้อรูปจริง (ตัดพื้นขาว/โปร่งใสรอบๆ ออก) แล้วคำนวณค่าซูมให้เต็มกรอบ
+// รูปสินค้าแต่ละแบรนด์มีระยะขอบขาวไม่เท่ากัน ซูมค่าคงที่ค่าเดียวไม่ได้ (จะไปตัดรูปที่ครอปมาแน่นอยู่แล้ว)
+// ต้องวัดจากพิกเซลจริงของแต่ละรูปแล้วคำนวณค่าซูมของตัวเอง
+function hpDetectContentScale(imgEl, targetFill = 0.94, maxScale = 1.8) {
+  try {
+    const w = imgEl.naturalWidth,
+      h = imgEl.naturalHeight;
+    if (!w || !h) return 1;
+    const sw = Math.min(220, w);
+    const sh = Math.max(1, Math.round(sw * h / w));
+    const canvas = document.createElement('canvas');
+    canvas.width = sw;
+    canvas.height = sh;
+    const ctx = canvas.getContext('2d', {
+      willReadFrequently: true
+    });
+    if (!ctx) return 1;
+    ctx.drawImage(imgEl, 0, 0, sw, sh);
+    const {
+      data
+    } = ctx.getImageData(0, 0, sw, sh);
+    let minX = sw,
+      minY = sh,
+      maxX = -1,
+      maxY = -1;
+    for (let y = 0; y < sh; y++) {
+      for (let x = 0; x < sw; x++) {
+        const i = (y * sw + x) * 4;
+        if (data[i + 3] < 10) continue;
+        if (data[i] >= 245 && data[i + 1] >= 245 && data[i + 2] >= 245) continue;
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+    if (maxX < minX || maxY < minY) return 1;
+    const ratio = Math.max((maxX - minX + 1) / sw, (maxY - minY + 1) / sh);
+    if (ratio <= 0) return 1;
+    return Math.min(maxScale, Math.max(1, targetFill / ratio));
+  } catch {
+    return 1;
+  }
+}
+function HPAutoFillImg({
+  src,
+  style,
+  alt,
+  onError
+}) {
+  const ref = React.useRef(null);
+  const [scale, setScale] = useState(1);
+  useEffect(() => {
+    setScale(1);
+    const el = ref.current;
+    if (el && el.complete && el.naturalWidth) setScale(hpDetectContentScale(el));
+  }, [src]);
+  const handleLoad = () => {
+    if (ref.current) setScale(hpDetectContentScale(ref.current));
+  };
+  return /*#__PURE__*/React.createElement("img", {
+    ref: ref,
+    loading: "lazy",
+    decoding: "async",
+    src: src,
+    alt: alt || '',
+    onLoad: handleLoad,
+    onError: onError,
+    style: {
+      ...style,
+      transform: scale > 1.02 ? `scale(${scale})` : undefined,
+      transition: 'transform 0.2s ease'
+    }
+  });
+}
 function HPProductGallery({
   images,
   title
@@ -6139,9 +6213,7 @@ function HPProductGallery({
       position: 'relative'
     },
     onClick: () => setOpen(true)
-  }, /*#__PURE__*/React.createElement("img", {
-    loading: "lazy",
-    decoding: "async",
+  }, /*#__PURE__*/React.createElement(HPAutoFillImg, {
     src: list[idx],
     style: {
       width: '100%',
@@ -6247,9 +6319,7 @@ function HPProductGallery({
       overflow: 'hidden',
       flexShrink: 0
     }
-  }, /*#__PURE__*/React.createElement("img", {
-    loading: "lazy",
-    decoding: "async",
+  }, /*#__PURE__*/React.createElement(HPAutoFillImg, {
     src: src,
     style: {
       maxWidth: '82%',

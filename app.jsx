@@ -1867,7 +1867,7 @@ function HPImageZoomRotateModal({ src, frames, title, onClose }) {
               <div key={i} onClick={() => { setIdx(i); reset(); }}
                 style={{ width:'50px', height:'50px', borderRadius:'8px', overflow:'hidden', cursor:'pointer', background:'#fff',
                          border: i === idx ? '2px solid #5fd1c2' : '2px solid rgba(255,255,255,0.2)', opacity: i === idx ? 1 : 0.65 }}>
-                <img loading="lazy" decoding="async" src={u} style={{ width:'100%', height:'100%', objectFit:'contain' }} onError={e => e.target.style.visibility='hidden'}/>
+                <HPAutoFillImg src={u} style={{ width:'100%', height:'100%', objectFit:'contain' }} onError={e => e.target.style.visibility='hidden'}/>
               </div>
             ))}
           </div>
@@ -1889,6 +1889,55 @@ function HPImageZoomRotateModal({ src, frames, title, onClose }) {
   );
 }
 
+// ตรวจจับขอบเขตเนื้อรูปจริง (ตัดพื้นขาว/โปร่งใสรอบๆ ออก) แล้วคำนวณค่าซูมให้เต็มกรอบ
+// รูปสินค้าแต่ละแบรนด์มีระยะขอบขาวไม่เท่ากัน ซูมค่าคงที่ค่าเดียวไม่ได้ (จะไปตัดรูปที่ครอปมาแน่นอยู่แล้ว)
+// ต้องวัดจากพิกเซลจริงของแต่ละรูปแล้วคำนวณค่าซูมของตัวเอง
+function hpDetectContentScale(imgEl, targetFill = 0.94, maxScale = 1.8) {
+  try {
+    const w = imgEl.naturalWidth, h = imgEl.naturalHeight;
+    if (!w || !h) return 1;
+    const sw = Math.min(220, w);
+    const sh = Math.max(1, Math.round(sw * h / w));
+    const canvas = document.createElement('canvas');
+    canvas.width = sw; canvas.height = sh;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return 1;
+    ctx.drawImage(imgEl, 0, 0, sw, sh);
+    const { data } = ctx.getImageData(0, 0, sw, sh);
+    let minX = sw, minY = sh, maxX = -1, maxY = -1;
+    for (let y = 0; y < sh; y++) {
+      for (let x = 0; x < sw; x++) {
+        const i = (y * sw + x) * 4;
+        if (data[i + 3] < 10) continue;
+        if (data[i] >= 245 && data[i + 1] >= 245 && data[i + 2] >= 245) continue;
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+    if (maxX < minX || maxY < minY) return 1;
+    const ratio = Math.max((maxX - minX + 1) / sw, (maxY - minY + 1) / sh);
+    if (ratio <= 0) return 1;
+    return Math.min(maxScale, Math.max(1, targetFill / ratio));
+  } catch { return 1; }
+}
+
+function HPAutoFillImg({ src, style, alt, onError }) {
+  const ref = React.useRef(null);
+  const [scale, setScale] = useState(1);
+  useEffect(() => {
+    setScale(1);
+    const el = ref.current;
+    if (el && el.complete && el.naturalWidth) setScale(hpDetectContentScale(el));
+  }, [src]);
+  const handleLoad = () => { if (ref.current) setScale(hpDetectContentScale(ref.current)); };
+  return (
+    <img ref={ref} loading="lazy" decoding="async" src={src} alt={alt || ''} onLoad={handleLoad} onError={onError}
+      style={{ ...style, transform: scale > 1.02 ? `scale(${scale})` : undefined, transition:'transform 0.2s ease' }}/>
+  );
+}
+
 function HPProductGallery({ images, title }) {
   const list = images && images.length ? images : [];
   const [idx, setIdx] = useState(0);
@@ -1900,7 +1949,7 @@ function HPProductGallery({ images, title }) {
       <div
         style={{ height:'380px', background:'#f9fafb', border:'1px solid #eef0f2', borderRadius:'16px', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', cursor:'zoom-in', position:'relative' }}
         onClick={() => setOpen(true)}>
-        <img loading="lazy" decoding="async" src={list[idx]} style={{ width:'100%', height:'100%', objectFit:'contain', padding:'14px', boxSizing:'border-box' }} onError={e => e.target.style.display='none'}/>
+        <HPAutoFillImg src={list[idx]} style={{ width:'100%', height:'100%', objectFit:'contain', padding:'14px', boxSizing:'border-box' }} onError={e => e.target.style.display='none'}/>
         <div style={{ position:'absolute', top:'12px', left:'14px', display:'flex', alignItems:'center', gap:'6px', background:'rgba(13,92,80,0.9)', color:'#fff', fontSize:'11px', fontWeight:'600', padding:'6px 12px', borderRadius:'999px' }}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="M11 8v6M8 11h6"/><path d="M21 21l-4.35-4.35"/></svg>
           คลิกเพื่อดูรูปขนาดใหญ่
@@ -1917,7 +1966,7 @@ function HPProductGallery({ images, title }) {
           {list.map((src, i) => (
             <div key={i} onClick={() => setIdx(i)}
               style={{ width:'64px', height:'64px', borderRadius:'10px', border: i===idx ? '2px solid #0d9488' : '1px solid #eef0f2', background:'#f9fafb', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', overflow:'hidden', flexShrink:0 }}>
-              <img loading="lazy" decoding="async" src={src} style={{ maxWidth:'82%', maxHeight:'82%', objectFit:'contain' }} onError={e => e.target.style.display='none'}/>
+              <HPAutoFillImg src={src} style={{ maxWidth:'82%', maxHeight:'82%', objectFit:'contain' }} onError={e => e.target.style.display='none'}/>
             </div>
           ))}
         </div>
