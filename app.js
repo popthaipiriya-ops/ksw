@@ -6960,7 +6960,7 @@ function HPBrandProductsPage({
       }, /*#__PURE__*/React.createElement("div", {
         style: {
           height: '140px',
-          background: '#f9fafb',
+          background: '#fff',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -6974,7 +6974,8 @@ function HPBrandProductsPage({
         style: {
           maxWidth: '100%',
           maxHeight: '100%',
-          objectFit: 'contain'
+          objectFit: 'contain',
+          mixBlendMode: 'multiply'
         },
         onError: e => e.target.style.display = 'none'
       }), /*#__PURE__*/React.createElement("div", {
@@ -8222,7 +8223,7 @@ function HPCategoryProductsPage({
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         height: '140px',
-        background: '#f9fafb',
+        background: '#fff',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -8236,7 +8237,8 @@ function HPCategoryProductsPage({
       style: {
         maxWidth: '100%',
         maxHeight: '100%',
-        objectFit: 'contain'
+        objectFit: 'contain',
+        mixBlendMode: 'multiply'
       },
       onError: e => e.target.style.display = 'none'
     }), /*#__PURE__*/React.createElement("div", {

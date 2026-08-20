@@ -2188,8 +2188,10 @@ function HPBrandProductsPage({ onSelectProduct, embedded, onViewAll, initialBran
                   onMouseEnter={e => { e.currentTarget.style.boxShadow='0 10px 22px rgba(0,0,0,0.09)'; e.currentTarget.style.transform='translateY(-3px)'; }}
                   onMouseLeave={e => { e.currentTarget.style.boxShadow='none'; e.currentTarget.style.transform='translateY(0)'; }}
                   onClick={() => onSelectProduct(p)}>
-                  <div style={{ height:'140px', background:'#f9fafb', display:'flex', alignItems:'center', justifyContent:'center', padding:'12px', position:'relative' }}>
-                    <img loading="lazy" decoding="async" src={thumb} style={{ maxWidth:'100%', maxHeight:'100%', objectFit:'contain' }} onError={e => e.target.style.display='none'}/>
+                  {/* background:'#fff' + mixBlendMode:'multiply' — พื้นขาวของรูปสินค้าจะกลืนไปกับการ์ดพอดี
+                      (เดิมพื้นกล่อง f9fafb ต่างเฉดกับพื้นรูปขาวนิดหน่อย ทำให้เห็นขอบกล่องเป็นเส้น) */}
+                  <div style={{ height:'140px', background:'#fff', display:'flex', alignItems:'center', justifyContent:'center', padding:'12px', position:'relative' }}>
+                    <img loading="lazy" decoding="async" src={thumb} style={{ maxWidth:'100%', maxHeight:'100%', objectFit:'contain', mixBlendMode:'multiply' }} onError={e => e.target.style.display='none'}/>
                     <div onClick={e => { e.stopPropagation(); setZoomProduct(p); }} title="ดูรูปขนาดใหญ่"
                       style={{ position:'absolute', bottom:'6px', right:'6px', width:'26px', height:'26px', borderRadius:'50%', background:'rgba(13,92,80,0.85)', display:'flex', alignItems:'center', justifyContent:'center' }}>
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="M11 8v6M8 11h6"/><path d="M21 21l-4.35-4.35"/></svg>
@@ -2551,8 +2553,8 @@ function HPCategoryProductsPage({ activeCategory, onSelectProduct }) {
                   onMouseEnter={e => { e.currentTarget.style.boxShadow='0 10px 22px rgba(0,0,0,0.09)'; e.currentTarget.style.transform='translateY(-3px)'; }}
                   onMouseLeave={e => { e.currentTarget.style.boxShadow='none'; e.currentTarget.style.transform='translateY(0)'; }}
                   onClick={() => onSelectProduct(p)}>
-                  <div style={{ height:'140px', background:'#f9fafb', display:'flex', alignItems:'center', justifyContent:'center', padding:'12px', position:'relative' }}>
-                    <img loading="lazy" decoding="async" src={thumb} style={{ maxWidth:'100%', maxHeight:'100%', objectFit:'contain' }} onError={e => e.target.style.display='none'}/>
+                  <div style={{ height:'140px', background:'#fff', display:'flex', alignItems:'center', justifyContent:'center', padding:'12px', position:'relative' }}>
+                    <img loading="lazy" decoding="async" src={thumb} style={{ maxWidth:'100%', maxHeight:'100%', objectFit:'contain', mixBlendMode:'multiply' }} onError={e => e.target.style.display='none'}/>
                     <div onClick={e => { e.stopPropagation(); setZoomProduct(p); }} title="ดูรูปขนาดใหญ่"
                       style={{ position:'absolute', bottom:'6px', right:'6px', width:'26px', height:'26px', borderRadius:'50%', background:'rgba(13,92,80,0.85)', display:'flex', alignItems:'center', justifyContent:'center' }}>
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="M11 8v6M8 11h6"/><path d="M21 21l-4.35-4.35"/></svg>
