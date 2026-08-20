@@ -2713,16 +2713,13 @@ function HPCategoryShowcase({
     style: {
       flex: '0 0 auto',
       width: '250px',
-      height: '340px',
-      borderRadius: '22px',
+      borderRadius: '16px',
       background: '#fff',
       border: '1px solid #eef0f2',
       boxShadow: '0 4px 16px rgba(15,77,42,0.06)',
-      position: 'relative',
       overflow: 'hidden',
       cursor: 'pointer',
       scrollSnapAlign: 'start',
-      padding: '26px 22px',
       display: 'flex',
       flexDirection: 'column',
       transition: 'transform 0.2s ease, box-shadow 0.2s ease'
@@ -2735,6 +2732,32 @@ function HPCategoryShowcase({
       e.currentTarget.style.transform = 'translateY(0)';
       e.currentTarget.style.boxShadow = '0 4px 16px rgba(15,77,42,0.06)';
     }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: '160px',
+      background: '#f9fafb',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '18px',
+      borderBottom: '1px solid #f2f4f2'
+    }
+  }, /*#__PURE__*/React.createElement("img", {
+    loading: "lazy",
+    decoding: "async",
+    src: c.img,
+    style: {
+      maxWidth: '85%',
+      maxHeight: '100%',
+      objectFit: 'contain'
+    },
+    onError: e => e.target.style.display = 'none'
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '18px 20px 22px',
+      display: 'flex',
+      flexDirection: 'column'
+    }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
       display: 'inline-block',
@@ -2745,12 +2768,12 @@ function HPCategoryShowcase({
       fontWeight: '700',
       padding: '5px 12px',
       borderRadius: '999px',
-      marginBottom: '14px'
+      marginBottom: '12px'
     }
   }, c.tag), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: 'Inter, Noto Sans Thai, sans-serif',
-      fontSize: '21px',
+      fontSize: '19px',
       fontWeight: '800',
       color: '#1a1a1a',
       marginBottom: '6px'
@@ -2761,25 +2784,7 @@ function HPCategoryShowcase({
       color: '#889',
       lineHeight: '1.5'
     }
-  }, c.desc), /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1,
-      display: 'flex',
-      alignItems: 'flex-end',
-      justifyContent: 'center'
-    }
-  }, /*#__PURE__*/React.createElement("img", {
-    loading: "lazy",
-    decoding: "async",
-    src: c.img,
-    style: {
-      maxWidth: '80%',
-      maxHeight: '140px',
-      objectFit: 'contain',
-      mixBlendMode: 'multiply'
-    },
-    onError: e => e.target.style.display = 'none'
-  })))))));
+  }, c.desc)))))));
 }
 
 // ─── PRODUCT CARD & SECTIONS ──────────────────────────────────────────────────
@@ -6139,9 +6144,11 @@ function HPProductGallery({
     decoding: "async",
     src: list[idx],
     style: {
-      maxWidth: '78%',
-      maxHeight: '78%',
-      objectFit: 'contain'
+      width: '100%',
+      height: '100%',
+      objectFit: 'contain',
+      padding: '14px',
+      boxSizing: 'border-box'
     },
     onError: e => e.target.style.display = 'none'
   }), /*#__PURE__*/React.createElement("div", {
