@@ -4723,7 +4723,7 @@ function HPKnowledgePage({
   }];
   return /*#__PURE__*/React.createElement("section", {
     style: {
-      background: '#eef8f7',
+      background: '#fff',
       padding: '30px 0 56px',
       minHeight: '75vh'
     }
@@ -5106,7 +5106,7 @@ function HPMdbArticlePage({
   }];
   return /*#__PURE__*/React.createElement("section", {
     style: {
-      background: '#eef8f7',
+      background: '#fff',
       padding: '30px 0 56px',
       minHeight: '75vh'
     }
@@ -5444,7 +5444,7 @@ function HPLoadCenter3PArticlePage({
   const caution = ['หลีกเลี่ยงการต่อโหลดไฟฟ้าเกินขนาดที่ตู้รองรับ', 'ตรวจสอบระบบสายดินและเบรกเกอร์ให้อยู่ในสภาพพร้อมใช้งาน', 'บำรุงรักษาและตรวจเช็กระบบไฟฟ้าเป็นประจำ'];
   return /*#__PURE__*/React.createElement("section", {
     style: {
-      background: '#eef8f7',
+      background: '#fff',
       padding: '30px 0 56px',
       minHeight: '75vh'
     }
@@ -6937,27 +6937,28 @@ function HPBrandProductsPage({
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '12px',
-      marginBottom: '26px'
+      textAlign: 'center',
+      marginBottom: '34px'
     }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: '4px',
-      height: '22px',
-      background: '#f5a623',
-      borderRadius: '2px'
-    }
-  }), /*#__PURE__*/React.createElement("h1", {
+  }, /*#__PURE__*/React.createElement("h1", {
     style: {
       fontFamily: 'Inter, Noto Sans Thai, sans-serif',
-      fontSize: '22px',
+      fontSize: '30px',
       fontWeight: '800',
-      color: '#06352e'
+      color: '#06352e',
+      letterSpacing: '0.01em'
     }
-  }, "\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E15\u0E32\u0E21\u0E41\u0E1A\u0E23\u0E19\u0E14\u0E4C"), /*#__PURE__*/React.createElement("span", {
+  }, "\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E15\u0E32\u0E21\u0E41\u0E1A\u0E23\u0E19\u0E14\u0E4C"), /*#__PURE__*/React.createElement("div", {
     style: {
+      width: '46px',
+      height: '4px',
+      background: '#f5a623',
+      borderRadius: '3px',
+      margin: '14px auto 16px'
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: 'inline-block',
       fontSize: '12px',
       color: '#0d9488',
       fontWeight: '700',
@@ -7399,7 +7400,7 @@ function HPCatalogPage({
   if (!total) {
     return /*#__PURE__*/React.createElement("section", {
       style: {
-        background: '#eef1ee',
+        background: '#fff',
         padding: '30px 0 56px',
         minHeight: '75vh'
       }
@@ -7432,7 +7433,7 @@ function HPCatalogPage({
   const openBrandSite = () => window.open(b.url, '_blank', 'noopener,noreferrer');
   return /*#__PURE__*/React.createElement("section", {
     style: {
-      background: '#eef1ee',
+      background: '#fff',
       padding: '30px 0 56px',
       minHeight: '75vh'
     }

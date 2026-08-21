@@ -1411,7 +1411,7 @@ function HPKnowledgePage({ onCategoryChange, onNavigate, embedded }) {
     { title:'ความสำคัญของตู้โหลด 3 เฟส', excerpt:'ตู้โหลด 3 เฟสช่วยกระจายโหลดไฟฟ้าให้สมดุล รองรับเครื่องจักรและอุปกรณ์กำลังสูง เหมาะกับโรงงานและอาคารขนาดใหญ่', c1:'#3b82f6', c2:'#2563eb', icon:'bolt', img:'assets/kjl-more/kjl-elecservice-1.webp', article:'loadcenter3p-article', cta:'อ่านบทความ' },
   ];
   return (
-    <section style={{ background:'#eef8f7', padding:'30px 0 56px', minHeight:'75vh' }}>
+    <section style={{ background:'#fff', padding:'30px 0 56px', minHeight:'75vh' }}>
       <div style={{ maxWidth:'900px', margin:'0 auto', padding:'0 20px' }}>
         {!embedded && <div style={{ fontSize:'14px', color:'#888', marginBottom:'22px' }}>หน้าหลัก › <span style={{ color:'#8bc83f', fontWeight:'700' }}>เกร็ดความรู้</span></div>}
       </div>
@@ -1528,7 +1528,7 @@ function HPMdbArticlePage({ onNavigate, onCategoryChange }) {
     { n:'3', title:'การทดสอบคุณภาพก่อนส่งมอบ', desc:'เช่น การทดสอบโหลดไฟฟ้า (Load Test) และความทนทานของตู้' },
   ];
   return (
-    <section style={{ background:'#eef8f7', padding:'30px 0 56px', minHeight:'75vh' }}>
+    <section style={{ background:'#fff', padding:'30px 0 56px', minHeight:'75vh' }}>
       <div style={{ maxWidth:'900px', margin:'0 auto', padding:'0 20px' }}>
         <div style={{ fontSize:'14px', color:'#888', marginBottom:'22px' }}>
           <span style={{ cursor:'pointer' }} onClick={() => onNavigate('หน้าแรก')}>หน้าหลัก</span> › <span style={{ cursor:'pointer' }} onClick={() => onNavigate('เกร็ดความรู้')}>เกร็ดความรู้</span> › <span style={{ color:'#8bc83f', fontWeight:'700' }}>ตู้ MDB คืออะไร ?</span>
@@ -1653,7 +1653,7 @@ function HPLoadCenter3PArticlePage({ onNavigate, onCategoryChange }) {
     'บำรุงรักษาและตรวจเช็กระบบไฟฟ้าเป็นประจำ',
   ];
   return (
-    <section style={{ background:'#eef8f7', padding:'30px 0 56px', minHeight:'75vh' }}>
+    <section style={{ background:'#fff', padding:'30px 0 56px', minHeight:'75vh' }}>
       <div style={{ maxWidth:'900px', margin:'0 auto', padding:'0 20px' }}>
         <div style={{ fontSize:'14px', color:'#888', marginBottom:'22px' }}>
           <span style={{ cursor:'pointer' }} onClick={() => onNavigate('หน้าแรก')}>หน้าหลัก</span> › <span style={{ cursor:'pointer' }} onClick={() => onNavigate('เกร็ดความรู้')}>เกร็ดความรู้</span> › <span style={{ color:'#8bc83f', fontWeight:'700' }}>ความสำคัญของตู้โหลด 3 เฟส</span>
@@ -2206,10 +2206,11 @@ function HPBrandProductsPage({ onSelectProduct, embedded, onViewAll, initialBran
           </div>}
 
           <div style={{ flex:1, minWidth:0 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:'12px', marginBottom:'26px' }}>
-              <div style={{ width:'4px', height:'22px', background:'#f5a623', borderRadius:'2px' }}/>
-              <h1 style={{ fontFamily:'Inter, Noto Sans Thai, sans-serif', fontSize:'22px', fontWeight:'800', color:'#06352e' }}>สินค้าตามแบรนด์</h1>
-              <span style={{ fontSize:'12px', color:'#0d9488', fontWeight:'700', background:'#e8f8f1', padding:'4px 12px', borderRadius:'999px' }}>{visibleBrands.length} แบรนด์</span>
+            {/* หัวข้อจัดกลาง ขนาดตัวอักษรเท่ากับ "แบรนด์สินค้าที่เราจำหน่าย" ในแถบโลโก้หน้าแรก ให้สไตล์ตรงกัน */}
+            <div style={{ textAlign:'center', marginBottom:'34px' }}>
+              <h1 style={{ fontFamily:'Inter, Noto Sans Thai, sans-serif', fontSize:'30px', fontWeight:'800', color:'#06352e', letterSpacing:'0.01em' }}>สินค้าตามแบรนด์</h1>
+              <div style={{ width:'46px', height:'4px', background:'#f5a623', borderRadius:'3px', margin:'14px auto 16px' }}/>
+              <span style={{ display:'inline-block', fontSize:'12px', color:'#0d9488', fontWeight:'700', background:'#e8f8f1', padding:'4px 12px', borderRadius:'999px' }}>{visibleBrands.length} แบรนด์</span>
             </div>
 
             {visibleBrands.map((brandTab, bi) => {
@@ -2352,7 +2353,7 @@ function HPCatalogPage({ embedded }) {
 
   if (!total) {
     return (
-      <section style={{ background:'#eef1ee', padding:'30px 0 56px', minHeight:'75vh' }}>
+      <section style={{ background:'#fff', padding:'30px 0 56px', minHeight:'75vh' }}>
         <div style={{ maxWidth:'1100px', margin:'0 auto', padding:'0 20px', textAlign:'center' }}>
           <div style={{ background:'#fff', borderRadius:'14px', padding:'60px 24px', color:'#8a9a92', fontSize:'15px' }}>
             ยังไม่มีหน้าแคตตาล็อกที่เปิดแสดงอยู่
@@ -2368,7 +2369,7 @@ function HPCatalogPage({ embedded }) {
   // แบรนด์ที่ใส่ลิงก์ไว้ กดที่รูปแล้วเปิดเว็บแบรนด์ในแท็บใหม่ / ที่ยังไม่ใส่ กดแล้วซูมดูรูปเหมือนเดิม
   const openBrandSite = () => window.open(b.url, '_blank', 'noopener,noreferrer');
   return (
-    <section style={{ background:'#eef1ee', padding:'30px 0 56px', minHeight:'75vh' }}>
+    <section style={{ background:'#fff', padding:'30px 0 56px', minHeight:'75vh' }}>
       <div style={{ maxWidth:'1100px', margin:'0 auto', padding:'0 20px' }}>
         {!embedded && <div style={{ fontSize:'14px', color:'#888', marginBottom:'22px' }}>หน้าหลัก › <span style={{ color:'#0d5c50', fontWeight:'700' }}>แคตตาล็อก</span></div>}
 
