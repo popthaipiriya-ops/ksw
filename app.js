@@ -2776,7 +2776,8 @@ function HPCategoryShowcase({
       maxWidth: '80%',
       maxHeight: '140px',
       objectFit: 'contain',
-      mixBlendMode: 'multiply'
+      mixBlendMode: 'multiply',
+      filter: 'brightness(1.28) contrast(1.05)'
     },
     onError: e => e.target.style.display = 'none'
   })))))));

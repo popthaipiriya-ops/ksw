@@ -884,7 +884,9 @@ function HPCategoryShowcase({ onCategoryChange }) {
               <div style={{ fontFamily:'Inter, Noto Sans Thai, sans-serif', fontSize:'21px', fontWeight:'800', color:'#1a1a1a', marginBottom:'6px' }}>{c.title}</div>
               <div style={{ fontSize:'12.5px', color:'#889', lineHeight:'1.5' }}>{c.desc}</div>
               <div style={{ flex:1, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
-                <img loading="lazy" decoding="async" src={c.img} style={{ maxWidth:'80%', maxHeight:'140px', objectFit:'contain', mixBlendMode:'multiply' }} onError={e => e.target.style.display='none'}/>
+                {/* รูปตัวอย่างหมวดหมู่พวกนี้พื้นหลังไม่ใช่สีขาวแท้ (มีเงา/แสงสะท้อนโทนเทาอ่อนติดมาด้วย ~rgb(204,205,208))
+                    multiply เฉยๆ ไม่พอ เพราะจะลบให้จางแค่พื้นขาวแท้ 255 เท่านั้น ต้องดัน brightness/contrast ให้พื้นเทาอ่อนนั้นเป็นขาวแท้ก่อน แล้ว multiply ถึงจะกลืนพื้นหายไปจริง */}
+                <img loading="lazy" decoding="async" src={c.img} style={{ maxWidth:'80%', maxHeight:'140px', objectFit:'contain', mixBlendMode:'multiply', filter:'brightness(1.28) contrast(1.05)' }} onError={e => e.target.style.display='none'}/>
               </div>
             </div>
           ))}
