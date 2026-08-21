@@ -874,21 +874,17 @@ function HPCategoryShowcase({ onCategoryChange }) {
             </button>
           </div>
         </div>
-        {/* การ์ดรูปสินค้าเต็ม แบบเดียวกับหน้า "สินค้าตามแบรนด์" — กล่องรูปแยกด้านบน พื้นหลังอ่อน
-            ไม่ใช้ mixBlendMode แล้ว (ของเดิมทำให้รูปดูจางเหมือนเป็นลายน้ำ ไม่ใช่รูปเต็มสี) */}
         <div ref={scrollRef} className="hp-scroll-hide" style={{ display:'flex', gap:'16px', overflowX:'auto', scrollSnapType:'x mandatory', paddingBottom:'6px' }}>
           {cards.map((c, idx) => (
             <div key={idx} onClick={() => onCategoryChange(c.cat)}
-              style={{ flex:'0 0 auto', width:'250px', borderRadius:'16px', background:'#fff', border:'1px solid #eef0f2', boxShadow:'0 4px 16px rgba(15,77,42,0.06)', overflow:'hidden', cursor:'pointer', scrollSnapAlign:'start', display:'flex', flexDirection:'column', transition:'transform 0.2s ease, box-shadow 0.2s ease' }}
+              style={{ flex:'0 0 auto', width:'250px', height:'340px', borderRadius:'22px', background:'#fff', border:'1px solid #eef0f2', boxShadow:'0 4px 16px rgba(15,77,42,0.06)', position:'relative', overflow:'hidden', cursor:'pointer', scrollSnapAlign:'start', padding:'26px 22px', display:'flex', flexDirection:'column', transition:'transform 0.2s ease, box-shadow 0.2s ease' }}
               onMouseEnter={e => { e.currentTarget.style.transform='translateY(-4px)'; e.currentTarget.style.boxShadow='0 14px 30px rgba(15,77,42,0.14)'; }}
               onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.boxShadow='0 4px 16px rgba(15,77,42,0.06)'; }}>
-              <div style={{ height:'160px', background:'#fff', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                <img loading="lazy" decoding="async" src={c.img} style={{ width:'100%', height:'100%', objectFit:'contain', padding:'10px', boxSizing:'border-box', mixBlendMode:'multiply' }} onError={e => e.target.style.display='none'}/>
-              </div>
-              <div style={{ padding:'18px 20px 22px', display:'flex', flexDirection:'column' }}>
-                <span style={{ display:'inline-block', alignSelf:'flex-start', background:`${c.accent}14`, color:c.accent, fontSize:'11px', fontWeight:'700', padding:'5px 12px', borderRadius:'999px', marginBottom:'12px' }}>{c.tag}</span>
-                <div style={{ fontFamily:'Inter, Noto Sans Thai, sans-serif', fontSize:'19px', fontWeight:'800', color:'#1a1a1a', marginBottom:'6px' }}>{c.title}</div>
-                <div style={{ fontSize:'12.5px', color:'#889', lineHeight:'1.5' }}>{c.desc}</div>
+              <span style={{ display:'inline-block', alignSelf:'flex-start', background:`${c.accent}14`, color:c.accent, fontSize:'11px', fontWeight:'700', padding:'5px 12px', borderRadius:'999px', marginBottom:'14px' }}>{c.tag}</span>
+              <div style={{ fontFamily:'Inter, Noto Sans Thai, sans-serif', fontSize:'21px', fontWeight:'800', color:'#1a1a1a', marginBottom:'6px' }}>{c.title}</div>
+              <div style={{ fontSize:'12.5px', color:'#889', lineHeight:'1.5' }}>{c.desc}</div>
+              <div style={{ flex:1, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
+                <img loading="lazy" decoding="async" src={c.img} style={{ maxWidth:'80%', maxHeight:'140px', objectFit:'contain', mixBlendMode:'multiply' }} onError={e => e.target.style.display='none'}/>
               </div>
             </div>
           ))}
