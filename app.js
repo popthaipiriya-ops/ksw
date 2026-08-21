@@ -4744,13 +4744,18 @@ function HPKnowledgePage({
       color: '#8bc83f',
       fontWeight: '700'
     }
-  }, "\u0E40\u0E01\u0E23\u0E47\u0E14\u0E04\u0E27\u0E32\u0E21\u0E23\u0E39\u0E49")), /*#__PURE__*/React.createElement("div", {
+  }, "\u0E40\u0E01\u0E23\u0E47\u0E14\u0E04\u0E27\u0E32\u0E21\u0E23\u0E39\u0E49"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxWidth: '1200px',
+      margin: '0 auto 28px',
+      padding: '0 20px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       borderRadius: '24px',
       overflow: 'hidden',
       position: 'relative',
       boxShadow: '0 14px 38px rgba(10,70,40,0.18)',
-      marginBottom: '28px',
       border: '1px solid #eaf3ed'
     }
   }, /*#__PURE__*/React.createElement("img", {
@@ -4763,7 +4768,13 @@ function HPKnowledgePage({
       display: 'block',
       objectFit: 'cover'
     }
-  })), /*#__PURE__*/React.createElement("div", {
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxWidth: '900px',
+      margin: '0 auto',
+      padding: '0 20px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: '24px'
     }

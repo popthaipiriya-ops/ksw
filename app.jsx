@@ -1414,12 +1414,18 @@ function HPKnowledgePage({ onCategoryChange, onNavigate, embedded }) {
     <section style={{ background:'#eef8f7', padding:'30px 0 56px', minHeight:'75vh' }}>
       <div style={{ maxWidth:'900px', margin:'0 auto', padding:'0 20px' }}>
         {!embedded && <div style={{ fontSize:'14px', color:'#888', marginBottom:'22px' }}>หน้าหลัก › <span style={{ color:'#8bc83f', fontWeight:'700' }}>เกร็ดความรู้</span></div>}
+      </div>
 
-        {/* hero — article cover image */}
-        <div style={{ borderRadius:'24px', overflow:'hidden', position:'relative', boxShadow:'0 14px 38px rgba(10,70,40,0.18)', marginBottom:'28px', border:'1px solid #eaf3ed' }}>
+      {/* hero — article cover image กว้างกว่าคอลัมน์เนื้อหา (900px) ให้เต็มพื้นที่มากขึ้นตามที่ขอ
+          เนื้อหาด้านล่างยังคงแคบไว้เพื่อความอ่านง่าย มีแค่รูปที่ขยายกว้างขึ้น */}
+      <div style={{ maxWidth:'1200px', margin:'0 auto 28px', padding:'0 20px' }}>
+        <div style={{ borderRadius:'24px', overflow:'hidden', position:'relative', boxShadow:'0 14px 38px rgba(10,70,40,0.18)', border:'1px solid #eaf3ed' }}>
           <img loading="lazy" decoding="async" src="assets/article-5guidelines.jpg" alt="5 แนวทาง การเลือกซื้ออุปกรณ์ เดินระบบไฟฟ้า"
             style={{ width:'100%', display:'block', objectFit:'cover' }}/>
         </div>
+      </div>
+
+      <div style={{ maxWidth:'900px', margin:'0 auto', padding:'0 20px' }}>
         <div style={{ marginBottom:'24px' }}>
           <span style={{ display:'inline-flex', alignItems:'center', gap:'8px', background:'linear-gradient(120deg,#f7b733,#ee9b1c)', color:'#3a2400', fontSize:'14px', fontWeight:'800', padding:'7px 22px', borderRadius:'999px', marginBottom:'14px' }}>📖 บทความน่ารู้</span>
           <h1 style={{ fontFamily:'Inter, Noto Sans Thai, sans-serif', fontSize:'40px', fontWeight:'800', color:'#06352e', letterSpacing:'-0.5px', lineHeight:'1.2', marginBottom:'8px' }}>5 แนวทาง การเลือกซื้ออุปกรณ์ เดินระบบไฟฟ้า</h1>
