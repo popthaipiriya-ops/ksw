@@ -1922,18 +1922,43 @@ function hpDetectContentScale(imgEl, targetFill = 0.94, maxScale = 1.8) {
   } catch { return 1; }
 }
 
-function HPAutoFillImg({ src, style, alt, onError }) {
+// เฟรมรูปหลักเป็นสัดส่วนตายตัว (กว้าง x 380px) แต่รูปสินค้าแต่ละใบสัดส่วนไม่เท่ากัน — objectFit:contain
+// เลยเหลือขอบขาวซ้าย-ขวา (หรือบน-ล่าง) เวลาสัดส่วนรูปกับเฟรมต่างกันมาก จะสลับไปใช้ cover (ตัดขอบให้เต็มเฟรม)
+// ก็ได้ แต่ต้องเช็คก่อนว่าตัดแล้วปลอดภัยจริง — ทดสอบแล้วรูปแบนเนอร์เต็มภาพ (ไม่มีขอบขาวในตัวรูปเอง) ตัดขอบ ~15%
+// ยังปลอดภัย (มีระยะขอบในดีไซน์อยู่แล้ว) แต่รูปสินค้าตัดขาวที่ครอปมาแน่นอยู่แล้ว (เช่น S-611) ตัด 30% จะกินเข้าเนื้อสินค้าจริง
+// เกณฑ์ 16% ตั้งไว้ปลอดภัยกว่าเคสที่พังไปมาก (30%) แต่ยังครอบคลุมเคสที่ปลอดภัย (~14.5%) ได้
+function hpSafeCoverFit(imgEl, frameEl, maxCropFraction = 0.16) {
+  try {
+    const iw = imgEl.naturalWidth, ih = imgEl.naturalHeight;
+    const fw = frameEl.clientWidth, fh = frameEl.clientHeight;
+    if (!iw || !ih || !fw || !fh) return 'contain';
+    const imgAspect = iw / ih, frameAspect = fw / fh;
+    const r = imgAspect > frameAspect ? frameAspect / imgAspect : imgAspect / frameAspect;
+    return (1 - r) <= maxCropFraction ? 'cover' : 'contain';
+  } catch { return 'contain'; }
+}
+
+function HPAutoFillImg({ src, style, alt, onError, frameRef }) {
   const ref = React.useRef(null);
   const [scale, setScale] = useState(1);
+  const [fit, setFit] = useState('contain');
+  const measure = (el) => {
+    if (!el) return;
+    // ใช้ cover ได้ปลอดภัยแค่ตอนที่สัดส่วนรูปใกล้เคียงเฟรมพอ — ตอนนั้น scale จากเนื้อรูปมักจะ ~1 อยู่แล้ว
+    // (เพราะเป็นรูปที่ไม่มีขอบขาวในตัวเองแบบแบนเนอร์) ไม่ต้อง zoom ซ้อนกับที่ cover ทำอยู่แล้ว
+    const f = frameRef && frameRef.current ? hpSafeCoverFit(el, frameRef.current) : 'contain';
+    setFit(f);
+    setScale(f === 'cover' ? 1 : hpDetectContentScale(el));
+  };
   useEffect(() => {
-    setScale(1);
+    setScale(1); setFit('contain');
     const el = ref.current;
-    if (el && el.complete && el.naturalWidth) setScale(hpDetectContentScale(el));
+    if (el && el.complete && el.naturalWidth) measure(el);
   }, [src]);
-  const handleLoad = () => { if (ref.current) setScale(hpDetectContentScale(ref.current)); };
+  const handleLoad = () => measure(ref.current);
   return (
     <img ref={ref} loading="lazy" decoding="async" src={src} alt={alt || ''} onLoad={handleLoad} onError={onError}
-      style={{ ...style, transform: scale > 1.02 ? `scale(${scale})` : undefined, transition:'transform 0.2s ease' }}/>
+      style={{ ...style, objectFit: frameRef ? fit : style.objectFit, transform: scale > 1.02 ? `scale(${scale})` : undefined, transition:'transform 0.2s ease' }}/>
   );
 }
 
@@ -1941,16 +1966,19 @@ function HPProductGallery({ images, title }) {
   const list = images && images.length ? images : [];
   const [idx, setIdx] = useState(0);
   const [open, setOpen] = useState(false);
+  const frameRef = React.useRef(null);
   const prev = () => setIdx(i => (i - 1 + list.length) % list.length);
   const next = () => setIdx(i => (i + 1) % list.length);
   return (
     <div>
-      <div
+      <div ref={frameRef}
         style={{ height:'380px', background:'#fff', border:'1px solid #eef0f2', borderRadius:'16px', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', cursor:'zoom-in', position:'relative' }}
         onClick={() => setOpen(true)}>
         {/* เอา padding คงที่ออก — เดิม 14px ทำให้รูปที่เป็นแบนเนอร์เต็มภาพอยู่แล้ว (ไม่ใช่ภาพตัดขาวพื้นขาว)
-            เหลือขอบขาวรอบรูปให้เห็นชัด ส่วนรูปภาพตัดขาวที่มีขอบขาวเยอะ HPAutoFillImg ซูมชดเชยให้อยู่แล้วโดยไม่ต้องพึ่ง padding นี้ */}
-        <HPAutoFillImg src={list[idx]} style={{ width:'100%', height:'100%', objectFit:'contain', mixBlendMode:'multiply' }} onError={e => e.target.style.display='none'}/>
+            เหลือขอบขาวรอบรูปให้เห็นชัด ส่วนรูปภาพตัดขาวที่มีขอบขาวเยอะ HPAutoFillImg ซูมชดเชยให้อยู่แล้วโดยไม่ต้องพึ่ง padding นี้
+            frameRef ส่งให้ HPAutoFillImg เช็คว่าสัดส่วนรูปกับเฟรมใกล้กันพอจะสลับไปใช้ cover (ตัดขอบให้เต็มเฟรม)
+            ได้อย่างปลอดภัยไหม — ถ้าต่างกันมากเกินไปเสี่ยงตัดเข้าเนื้อสินค้า จะใช้ contain เหมือนเดิม */}
+        <HPAutoFillImg src={list[idx]} frameRef={frameRef} style={{ width:'100%', height:'100%', objectFit:'contain', mixBlendMode:'multiply' }} onError={e => e.target.style.display='none'}/>
         <div style={{ position:'absolute', top:'12px', left:'14px', display:'flex', alignItems:'center', gap:'6px', background:'rgba(13,92,80,0.9)', color:'#fff', fontSize:'11px', fontWeight:'600', padding:'6px 12px', borderRadius:'999px' }}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="M11 8v6M8 11h6"/><path d="M21 21l-4.35-4.35"/></svg>
           คลิกเพื่อดูรูปขนาดใหญ่
