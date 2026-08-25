@@ -13,21 +13,27 @@ if (-not (Test-Path $data)) { New-Item -ItemType Directory -Force $data | Out-Nu
 # ══════════════════════════════════════════════════════════════════════════
 #  เปิดให้เข้าถึงโฟลเดอร์ .data ผ่าน URL ได้
 #  ────────────────────────────────────────────────────────────────────────
-#  ⚠ อ่านก่อนใช้งาน — เปิดไว้ตามที่ผู้ใช้สั่ง
-#  .data ไม่ได้มีแค่ข้อมูลธรรมดา แต่มีของที่หลุดแล้วเสียหายจริงอยู่ด้วย
+#  ค่าเริ่มต้นคือ "ปิด" — ต้องตั้งตัวแปรสภาพแวดล้อมก่อนสตาร์ตถึงจะเปิด
+#
+#      $env:EXPOSE_DATA = 1 ; .\serve.ps1
+#
+#  ที่ไม่ฝัง $true ไว้ในไฟล์ เพราะค่านั้นจะติดไปกับ repo ด้วย
+#  ใครที่ pull ไปแล้วรัน serve.ps1 จะได้ .data ที่เปิดอยู่ตามไปโดยไม่รู้ตัว
+#  ทำเป็น env แทน = เปิดเฉพาะเครื่องที่ตั้งใจเปิด และหายไปเองเมื่อปิดหน้าต่าง
+#
+#  ⚠ .data ไม่ได้มีแค่ข้อมูลธรรมดา แต่มีของที่หลุดแล้วเสียหายจริงอยู่ด้วย
 #    secret.key   = คีย์เซ็น token เซสชัน · ใครอ่านได้ ปลอมคุกกี้เป็น super admin ได้เลย
 #    users.json   = salt + hash รหัสผ่าน เอาไปไล่เดารหัสแบบออฟไลน์ได้
 #    anthropic.key / line.json = คีย์ของบริการภายนอก
 #    leads.json / quotes.json  = ชื่อและเบอร์ลูกค้า
 #  เซิร์ฟเวอร์นี้ผูกกับ localhost เท่านั้น คนนอกยิงตรงเข้ามาไม่ได้
 #  แต่เว็บใดก็ตามที่เปิดในเบราว์เซอร์เครื่องเดียวกันยิงมาที่ localhost ได้
-#  ปิดกลับเมื่อไรก็ตั้งเป็น $false บรรทัดเดียวจบ
 #
 #  หมายเหตุ: เว็บจริงบน Netlify ไม่ได้รับผลจากตัวแปรนี้
 #  เพราะ .data ถูก .gitignore ไว้ (ไม่เคยถูกอัปขึ้นไป) และ netlify.toml
 #  ยัง redirect /.data/* เป็น 404 ไว้อีกชั้น
 # ══════════════════════════════════════════════════════════════════════════
-$EXPOSE_DATA = $true
+$EXPOSE_DATA = ($env:EXPOSE_DATA -in @('1', 'true', 'yes', 'on'))
 
 $UTF8   = New-Object System.Text.UTF8Encoding($false)
 $ITER   = 150000
@@ -497,6 +503,14 @@ $listener = New-Object System.Net.HttpListener
 $listener.Prefixes.Add($url)
 $listener.Start()
 Write-Host ("Serving {0} on {1}" -f $root, $url) -ForegroundColor Green
+# เตือนให้เห็นชัดตอนสตาร์ต จะได้ไม่มีทางเปิดค้างไว้โดยไม่รู้ตัว
+if ($EXPOSE_DATA) {
+  Write-Host ""
+  Write-Host " *** เปิดให้เข้าถึงโฟลเดอร์ .data ผ่าน URL อยู่ ***" -ForegroundColor Red
+  Write-Host ("     {0}.data/  — มี secret.key และ users.json อยู่ในนั้น" -f $url) -ForegroundColor Yellow
+  Write-Host "     ปิดโดยเอา `$env:EXPOSE_DATA ออกแล้วสตาร์ตใหม่" -ForegroundColor Yellow
+  Write-Host ""
+}
 Load-Users | Out-Null
 
 while ($listener.IsListening) {
