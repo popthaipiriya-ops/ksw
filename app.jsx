@@ -4407,11 +4407,27 @@ function hpChatFindProducts(query, current) {
     for (const w of hpChatPhrases(p.name))   if (raw.includes(w.toLowerCase())) score += 3;
     if (score > 0) scored.push({ p, score });
   }
-  if (!scored.length) return [];
+  // ผลลัพธ์เป็น array ปกติ (ผู้เรียกเดิมใช้ .length/.map ได้เหมือนเดิม)
+  // แต่แนบยอดจริงและรายชื่อแบรนด์ติดไปด้วย เพราะรายการที่หยิบมาแสดงถูกตัดเหลือไม่กี่ตัว
+  // ถ้าเอา out.length ไปบอกลูกค้าเป็นยอดรวม จะกลายเป็นบอกผิด (เช่น มีจริง 445 แต่บอก 12)
+  const out = [];
+  out.total  = 0;
+  out.brands = [];
+  if (!scored.length) return out;
 
   scored.sort((a, b) => b.score - a.score);
+
+  // นับของจริงแบบไม่ซ้ำ และเก็บว่ามีแบรนด์ไหนบ้าง
+  const uniq = new Set();
+  const brandSet = new Set();
+  for (const s of scored) {
+    uniq.add(s.p.brand + '|' + s.p.code);
+    if (s.p.brand) brandSet.add(s.p.brand);
+  }
+  out.total  = uniq.size;
+  out.brands = [...brandSet];
+
   // สินค้าที่ลูกค้าเปิดหน้าอยู่ ต้องอยู่ในผลเสมอ ไม่ให้ตกไปเพราะคะแนนน้อยกว่าตัวอื่น
-  const out = [];
   const seen = new Set();
   const push = (p) => {
     const k = p.brand + '|' + p.code;
@@ -4523,17 +4539,29 @@ function hpBotAnswer(text, product) {
   // ── 4) เจอสินค้าจริงในแคตตาล็อก — ส่งข้อมูลสินค้ากลับไปแสดงเป็นการ์ด ──
   // ทุกฟิลด์บนการ์ด (รูป รหัส ชื่อ แบรนด์ หมวด สเปก) อ่านจากฐานข้อมูลตรงๆ ไม่มีการแต่ง
   if (found.length) {
-    const one = found.length === 1;
+    const total  = found.total || found.length;      // ยอดจริง ไม่ใช่จำนวนที่หยิบมาแสดง
+    const brands = found.brands || [];
+    const cards  = found.slice(0, HP_BOT_CARD_MAX);
+    const one    = total === 1;
+
     const head = one
       ? 'มีรุ่นนี้ในแคตตาล็อกครับ ข้อมูลตามนี้เลย'
-      : `ผมค้นเจอ ${found.length} รายการครับ`;
-    const more = found.length > HP_BOT_CARD_MAX
-      ? `\n(แสดง ${HP_BOT_CARD_MAX} รายการแรก กดที่การ์ดเพื่อดูรายละเอียดเต็มได้เลยครับ)`
-      : '\n(กดที่การ์ดเพื่อดูรายละเอียดเต็มได้เลยครับ)';
+      : `มีครับ ในร้านมีที่ตรงกับที่ถาม ${total.toLocaleString('th-TH')} รายการ`;
+
+    // บอกด้วยว่ามีของแบรนด์ไหนบ้าง — ลูกค้ามักเลือกจากแบรนด์ที่คุ้นเคย
+    const brandLine = (!one && brands.length > 1)
+      ? '\nแบรนด์ที่มี: ' + brands.slice(0, 6).join(' · ')
+        + (brands.length > 6 ? ` และอีก ${brands.length - 6} แบรนด์` : '')
+      : '';
+
+    const more = total > cards.length
+      ? `\nขอยกตัวอย่าง ${cards.length} รายการ กดที่การ์ดเพื่อดูรายละเอียดเต็มได้ครับ`
+      : '\nกดที่การ์ดเพื่อดูรายละเอียดเต็มได้เลยครับ';
+
     return {
       ask: true,
-      products: found.slice(0, HP_BOT_CARD_MAX),
-      reply: head + more + '\nส่วนราคาและของพร้อมส่ง ทีมงานจะเป็นคนแจ้งทางไลน์ครับ',
+      products: cards,
+      reply: head + brandLine + more + '\nส่วนราคาและของพร้อมส่ง ทีมงานจะเป็นคนแจ้งทางไลน์ครับ',
     };
   }
 
