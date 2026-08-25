@@ -41,6 +41,11 @@ $LINE_URL       = 'https://lin.ee/rAFJt2QD'
 $LEAD_RATE_MAX = 10                # ส่งลิสต์ได้กี่ครั้งต่อ IP
 $LEAD_RATE_WIN = 60 * 60 * 1000    # ต่อ 1 ชั่วโมง
 $LeadRate      = @{}
+
+# ลูกค้าแนบรูปสินค้าที่อยากถามในแชท — จำกัดแยกจาก /lead เพราะรูปกินพื้นที่เก็บมากกว่า
+$CHATIMG_RATE_MAX = 15
+$CHATIMG_RATE_WIN = 60 * 60 * 1000
+$ChatImgRate      = @{}
 function Get-LinePush {
   $token = $env:LINE_CHANNEL_ACCESS_TOKEN
   $to    = $env:LINE_TO
@@ -270,6 +275,8 @@ $fSetting = Join-Path $data "settings.json"
 $fLeads   = Join-Path $data "leads.json"
 $dImg     = Join-Path $data "catalogimg"
 if (-not (Test-Path $dImg)) { New-Item -ItemType Directory -Force $dImg | Out-Null }
+$dChatImg = Join-Path $data "chatimg"
+if (-not (Test-Path $dChatImg)) { New-Item -ItemType Directory -Force $dChatImg | Out-Null }
 $fSecret  = Join-Path $data "secret.key"
 
 function Read-Json([string]$path, $fallback) {
@@ -549,6 +556,47 @@ while ($listener.IsListening) {
         continue
       }
 
+      # รูปที่ลูกค้าแนบมาในแชท (เปิดสาธารณะ — LINE ต้องดึงรูปนี้ไปแสดงในข้อความ push ให้ทีมงาน)
+      if ($ep -like '/chat-image/*' -and $method -eq 'GET') {
+        $key = $ep.Substring('/chat-image/'.Length)
+        if ($key -notmatch '^[A-Za-z0-9_-]+$') { Send-Json $res @{ error='ชื่อไฟล์ไม่ถูกต้อง' } 400; continue }
+        $imgFile = Join-Path $dChatImg ("$key.json")
+        if (-not (Test-Path -LiteralPath $imgFile)) { Send-Json $res @{ error='ไม่พบรูป' } 404; continue }
+        $recImg = Read-Json $imgFile $null
+        if (-not $recImg -or -not $recImg.data) { Send-Json $res @{ error='ไม่พบรูป' } 404; continue }
+        $bytes = [Convert]::FromBase64String([string]$recImg.data)
+        $res.ContentType = if ($recImg.type) { [string]$recImg.type } else { 'image/jpeg' }
+        $res.Headers.Add('Cache-Control', 'public, max-age=604800')
+        $res.ContentLength64 = $bytes.Length
+        $res.OutputStream.Write($bytes, 0, $bytes.Length)
+        $res.OutputStream.Close()
+        continue
+      }
+
+      # อัปโหลดรูปที่ลูกค้าแนบมาในแชท — เปิดสาธารณะ (ไม่ต้องล็อกอิน) แต่จำกัดจำนวนต่อ IP
+      # เก็บไว้เฉยๆ ไม่พยายามวิเคราะห์รูปเอง (ไม่มี AI ดูภาพ) แค่ส่งต่อให้ทีมงานดูเองทาง /lead
+      if ($ep -eq '/chat-image' -and $method -eq 'POST') {
+        $ip = [string]$req.RemoteEndPoint.Address
+        $now = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        $rec = $ChatImgRate[$ip]
+        if ($null -eq $rec -or ($now - [int64]$rec.start) -gt $CHATIMG_RATE_WIN) { $rec = @{ start=$now; count=0 } }
+        if ([int]$rec.count -ge $CHATIMG_RATE_MAX) {
+          Send-Json $res @{ error='แนบรูปบ่อยเกินไป รบกวนทักไลน์ @kirdsaengsawang โดยตรงนะครับ' } 429; continue
+        }
+        $rec.count = [int]$rec.count + 1
+        $ChatImgRate[$ip] = $rec
+
+        $b = Read-Body $req
+        $dataUrl = [string]$b.dataUrl
+        $m = [regex]::Match($dataUrl, '^data:(image/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$')
+        if (-not $m.Success) { Send-Json $res @{ error='รองรับเฉพาะไฟล์รูป JPG / PNG / WEBP' } 400; continue }
+        $b64 = $m.Groups[2].Value
+        if ($b64.Length -gt 4MB) { Send-Json $res @{ error='ไฟล์ใหญ่เกินไป (จำกัด 3MB)' } 400; continue }
+        $key = [guid]::NewGuid().ToString('N')
+        Write-JsonObj (Join-Path $dChatImg "$key.json") @{ type=$m.Groups[1].Value; data=$b64; at=[DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() }
+        Send-Json $res @{ ok=$true; url=("/api/chat-image/{0}" -f $key) } 200; continue
+      }
+
       # ---------- ผู้ช่วย AI ตอบลูกค้า (เปิดสาธารณะ ลูกค้าหน้าเว็บใช้ได้เลย) ----------
       if ($ep -eq '/chat' -and $method -eq 'POST') {
         $apiKey = Get-AnthropicKey
@@ -687,10 +735,17 @@ while ($listener.IsListening) {
         $orderNo = Get-NextOrderNo
         $when    = Get-ThaiTimeText
 
+        # รูปที่ลูกค้าแนบมาในแชท — รับเฉพาะพาธของ endpoint เราเท่านั้น กัน URL ปลอมหลุดเข้าไปในข้อความ LINE
+        $imgUrl = [string]$b.imageUrl
+        $validImg = $imgUrl -match '^/api/chat-image/[A-Za-z0-9_-]+$'
+        $absImgUrl = if ($validImg) { $req.Url.GetLeftPart([System.UriPartial]::Authority) + $imgUrl } else { '' }
+
         # เก็บออเดอร์ไว้ในเครื่องเสมอ ต่อให้ส่งไลน์ไม่ผ่านก็ยังไม่หาย
         try {
           $leads = @(Read-Json $fLeads @())
-          $leads += @{ orderNo=$orderNo; at=(Get-Date).ToString('yyyy-MM-dd HH:mm:ss'); ip=$ip; product=$prodTxt; summary=$summary }
+          $leadRec = @{ orderNo=$orderNo; at=(Get-Date).ToString('yyyy-MM-dd HH:mm:ss'); ip=$ip; product=$prodTxt; summary=$summary }
+          if ($absImgUrl) { $leadRec['image'] = $absImgUrl }
+          $leads += $leadRec
           if ($leads.Count -gt 500) { $leads = $leads[($leads.Count - 500)..($leads.Count - 1)] }
           Write-Json $fLeads $leads
         } catch { Write-Host ("lead save error: {0}" -f $_.Exception.Message) -ForegroundColor Yellow }
@@ -703,7 +758,12 @@ while ($listener.IsListening) {
         try {
           [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
           $text = Get-OrderMessage $orderNo $when $prodTxt $summary
-          $payload = @{ to=$push.to; messages=@(@{ type='text'; text=$text }) }
+          $msgs = @(@{ type='text'; text=$text })
+          # LINE ต้องดึงรูปจาก URL https สาธารณะเอง — local dev เป็น http จึงข้ามส่วนนี้ (ยังส่งข้อความได้ตามปกติ)
+          if ($absImgUrl -and $absImgUrl.StartsWith('https://')) {
+            $msgs += @{ type='image'; originalContentUrl=$absImgUrl; previewImageUrl=$absImgUrl }
+          }
+          $payload = @{ to=$push.to; messages=$msgs }
           $bytes = [System.Text.Encoding]::UTF8.GetBytes((ConvertTo-Json -InputObject $payload -Depth 8 -Compress))
           Invoke-WebRequest -Uri 'https://api.line.me/v2/bot/message/push' -Method Post `
             -Headers @{ 'Authorization' = "Bearer $($push.token)" } -Body $bytes `
@@ -830,52 +890,94 @@ while ($listener.IsListening) {
         $b = Read-Body $req
         if ($null -eq $b -or $null -eq $b.settings) { Send-Json $res @{ error='รูปแบบข้อมูลไม่ถูกต้อง' } 400; continue }
 
+        # หลังบ้านมีหลายที่ที่บันทึกการตั้งค่าคนละส่วนกัน (ฟอร์ม "ตั้งค่าเว็บไซต์" กับ "โหมดแก้รูป")
+        # ส่วนไหนไม่ได้ส่งมาในคำขอนี้ ต้องคงค่าเดิมไว้ ไม่ใช่ล้างทิ้ง
+        # ไม่งั้นบันทึกฟอร์มหนึ่งแล้วอีกส่วนหายเกลี้ยง
+        $prev = To-Hashtable (Read-Json $fSetting @{})
+        $sk   = @($b.settings.PSObject.Properties.Name)
+
         # ---- แคตตาล็อก: ต่อแบรนด์มี ลิงก์ / ชื่อที่แสดง / ข้อความปุ่ม / ซ่อน ----
         # ยอมรับเฉพาะ http/https เพื่อกัน javascript: และลิงก์แปลกปลอม
-        $inCat   = To-Hashtable $b.settings.catalog
         $catalog = @{}
         $urlMap  = @{}
-        $badKey  = $null
-        $badImg  = $null
-        foreach ($k in @($inCat.Keys)) {
-          $raw = $inCat[$k]
-          if ($null -eq $raw) { continue }
-          $url = Trim-Max $raw.url 500
-          if ($url -and $url -notmatch '^https?://') { $badKey = $k; break }
-          $rec = @{}
-          if ($url)                  { $rec['url']    = $url; $urlMap[[string]$k] = $url }
-          if ($raw.label)            { $rec['label']  = Trim-Max $raw.label 60 }
-          if ($raw.cta)              { $rec['cta']    = Trim-Max $raw.cta 40 }
-          if ($raw.hidden -eq $true) { $rec['hidden'] = $true }
-          # รูปที่อัปโหลดเอง — รับเฉพาะพาธของ endpoint เราเท่านั้น
-          $img = Trim-Max $raw.img 300
-          if ($img) {
-            if ($img -notmatch '^/api/catalog-image/[A-Za-z0-9_-]+(\?v=\d+)?$') { $badImg = $k; break }
-            $rec['img'] = $img
+        if ($sk -contains 'catalog') {
+          $inCat   = To-Hashtable $b.settings.catalog
+          $badKey  = $null
+          $badImg  = $null
+          foreach ($k in @($inCat.Keys)) {
+            $raw = $inCat[$k]
+            if ($null -eq $raw) { continue }
+            $url = Trim-Max $raw.url 500
+            if ($url -and $url -notmatch '^https?://') { $badKey = $k; break }
+            $rec = @{}
+            if ($url)                  { $rec['url']    = $url; $urlMap[[string]$k] = $url }
+            if ($raw.label)            { $rec['label']  = Trim-Max $raw.label 60 }
+            if ($raw.cta)              { $rec['cta']    = Trim-Max $raw.cta 40 }
+            if ($raw.hidden -eq $true) { $rec['hidden'] = $true }
+            # รูปที่อัปโหลดเอง — รับเฉพาะพาธของ endpoint เราเท่านั้น
+            $img = Trim-Max $raw.img 300
+            if ($img) {
+              if ($img -notmatch '^/api/catalog-image/[A-Za-z0-9_-]+(\?v=\d+)?$') { $badImg = $k; break }
+              $rec['img'] = $img
+            }
+            if ($rec.Count -gt 0)      { $catalog[[string]$k] = $rec }
           }
-          if ($rec.Count -gt 0)      { $catalog[[string]$k] = $rec }
+          if ($badKey) { Send-Json $res @{ error=("ลิงก์ของ {0} ต้องขึ้นต้นด้วย http:// หรือ https://" -f $badKey) } 400; continue }
+          if ($badImg) { Send-Json $res @{ error=("รูปของ {0} ไม่ถูกต้อง" -f $badImg) } 400; continue }
+        } else {
+          if ($null -ne $prev['catalog'])     { $catalog = $prev['catalog'] }
+          if ($null -ne $prev['catalogUrls']) { $urlMap  = $prev['catalogUrls'] }
         }
-        if ($badKey) { Send-Json $res @{ error=("ลิงก์ของ {0} ต้องขึ้นต้นด้วย http:// หรือ https://" -f $badKey) } 400; continue }
-        if ($badImg) { Send-Json $res @{ error=("รูปของ {0} ไม่ถูกต้อง" -f $badImg) } 400; continue }
+
+        # ---- รูปภาพทั้งเว็บที่แอดมินเปลี่ยนเอง (โหมดแก้รูปบนหน้าเว็บจริง) ----
+        # คีย์ = พาธรูปเดิมที่ฝังอยู่ในเว็บ เช่น assets/banner1.png
+        # ค่า  = พาธรูปที่แอดมินอัปโหลดทับ ต้องเป็น endpoint ของเราเท่านั้น
+        #        (กันไม่ให้ยัดลิงก์ภายนอกหรือ javascript: มาเป็น src ของรูป)
+        $images = @{}
+        if ($sk -contains 'images') {
+          $inImg   = To-Hashtable $b.settings.images
+          $badSlot = $null
+          foreach ($k in @($inImg.Keys)) {
+            $slot = [string]$k
+            # ชื่อไฟล์รูปในเว็บมีทั้งเว้นวรรคและภาษาไทย จึงกันเฉพาะตัวที่อันตราย
+            # (คีย์นี้ใช้เป็นแค่ชื่อช่องสำหรับเทียบ ไม่ได้เอาไปต่อเป็นพาธไฟล์จริง
+            #  ไฟล์บนดิสก์ใช้ชื่อที่แฮชมาจากคีย์อีกที)
+            if ($slot.Length -gt 200 -or $slot.Contains('..') -or $slot -match '[\u0000-\u001f\\<>"]') { $badSlot = $slot; break }
+            $v = Trim-Max $inImg[$k] 300
+            if (-not $v) { continue }   # ค่าว่าง = คืนไปใช้รูปเดิมที่มากับเว็บ
+            if ($v -notmatch '^/api/catalog-image/[A-Za-z0-9_-]+(\?v=\d+)?$') { $badSlot = $slot; break }
+            $images[$slot] = $v
+            if ($images.Count -ge 500) { break }
+          }
+          if ($badSlot) { Send-Json $res @{ error=("รูปของ {0} ไม่ถูกต้อง" -f $badSlot) } 400; continue }
+        } else {
+          if ($null -ne $prev['images']) { $images = $prev['images'] }
+        }
 
         # ---- ข้อมูลติดต่อ (ใช้ร่วมกันหลายหน้า) ----
-        $c = $b.settings.contact
-        $lineUrl = Trim-Max $c.lineUrl 300
-        if ($lineUrl -and $lineUrl -notmatch '^https?://') {
-          Send-Json $res @{ error='ลิงก์ไลน์ต้องขึ้นต้นด้วย http:// หรือ https://' } 400; continue
-        }
-        $contact = @{
-          phone   = Trim-Max $c.phone 60
-          lineId  = Trim-Max $c.lineId 60
-          lineUrl = $lineUrl
-          hours   = Trim-Max $c.hours 120
-          address = Trim-Max $c.address 300
-        }
+        $contact = @{}
+        if ($sk -contains 'contact') {
+          $c = $b.settings.contact
+          $lineUrl = Trim-Max $c.lineUrl 300
+          if ($lineUrl -and $lineUrl -notmatch '^https?://') {
+            Send-Json $res @{ error='ลิงก์ไลน์ต้องขึ้นต้นด้วย http:// หรือ https://' } 400; continue
+          }
+          $contact = @{
+            phone   = Trim-Max $c.phone 60
+            lineId  = Trim-Max $c.lineId 60
+            lineUrl = $lineUrl
+            hours   = Trim-Max $c.hours 120
+            address = Trim-Max $c.address 300
+          }
+        } elseif ($null -ne $prev['contact']) { $contact = $prev['contact'] }
+
+        $cfoot = if ($sk -contains 'catalogFooter') { Trim-Max $b.settings.catalogFooter 80 } else { [string]$prev['catalogFooter'] }
 
         $out = @{
           catalog       = $catalog
-          catalogFooter = Trim-Max $b.settings.catalogFooter 80
+          catalogFooter = $cfoot
           contact       = $contact
+          images        = $images
           catalogUrls   = $urlMap   # เก็บรูปแบบเดิมไว้ เผื่อหน้าเว็บเวอร์ชันเก่ายังอ่านอยู่
         }
         Write-JsonObj $fSetting $out

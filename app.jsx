@@ -1,6 +1,103 @@
 // -- Main app source (JSX). Edit this file, then open build.html to compile into app.js --
 // Do NOT edit app.js directly; it is overwritten on every build.
-const { useState, useEffect } = React;
+const { useState, useEffect, useRef, useReducer } = React;
+
+// ══════════════════════════════════════════════════════════════════════════
+//  รูปภาพทั้งเว็บ — แอดมินเปลี่ยนเองได้จากหน้าเว็บจริง
+//  ────────────────────────────────────────────────────────────────────────
+//  รูปในเว็บนี้ฝังอยู่ในโค้ดกว่าร้อยจุด (ยังไม่นับรูปสินค้าใน brand-products.js)
+//  ถ้าไล่แก้ทีละจุดให้รับรูปใหม่ได้ จะเละและตกหล่นแน่นอน
+//  จึงดักที่ "จุดสร้าง element" ที่เดียว แล้วสลับ src ให้อัตโนมัติทุกรูปทั้งเว็บ
+//
+//  ช่องเก็บรูป (slot) ใช้พาธรูปเดิมเป็นคีย์ เช่น 'assets/banner1.png'
+//  แอดมินอัปรูปใหม่ทับ ระบบเก็บเป็น { 'assets/banner1.png': '/api/catalog-image/siteXXXX' }
+// ══════════════════════════════════════════════════════════════════════════
+const HP_IMG_LS_KEY = 'kss_img_overrides';
+const HP_IMG_OK_URL = /^\/api\/catalog-image\/[A-Za-z0-9_-]+(\?v=\d+)?$/;
+let   HP_IMG_MAP    = {};        // { พาธรูปเดิม: พาธรูปที่อัปทับ }
+const HP_IMG_SUBS   = new Set(); // ตัวสั่งให้เรนเดอร์ใหม่เมื่อรูปเปลี่ยน
+
+// พาธเดียวกันเขียนได้หลายแบบ ('assets/a.png', './assets/a.png', '/assets/a.png',
+// 'https://โดเมนเรา/assets/a.png') ต้องยุบให้เหลือรูปเดียวก่อน
+// ไม่งั้นรูปเดิมรูปเดียวจะถูกนับเป็นคนละช่อง แล้วเปลี่ยนแล้วไม่ติดบางหน้า
+// คืน '' = รูปนี้เปลี่ยนไม่ได้ (รูปจากเว็บนอก / data: / รูปที่อัปทับไปแล้ว)
+function hpImgPath(src) {
+  if (typeof src !== 'string') return '';
+  let s = src.trim();
+  if (!s || s.slice(0, 5) === 'data:' || s.slice(0, 5) === 'blob:') return '';
+  if (s.slice(0, 5) === '/api/') return '';
+  s = s.split('#')[0].split('?')[0];
+  if (/^https?:\/\//i.test(s)) {
+    try {
+      const u = new URL(s);
+      if (u.origin !== location.origin) return '';   // รูปจากเว็บนอก แตะไม่ได้
+      s = u.pathname;
+    } catch (e) { return ''; }
+  }
+  // เบราว์เซอร์คืนพาธมาแบบเข้ารหัสได้ (%20) ต้องถอดก่อนเทียบ
+  // ไม่งั้นไฟล์ที่ชื่อมีเว้นวรรคจะถูกนับเป็นคนละช่องกับที่เขียนไว้ในโค้ด
+  try { s = decodeURIComponent(s); } catch (e) {}
+  s = s.replace(/^\.?\//, '');
+  // ชื่อไฟล์จริงในเว็บนี้มีทั้งเว้นวรรคและภาษาไทย (เช่น 'assets/lucky misu.jpg',
+  // 'assets/zeberg/1-ชุดสวิตซ์ทางเดียว-2-ตัว-gs002-zeberg.png')
+  // จึงกันเฉพาะตัวที่อันตรายจริงๆ ไม่ใช่บังคับให้เป็น a-z0-9 อย่างเดียว
+  if (!s || s.length > 200 || s.indexOf('..') !== -1) return '';
+  return /[\u0000-\u001f\\<>"]/.test(s) ? '' : s;
+}
+
+// ชื่อไฟล์ที่เก็บบนเซิร์ฟเวอร์ — เซิร์ฟเวอร์รับแค่ A-Z a-z 0-9 _ - ยาวไม่เกิน 40
+// ใช้แฮชสองตัวคู่กัน ลดโอกาสที่รูปคนละไฟล์จะได้ชื่อชนกันแล้วทับรูปกันเอง
+function hpImgSlotKey(path) {
+  let h1 = 5381, h2 = 52711;
+  for (let i = 0; i < path.length; i++) {
+    const c = path.charCodeAt(i);
+    h1 = ((h1 * 33) ^ c) >>> 0;
+    h2 = ((h2 * 31) ^ c) >>> 0;
+  }
+  return 'site' + h1.toString(36) + h2.toString(36);
+}
+
+function hpImgNotify() { HP_IMG_SUBS.forEach(fn => { try { fn(); } catch (e) {} }); }
+
+// รับเฉพาะค่าที่เป็น endpoint รูปของเราเท่านั้น — ทั้งจากเซิร์ฟเวอร์และจาก
+// localStorage (ที่ผู้ใช้แก้เองได้) จะได้ไม่มีทางยัดลิงก์แปลกปลอมมาเป็น src
+function hpImgClean(map) {
+  const out = {};
+  if (!map || typeof map !== 'object') return out;
+  for (const [k, v] of Object.entries(map)) {
+    if (hpImgPath(k) === k && typeof v === 'string' && HP_IMG_OK_URL.test(v)) out[k] = v;
+  }
+  return out;
+}
+
+function hpImgSetMap(map) {
+  HP_IMG_MAP = hpImgClean(map);
+  try { localStorage.setItem(HP_IMG_LS_KEY, JSON.stringify(HP_IMG_MAP)); } catch (e) {}
+  hpImgNotify();
+}
+
+// ใช้ค่าที่เคยโหลดไว้ตั้งแต่เฟรมแรก รูปที่แอดมินเปลี่ยนจะได้ขึ้นทันที
+// ไม่ต้องรอ /api/settings ตอบก่อนแล้วค่อยกระพริบสลับรูปให้ลูกค้าเห็น
+try { HP_IMG_MAP = hpImgClean(JSON.parse(localStorage.getItem(HP_IMG_LS_KEY) || '{}')); } catch (e) {}
+
+// ── ดักจุดสร้าง element ──
+// JSX ทุกบรรทัดในไฟล์นี้ถูกคอมไพล์เป็น React.createElement(...) จึงผ่านตรงนี้หมด
+// เจอ <img> เมื่อไร ก็สลับ src เป็นรูปที่แอดมินอัปไว้ (ถ้ามี) แล้วติดป้าย data-hpimg
+// บอกว่ารูปเดิมคือไฟล์ไหน โหมดแก้รูปจะได้รู้ว่ากดแล้วต้องเปลี่ยนช่องไหน
+// data-hpraw = ขอรูปตามพาธจริงๆ ไม่ต้องสลับให้ (กล่องแก้รูปใช้โชว์ "รูปเดิม" เทียบกับรูปใหม่)
+const hpCreateElement = React.createElement;
+React.createElement = function (type, props) {
+  if (type === 'img' && props && typeof props.src === 'string' && !props['data-hpraw']) {
+    const path = hpImgPath(props.src);
+    if (path) {
+      props = { ...props, 'data-hpimg': path };
+      if (HP_IMG_MAP[path]) props.src = HP_IMG_MAP[path];
+    }
+  }
+  return hpCreateElement.apply(React, arguments.length > 2
+    ? [type, props].concat(Array.prototype.slice.call(arguments, 2))
+    : [type, props]);
+};
 
 // ── Google Sign-In config ──
 // ⚠ ใส่ OAuth Client ID ของคุณที่นี่ (สร้างฟรีที่ https://console.cloud.google.com → APIs & Services → Credentials)
@@ -2011,6 +2108,36 @@ function HPProductGallery({ images, title }) {
 
 const HP_LINE_URL = 'https://lin.ee/rAFJt2QD';
 
+// ย่อรูปในเบราว์เซอร์ก่อนส่งขึ้นเซิร์ฟเวอร์ — ใช้ทั้งตอนแอดมินอัปโหลดรูปแคตตาล็อก
+// และตอนลูกค้าแนบรูปสินค้าในแชท ไฟล์จากกล้อง/มือถือมักหนัก 3-5MB ซึ่งไม่จำเป็นเลย
+// สำหรับใช้ดูอ้างอิงเฉยๆ ย่อเหลือด้านยาวสุดตามที่กำหนดก็คมพอแล้ว
+function hpShrinkImageFile(file, maxDim = 1600) {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onerror = () => reject(new Error('อ่านไฟล์ไม่สำเร็จ'));
+    fr.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('ไฟล์นี้ไม่ใช่รูปที่เปิดได้'));
+      img.onload = () => {
+        const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        // เล็กอยู่แล้วและไม่ใหญ่เกิน 800KB ก็ส่งของเดิมไปเลย ไม่ต้องบีบซ้ำให้เสียคุณภาพ
+        if (scale === 1 && file.size <= 800 * 1024) return resolve(fr.result);
+        const cv = document.createElement('canvas');
+        cv.width  = Math.round(img.width  * scale);
+        cv.height = Math.round(img.height * scale);
+        const ctx = cv.getContext('2d');
+        // PNG โปร่งใสได้ ถ้าแปลงเป็น JPEG ต้องรองพื้นขาวก่อน ไม่งั้นพื้นจะกลายเป็นดำ
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, cv.width, cv.height);
+        ctx.drawImage(img, 0, 0, cv.width, cv.height);
+        resolve(cv.toDataURL('image/jpeg', 0.88));
+      };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+
 function hpCopyText(text) {
   if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(text).catch(() => {}); return; }
   // clipboard API ใช้ไม่ได้ถ้าไม่ได้เปิดผ่าน https (เช่นตอนทดสอบในเครื่อง)
@@ -3497,35 +3624,6 @@ function HPSiteSettings() {
     for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
     return 'cat' + h.toString(36);
   };
-  // ย่อรูปในเบราว์เซอร์ก่อนส่งขึ้นเซิร์ฟเวอร์
-  // หน้าแคตตาล็อกโหลดรูปย่อครบทุกแบรนด์พร้อมกัน ถ้าปล่อยไฟล์กล้อง 3-5MB ขึ้นไปตรงๆ
-  // ลูกค้าจะโหลดหนักมากทุกครั้งที่เข้า — ย่อเหลือด้านยาวสุด 1600px ก็คมพอสำหรับดูเต็มจอแล้ว
-  const shrinkImage = (file) => new Promise((resolve, reject) => {
-    const MAX = 1600;
-    const fr = new FileReader();
-    fr.onerror = () => reject(new Error('อ่านไฟล์ไม่สำเร็จ'));
-    fr.onload = () => {
-      const img = new Image();
-      img.onerror = () => reject(new Error('ไฟล์นี้ไม่ใช่รูปที่เปิดได้'));
-      img.onload = () => {
-        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
-        // เล็กอยู่แล้วและไม่ใหญ่เกิน 800KB ก็ส่งของเดิมไปเลย ไม่ต้องบีบซ้ำให้เสียคุณภาพ
-        if (scale === 1 && file.size <= 800 * 1024) return resolve(fr.result);
-        const cv = document.createElement('canvas');
-        cv.width  = Math.round(img.width  * scale);
-        cv.height = Math.round(img.height * scale);
-        const ctx = cv.getContext('2d');
-        // PNG โปร่งใสได้ ถ้าแปลงเป็น JPEG ต้องรองพื้นขาวก่อน ไม่งั้นพื้นจะกลายเป็นดำ
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(0, 0, cv.width, cv.height);
-        ctx.drawImage(img, 0, 0, cv.width, cv.height);
-        resolve(cv.toDataURL('image/jpeg', 0.88));
-      };
-      img.src = fr.result;
-    };
-    fr.readAsDataURL(file);
-  });
-
   const uploadImage = async (name, file, inputEl) => {
     if (inputEl) inputEl.value = '';   // เลือกไฟล์เดิมซ้ำได้
     if (!file) return;
@@ -3534,7 +3632,7 @@ function HPSiteSettings() {
     if (file.size > 12 * 1024 * 1024) { setErr('ไฟล์ใหญ่เกิน 12MB กรุณาย่อรูปก่อน'); return; }
     setUploading(name);
     try {
-      const dataUrl = await shrinkImage(file);
+      const dataUrl = await hpShrinkImageFile(file, 1600);
       const r = await hpApi('/catalog-image', { method:'POST', body:{ key: imgKey(name), dataUrl } });
       setField(name, 'img', r.url);
       const kb = Math.round((dataUrl.length * 0.75) / 1024);
@@ -3578,6 +3676,23 @@ function HPSiteSettings() {
 
   const filled = Object.values(catalog).filter(v => v && v.url && v.url.trim()).length;
   const hiddenCount = Object.values(catalog).filter(v => v && v.hidden).length;
+
+  // ── รูปภาพทั้งเว็บที่เปลี่ยนไว้จากโหมดแก้รูป ──
+  const [imgBusy, setImgBusy] = useState(false);
+  const [, imgBump] = useReducer(x => x + 1, 0);
+  useEffect(() => { HP_IMG_SUBS.add(imgBump); return () => HP_IMG_SUBS.delete(imgBump); }, []);
+  const imgCount = Object.keys(HP_IMG_MAP).length;
+  const resetImages = async () => {
+    if (!window.confirm(`คืนรูปเดิมทั้งหมด ${imgCount} รูป ใช่หรือไม่?\nรูปที่เคยอัปโหลดทับจะเลิกใช้ทั้งหมด`)) return;
+    setErr(''); setMsg(''); setImgBusy(true);
+    try {
+      const r = await hpApi('/settings', { method:'POST', body:{ settings:{ images:{} } } });
+      hpImgSetMap((r.settings || {}).images || {});
+      setMsg('✔ คืนรูปเดิมทั้งหมดแล้ว');
+      setTimeout(() => setMsg(''), 4000);
+    } catch (e) { setErr('คืนรูปเดิมไม่สำเร็จ: ' + e.message); }
+    setImgBusy(false);
+  };
 
   if (loading) return <div style={{ padding:'40px', textAlign:'center', color:'#888' }}>กำลังโหลดการตั้งค่า…</div>;
 
@@ -3729,6 +3844,28 @@ function HPSiteSettings() {
             placeholder="87/11-12 ซอยเอกชัย 76 แยก 2 แขวงคลองบางพราน เขตบางบอน กรุงเทพมหานคร 10150"
             maxLength={300} rows={2} style={{ ...inputCss, resize:'vertical', lineHeight:'1.7' }}/>
         </Field>
+      </div>
+
+      {/* ── รูปภาพทั้งเว็บ ── */}
+      <div style={cardCss}>
+        <div style={{ fontSize:'16px', fontWeight:'800', color:'#222', marginBottom:'6px' }}>รูปภาพทั้งเว็บ</div>
+        <p style={{ fontSize:'13.5px', color:'#777', lineHeight:'1.8' }}>
+          รูปทุกใบบนเว็บเปลี่ยนได้จากหน้าเว็บจริง — กลับไปหน้าแรก แล้วกดปุ่ม
+          <b style={{ color:'#0d6b5c' }}> “แก้รูปภาพ” </b> ที่มุมบนซ้าย รูปจะขึ้นกรอบส้ม กดใบไหนก็เปลี่ยนใบนั้นได้เลย
+        </p>
+        <div style={{ marginTop:'12px', display:'flex', alignItems:'center', gap:'14px', flexWrap:'wrap' }}>
+          <span style={{ fontSize:'13.5px', color:'#0d6b5c', fontWeight:'700' }}>
+            ตอนนี้เปลี่ยนรูปไปแล้ว {imgCount} รูป
+          </span>
+          {imgCount > 0 && (
+            <button type="button" disabled={imgBusy} onClick={resetImages}
+              style={{ background:'#fff', color:'#b3261e', border:'1px solid #f0c8c4', borderRadius:'8px',
+                       padding:'9px 16px', fontSize:'13px', fontWeight:'700', cursor: imgBusy ? 'default' : 'pointer',
+                       opacity: imgBusy ? 0.6 : 1, fontFamily:'Inter, Noto Sans Thai, sans-serif' }}>
+              {imgBusy ? 'กำลังคืนค่า…' : 'คืนรูปเดิมทั้งหมด'}
+            </button>
+          )}
+        </div>
       </div>
 
       <button onClick={save} disabled={saving}
@@ -4618,6 +4755,33 @@ function hpBotAnswer(text, product) {
     'ผมขอเก็บรายละเอียดความต้องการไว้ แล้วส่งให้ทีมงานดูแลต่อทางไลน์นะครับ' };
 }
 
+// ตอบด้วยสินค้าจริงในหมวดที่ลูกค้าชี้เอง
+// ใช้ตอนลูกค้าส่งรูปมา — ผู้ช่วยดูรูปเองไม่ได้ จึงห้ามเดาว่าในรูปคือรุ่นอะไรเด็ดขาด
+// ให้ลูกค้าบอกประเภทแทน แล้วดึงของจริงจากแคตตาล็อกมาแสดง ข้อมูลจึงถูกต้องเสมอ
+function hpBotCategoryAnswer(catId) {
+  const label = hpCategoryLabel(catId);
+  const list  = hpProductsInCategory(catId);
+  if (!list.length) {
+    return { ask:true, reply:
+      'หมวด ' + label + ' ยังไม่มีข้อมูลในระบบครับ\n'
+      + 'ขอให้ทีมงานช่วยตรวจสอบจากรูปที่ส่งมาอีกครั้งนะครับ' };
+  }
+  const cards  = list.slice(0, HP_BOT_CARD_MAX);
+  const brands = [...new Set(list.map(p => p.brand).filter(Boolean))];
+  const brandLine = brands.length > 1
+    ? '\nแบรนด์ที่มี: ' + brands.slice(0, 6).join(' · ')
+      + (brands.length > 6 ? ` และอีก ${brands.length - 6} แบรนด์` : '')
+    : '';
+  return {
+    ask: true,
+    products: cards,
+    reply: 'หมวด ' + label + ' ในร้านมี ' + list.length.toLocaleString('th-TH') + ' รายการครับ'
+      + brandLine
+      + '\nขอยกตัวอย่างมาให้ดูก่อน กดที่การ์ดเพื่อดูรายละเอียดเต็มได้เลยครับ'
+      + '\nถ้าเห็นรุ่นที่ตรงกับในรูป บอกรหัสรุ่นมาได้เลย เดี๋ยวผมดึงข้อมูลรุ่นนั้นให้ครับ',
+  };
+}
+
 function HPChatWidget({ onSelectProduct }) {
   const LINE = HP_LINE_URL;
   const SUMMARY_TAG = 'สรุปให้ทีมงาน:';
@@ -4642,7 +4806,13 @@ function HPChatWidget({ onSelectProduct }) {
   const [form, setForm]       = useState(null);   // { step, data }
   // เก็บความต้องการครบแล้วหรือยัง — กันไม่ให้ถามวนซ้ำเมื่อลูกค้าถามอย่างอื่นต่อ
   const [collected, setCollected] = useState(false);
+  // รูปสินค้าที่ลูกค้าแนบมา — ไม่มี AI ดูภาพ จึงห้ามเดารุ่นจากรูปเด็ดขาด
+  // รูปถูกส่งต่อให้ทีมงานดูเองทางไลน์ ส่วนข้อมูลสินค้าให้ลูกค้าชี้ประเภทแล้วดึงจากแคตตาล็อกจริง
+  const [attachedImage, setAttachedImage] = useState(null);  // { url } รูปที่จะติดไปกับลิสต์เข้าไลน์
+  const [pendingImage,  setPendingImage]  = useState(null);  // { url, preview } รูปที่เลือกไว้แต่ยังไม่กดส่ง
+  const [attaching, setAttaching]         = useState(false);
   const bodyRef = React.useRef(null);
+  const fileInputRef = React.useRef(null);
 
   // เปิดแชทจากหน้าสินค้า — เริ่มบทสนทนาใหม่โดยผูกกับสินค้าตัวที่ลูกค้ากดมา
   useEffect(() => {
@@ -4650,7 +4820,7 @@ function HPChatWidget({ onSelectProduct }) {
       const p = e.detail;
       if (!p) return;
       setProduct(p);
-      setInput(''); setForm(null); setCollected(false);
+      setInput(''); setForm(null); setCollected(false); setAttachedImage(null); setPendingImage(null);
       // แนบการ์ดสินค้าตัวที่ลูกค้ากดมาด้วย จะได้เห็นข้อมูลจริงตั้งแต่ข้อความแรก
       setMsgs([{ role:'assistant', intro:true, products:[p], content:
         'สวัสดีครับ 👋 สนใจรุ่นนี้ใช่ไหมครับ\n' +
@@ -4681,7 +4851,9 @@ function HPChatWidget({ onSelectProduct }) {
 
   const leadText = () => 'สวัสดีครับ ผมคุยกับผู้ช่วยหน้าเว็บมาแล้ว\n'
     + (product ? 'สินค้าที่สนใจ: ' + product.code + (product.name ? ' · ' + product.name : '') + '\n' : '')
-    + summary;
+    + summary
+    // ส่งเองไม่ได้ (ยังไม่ตั้งค่า/เน็ตล่ม) — แนบลิงก์รูปให้วางในไลน์เองแทน จะได้ไม่หลุดข้อมูลนี้ไป
+    + (attachedImage ? '\nรูปที่แนบ: ' + location.origin + attachedImage.url : '');
 
   const sendLead = async () => {
     if (sending || !summary) return;
@@ -4693,6 +4865,7 @@ function HPChatWidget({ onSelectProduct }) {
         body: JSON.stringify({
           summary,
           product: product ? { code:product.code, name:product.name } : undefined,
+          imageUrl: attachedImage ? attachedImage.url : undefined,
         }),
       });
       const data = await r.json().catch(() => ({}));
@@ -4729,12 +4902,51 @@ function HPChatWidget({ onSelectProduct }) {
       'ขอบคุณครับ 🙏 ผมสรุปตามนี้นะครับ กดปุ่มสีเขียวด้านล่างเพื่อส่งให้ทีมงานได้เลย\n\n' + SUMMARY_TAG + '\n' + list }]);
   };
 
+  // ---- ลูกค้าแนบรูปสินค้ามาถาม ----
+  // ย่อรูปในเครื่องก่อนแล้วค่อยอัป เพื่อไม่ให้กินเน็ตลูกค้าและไม่ชนลิมิตฝั่งเซิร์ฟเวอร์
+  const attachImage = async (file, inputEl) => {
+    if (inputEl) inputEl.value = '';        // เลือกไฟล์เดิมซ้ำได้
+    if (!file || attaching) return;
+    const warn = (msg) => setMsgs(m => [...m, { role:'assistant', content: msg }]);
+    if (!/^image\//.test(file.type)) { warn('ไฟล์นี้ไม่ใช่รูปภาพครับ รบกวนส่งเป็น JPG / PNG / WEBP นะครับ'); return; }
+    if (file.size > 12 * 1024 * 1024) { warn('ไฟล์ใหญ่เกินไปครับ รบกวนย่อรูปก่อนแล้วส่งใหม่นะครับ'); return; }
+    setAttaching(true);
+    try {
+      const dataUrl = await hpShrinkImageFile(file, 1600);
+      const r = await fetch('/api/chat-image', {
+        method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ dataUrl }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.url) throw new Error(d.error || 'อัปโหลดรูปไม่สำเร็จ');
+      setPendingImage({ url: d.url, preview: dataUrl });
+    } catch (e) {
+      warn((e.message || 'แนบรูปไม่สำเร็จครับ') + '\nรบกวนทักไลน์แล้วส่งรูปให้ทีมงานโดยตรงก็ได้ครับ');
+    }
+    setAttaching(false);
+  };
+
   // ตอบจากข้อมูลจริงล้วน ไม่เรียกโมเดลภาษา จึงไม่มีทางเพี้ยนและไม่ต้องรอเน็ต
   const send = (text) => {
     const q = (text != null ? text : input).trim();
-    if (!q) return;
+    const img = pendingImage;
+    if (!q && !img) return;
     setInput('');
-    setMsgs(m => [...m, { role:'user', content:q }]);
+    setMsgs(m => [...m, { role:'user', content:q, image: img ? img.preview : null }]);
+
+    if (img) {
+      setAttachedImage({ url: img.url });   // ติดไปกับลิสต์ที่ส่งเข้าไลน์ ทีมงานจะได้เห็นรูป
+      setPendingImage(null);
+      // ผู้ช่วยดูรูปเองไม่ได้ จึงต้องบอกตรงๆ ห้ามเดาว่าในรูปเป็นรุ่นอะไร
+      // ถ้าลูกค้าไม่ได้พิมพ์อะไรมาด้วย ให้เลือกประเภทเอา แล้วค่อยดึงของจริงจากแคตตาล็อก
+      if (!q) {
+        setMsgs(m => [...m, { role:'assistant', cats:true, content:
+          'รับรูปแล้วครับ 📷 เดี๋ยวผมแนบรูปนี้ส่งให้ทีมงานดูด้วย\n'
+          + 'ผมดูจากรูปแล้วยืนยันรุ่นแทนทีมงานไม่ได้ครับ รบกวนช่วยบอกอีกนิดว่าเป็นอุปกรณ์ประเภทไหน '
+          + 'หรือถ้าบนตัวสินค้ามีรหัสรุ่น พิมพ์มาได้เลย เดี๋ยวผมค้นข้อมูลจริงในแคตตาล็อกให้ครับ' }]);
+        return;
+      }
+      setMsgs(m => [...m, { role:'assistant', content:'รับรูปแล้วครับ 📷 เดี๋ยวผมแนบส่งให้ทีมงานดูด้วยนะครับ' }]);
+    }
 
     // อยู่ระหว่างเก็บความต้องการอยู่แล้ว
     if (form) {
@@ -4768,6 +4980,14 @@ function HPChatWidget({ onSelectProduct }) {
       }
       askStep(data, 0);
     }
+  };
+
+  // ลูกค้ากดเลือกประเภทสินค้าหลังส่งรูปมา — ดึงของจริงในหมวดนั้นมาแสดง
+  const sendCategory = (cat) => {
+    setMsgs(m => [...m, { role:'user', content: cat.label }]);
+    const a = hpBotCategoryAnswer(cat.id);
+    setMsgs(m => [...m, { role:'assistant', content: a.reply, products: a.products }]);
+    if (a.ask && !collected) askStep({ item: cat.label + ' (ลูกค้าส่งรูปมาให้ดู)' }, 0);
   };
 
   // การ์ดข้อมูลสินค้า — ทุกค่าอ่านจากฐานข้อมูลจริงโดยตรง ไม่มีการเรียบเรียงใหม่
@@ -4814,11 +5034,30 @@ function HPChatWidget({ onSelectProduct }) {
   const bubble = (m, i) => (
     <div key={i} style={{ display:'flex', flexDirection:'column',
                           alignItems: m.role === 'user' ? 'flex-end' : 'flex-start', marginBottom:'10px' }}>
-      <div style={{ maxWidth:'82%', padding:'10px 14px', borderRadius: m.role === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
-                    background: m.role === 'user' ? '#0d6b5c' : '#f1f5f3', color: m.role === 'user' ? '#fff' : '#26332e',
-                    fontSize:'14.5px', lineHeight:'1.75', whiteSpace:'pre-wrap', wordBreak:'break-word' }}>
-        {m.content}
-      </div>
+      {/* รูปที่ลูกค้าส่งมาถาม — โชว์ในบทสนทนาให้เห็นว่าส่งอะไรไปแล้ว */}
+      {m.image && (
+        <img src={m.image} alt="รูปที่ส่งมาสอบถาม"
+          style={{ maxWidth:'70%', borderRadius:'14px', border:'1px solid #dbe7e2',
+                   marginBottom: m.content ? '6px' : 0, display:'block' }}/>
+      )}
+      {m.content && (
+        <div style={{ maxWidth:'82%', padding:'10px 14px', borderRadius: m.role === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+                      background: m.role === 'user' ? '#0d6b5c' : '#f1f5f3', color: m.role === 'user' ? '#fff' : '#26332e',
+                      fontSize:'14.5px', lineHeight:'1.75', whiteSpace:'pre-wrap', wordBreak:'break-word' }}>
+          {m.content}
+        </div>
+      )}
+      {/* ให้ลูกค้าชี้ประเภทเอง แทนที่ผู้ช่วยจะเดาจากรูป — ข้อมูลที่ตอบกลับจึงมาจากแคตตาล็อกจริงเสมอ */}
+      {m.cats && (
+        <div style={{ display:'flex', flexWrap:'wrap', gap:'6px', marginTop:'8px' }}>
+          {HP_CATEGORIES.map(c => (
+            <button key={c.id} onClick={() => sendCategory(c)}
+              style={{ background:'#fff', border:'1px solid #cfe3dc', color:'#0d6b5c', borderRadius:'999px',
+                       padding:'6px 12px', fontSize:'12px', fontWeight:'600', cursor:'pointer',
+                       fontFamily:'Inter, Noto Sans Thai, sans-serif' }}>{c.label}</button>
+          ))}
+        </div>
+      )}
       {m.products && m.products.length > 0 && (
         <div style={{ width:'100%', marginTop:'7px' }}>{m.products.map(productCard)}</div>
       )}
@@ -4955,18 +5194,49 @@ function HPChatWidget({ onSelectProduct }) {
           )}
 
           {/* ช่องพิมพ์ */}
-          <div style={{ display:'flex', gap:'8px', padding:'11px', borderTop:'1px solid #eef3f0', background:'#fff', flexShrink:0 }}>
-            <input value={input} onChange={e => setInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-              maxLength={1000} placeholder="พิมพ์คำถามที่นี่…"
-              style={{ flex:1, minWidth:0, padding:'10px 13px', fontSize:'14px', border:'1px solid #dde7e2',
-                       borderRadius:'999px', outline:'none', fontFamily:'Inter, Noto Sans Thai, sans-serif' }}/>
-            <button onClick={() => send()} disabled={!input.trim()} aria-label="ส่ง"
-              style={{ width:'40px', height:'40px', flexShrink:0, borderRadius:'50%', border:'none',
-                       background: !input.trim() ? '#c3d4cd' : '#0d6b5c', color:'#fff',
-                       cursor: !input.trim() ? 'default' : 'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
-            </button>
+          <div style={{ borderTop:'1px solid #eef3f0', background:'#fff', flexShrink:0 }}>
+            {/* รูปที่เลือกไว้แล้วแต่ยังไม่กดส่ง — ให้เห็นก่อนว่าจะส่งรูปไหนไป และเอาออกได้ */}
+            {pendingImage && (
+              <div style={{ display:'flex', alignItems:'center', gap:'9px', padding:'10px 11px 0' }}>
+                <img src={pendingImage.preview} alt=""
+                  style={{ width:'42px', height:'42px', objectFit:'cover', borderRadius:'8px', border:'1px solid #dbe7e2', flexShrink:0 }}/>
+                <div style={{ flex:1, minWidth:0, fontSize:'12px', color:'#5c6f67', lineHeight:'1.55' }}>
+                  แนบรูปแล้ว — กดส่งเพื่อให้ทีมงานดูรูปนี้
+                </div>
+                <button onClick={() => setPendingImage(null)} aria-label="เอารูปออก"
+                  style={{ background:'transparent', border:'none', color:'#8fa39a', fontSize:'16px',
+                           cursor:'pointer', lineHeight:1, padding:'3px 5px', flexShrink:0 }}>✕</button>
+              </div>
+            )}
+            <div style={{ display:'flex', gap:'8px', padding:'11px', alignItems:'center' }}>
+              {/* แนบรูปสินค้า — ลูกค้าถ่ายรูปของที่อยากได้มาถามได้เลย ไม่ต้องรู้ชื่อรุ่น */}
+              <button onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                disabled={attaching} aria-label="แนบรูปสินค้า" title="แนบรูปสินค้า"
+                style={{ width:'40px', height:'40px', flexShrink:0, borderRadius:'50%',
+                         border:'1px solid #dde7e2', background:'#fff', color: attaching ? '#c3d4cd' : '#0d6b5c',
+                         cursor: attaching ? 'default' : 'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                {attaching ? (
+                  <span style={{ fontSize:'11px', fontWeight:'700' }}>…</span>
+                ) : (
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2.5"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/>
+                  </svg>
+                )}
+              </button>
+              <input ref={fileInputRef} type="file" accept="image/*" style={{ display:'none' }}
+                onChange={e => attachImage(e.target.files && e.target.files[0], e.target)}/>
+              <input value={input} onChange={e => setInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+                maxLength={1000} placeholder={pendingImage ? 'อยากถามอะไรเกี่ยวกับรูปนี้…' : 'พิมพ์คำถามที่นี่…'}
+                style={{ flex:1, minWidth:0, padding:'10px 13px', fontSize:'14px', border:'1px solid #dde7e2',
+                         borderRadius:'999px', outline:'none', fontFamily:'Inter, Noto Sans Thai, sans-serif' }}/>
+              <button onClick={() => send()} disabled={!input.trim() && !pendingImage} aria-label="ส่ง"
+                style={{ width:'40px', height:'40px', flexShrink:0, borderRadius:'50%', border:'none',
+                         background: (!input.trim() && !pendingImage) ? '#c3d4cd' : '#0d6b5c', color:'#fff',
+                         cursor: (!input.trim() && !pendingImage) ? 'default' : 'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+              </button>
+            </div>
           </div>
 
           <div style={{ fontSize:'10.5px', color:'#9fb0a8', textAlign:'center', padding:'0 12px 9px', background:'#fff', lineHeight:'1.5' }}>
@@ -5008,6 +5278,180 @@ function HPRevealSection({ id, nav, children }) {
   );
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+//  โหมดแก้รูป — แอดมินกดเปลี่ยนรูปได้สดๆ บนหน้าเว็บจริง ไม่ต้องเข้าหลังบ้าน
+//  เปิดโหมดแล้วรูปทุกใบจะขึ้นกรอบส้ม กดใบไหนก็เปลี่ยนใบนั้น
+//  ปุ่มนี้จะโผล่เฉพาะคนที่ล็อกอินแล้วและมีสิทธิ์แก้ไขเท่านั้น ลูกค้าทั่วไปไม่เห็น
+// ══════════════════════════════════════════════════════════════════════════
+function HPImageEditor() {
+  const [canEdit, setCanEdit] = useState(false);
+  const [on,      setOn]      = useState(false);
+  const [target,  setTarget]  = useState(null);   // { path, el }
+  const [busy,    setBusy]    = useState(false);
+  const [err,     setErr]     = useState('');
+  const [note,    setNote]    = useState('');
+  const [count,   setCount]   = useState(0);
+  const fileRef = useRef(null);
+
+  // เซสชันเป็น HttpOnly cookie — ต้องถามเซิร์ฟเวอร์ว่าใครล็อกอินอยู่
+  useEffect(() => {
+    hpApi('/auth/me')
+      .then(r => setCanEdit(!!(r.can && r.can.editProduct)))
+      .catch(() => {});
+  }, []);
+
+  // เปิดโหมด: ใส่คลาสให้ body (CSS ตีกรอบรูปให้เห็นว่ากดได้)
+  // แล้วดักคลิกแบบ capture เพื่อชิงก่อนปุ่ม/ลิงก์ของเว็บ ไม่งั้นกดรูปสินค้าแล้วเด้งไปหน้าอื่น
+  useEffect(() => {
+    if (!on) { document.body.classList.remove('hp-imgedit'); return; }
+    document.body.classList.add('hp-imgedit');
+    const onClick = (e) => {
+      const img = e.target && e.target.closest && e.target.closest('img[data-hpimg]');
+      if (!img) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setErr(''); setNote('');
+      setTarget({ path: img.getAttribute('data-hpimg') });
+    };
+    document.addEventListener('click', onClick, true);
+    // นับรูปที่เปลี่ยนได้ในหน้านี้ ให้แอดมินรู้ว่าโหมดทำงานอยู่จริง
+    const tick = () => setCount(document.querySelectorAll('img[data-hpimg]').length);
+    tick();
+    const timer = setInterval(tick, 1200);
+    return () => {
+      document.removeEventListener('click', onClick, true);
+      document.body.classList.remove('hp-imgedit');
+      clearInterval(timer);
+    };
+  }, [on]);
+
+  // ให้เรนเดอร์ใหม่เมื่อแผนที่รูปเปลี่ยน จะได้เห็นผลทันทีโดยไม่ต้องรีเฟรช
+  const [, bump] = useReducer(x => x + 1, 0);
+  useEffect(() => { HP_IMG_SUBS.add(bump); return () => HP_IMG_SUBS.delete(bump); }, []);
+
+  // ส่งเฉพาะ images ไปอย่างเดียว — เซิร์ฟเวอร์จะคงการตั้งค่าส่วนอื่นไว้ให้เอง
+  const saveMap = async (next) => {
+    const r = await hpApi('/settings', { method:'POST', body:{ settings:{ images: next } } });
+    hpImgSetMap((r.settings || {}).images || {});
+  };
+
+  const pickFile = async (file, inputEl) => {
+    if (inputEl) inputEl.value = '';        // เลือกไฟล์เดิมซ้ำได้
+    if (!file || !target) return;
+    setErr(''); setNote('');
+    if (!/^image\//.test(file.type)) { setErr('ต้องเป็นไฟล์รูปเท่านั้น (JPG / PNG / WEBP / GIF)'); return; }
+    if (file.size > 12 * 1024 * 1024) { setErr('ไฟล์ใหญ่เกิน 12MB กรุณาย่อรูปก่อน'); return; }
+    setBusy(true);
+    try {
+      const dataUrl = await hpShrinkImageFile(file, 1600);
+      const up = await hpApi('/catalog-image', { method:'POST', body:{ key: hpImgSlotKey(target.path), dataUrl } });
+      await saveMap({ ...HP_IMG_MAP, [target.path]: up.url });
+      setNote('✔ เปลี่ยนรูปแล้ว');
+      setTimeout(() => { setTarget(null); setNote(''); }, 900);
+    } catch (e) { setErr('เปลี่ยนรูปไม่สำเร็จ: ' + (e.message || e)); }
+    setBusy(false);
+  };
+
+  const revert = async () => {
+    if (!target) return;
+    setErr(''); setNote(''); setBusy(true);
+    try {
+      const next = { ...HP_IMG_MAP };
+      delete next[target.path];
+      await saveMap(next);
+      setNote('✔ คืนรูปเดิมแล้ว');
+      setTimeout(() => { setTarget(null); setNote(''); }, 900);
+    } catch (e) { setErr('คืนรูปเดิมไม่สำเร็จ: ' + (e.message || e)); }
+    setBusy(false);
+  };
+
+  if (!canEdit) return null;
+
+  const changed  = Object.keys(HP_IMG_MAP).length;
+  const override = target ? HP_IMG_MAP[target.path] : '';
+  const btnCss   = { border:'none', borderRadius:'9px', padding:'11px 20px', fontSize:'14px', fontWeight:'700',
+                     fontFamily:'Inter, Noto Sans Thai, sans-serif', cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.6 : 1 };
+
+  return (
+    <>
+      {/* แถบควบคุมลอย — วางบนซ้าย ไม่ไปทับปุ่มแชท (ล่างซ้าย) และปุ่มซูม (ล่างขวา) */}
+      <div style={{ position:'fixed', left:'14px', top:'88px', zIndex:100000, display:'flex', flexDirection:'column',
+                    alignItems:'flex-start', gap:'8px', pointerEvents:'none' }}>
+        <button onClick={() => setOn(v => !v)}
+          style={{ ...btnCss, opacity:1, cursor:'pointer', pointerEvents:'auto', display:'flex', alignItems:'center', gap:'8px',
+                   background: on ? '#f05a20' : '#0d6b5c', color:'#fff', boxShadow:'0 6px 20px rgba(0,0,0,0.25)' }}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/>
+          </svg>
+          {on ? 'ปิดโหมดแก้รูป' : 'แก้รูปภาพ'}
+        </button>
+        {on && (
+          <div style={{ pointerEvents:'auto', background:'rgba(17,24,22,0.92)', color:'#fff', borderRadius:'9px',
+                        padding:'9px 13px', fontSize:'12.5px', lineHeight:'1.75', maxWidth:'230px', boxShadow:'0 6px 20px rgba(0,0,0,0.25)' }}>
+            กดที่รูปใบไหนก็ได้เพื่อเปลี่ยนรูปนั้น<br/>
+            <span style={{ color:'#9fe6d4' }}>หน้านี้เปลี่ยนได้ {count} รูป · เปลี่ยนไปแล้วทั้งเว็บ {changed} รูป</span>
+          </div>
+        )}
+      </div>
+
+      {/* กล่องเปลี่ยนรูป */}
+      {target && (
+        <div onClick={() => !busy && setTarget(null)}
+          style={{ position:'fixed', inset:0, zIndex:100001, background:'rgba(0,0,0,0.62)',
+                   display:'flex', alignItems:'center', justifyContent:'center', padding:'20px' }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ background:'#fff', borderRadius:'15px', width:'100%', maxWidth:'520px', maxHeight:'88vh', overflowY:'auto',
+                     padding:'24px', boxShadow:'0 20px 60px rgba(0,0,0,0.3)' }}>
+            <div style={{ fontSize:'17px', fontWeight:'800', color:'#222', marginBottom:'4px' }}>เปลี่ยนรูปนี้</div>
+            <div style={{ fontSize:'11.5px', color:'#9aa8a0', marginBottom:'16px', wordBreak:'break-all' }}>{target.path}</div>
+
+            {err  && <div style={{ background:'#fdecea', border:'1px solid #f5c6cb', color:'#b3261e', borderRadius:'8px', padding:'10px 14px', marginBottom:'12px', fontSize:'13.5px' }}>{err}</div>}
+            {note && <div style={{ background:'#e8f7ee', border:'1px solid #b7e4c7', color:'#0d6b3f', borderRadius:'8px', padding:'10px 14px', marginBottom:'12px', fontSize:'13.5px' }}>{note}</div>}
+
+            <div style={{ display:'flex', gap:'12px', marginBottom:'18px' }}>
+              {[['รูปเดิมที่มากับเว็บ', target.path], ['รูปที่ใช้อยู่ตอนนี้', override || target.path]].map(([lbl, src], i) => (
+                <div key={i} style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontSize:'11.5px', fontWeight:'700', color:'#667', marginBottom:'6px' }}>{lbl}</div>
+                  <div style={{ height:'132px', border:'1px solid #e2e6e3', borderRadius:'9px', background:'#fafbfa',
+                                display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
+                    {/* data-hpraw = ไม่ให้ตัวดักสลับรูป ไม่งั้นช่อง "รูปเดิม" จะกลายเป็นรูปใหม่ไปด้วย
+                        จนเทียบไม่ออกว่าของเดิมหน้าตาเป็นยังไง (และกดแล้วจะเปิดกล่องซ้อนอีกชั้น) */}
+                    <img src={src} alt="" data-hpraw="1"
+                      style={{ maxWidth:'100%', maxHeight:'100%', objectFit:'contain' }}
+                      onError={e => { e.target.style.visibility = 'hidden'; }}/>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display:'flex', gap:'10px', flexWrap:'wrap' }}>
+              <button disabled={busy} onClick={() => fileRef.current && fileRef.current.click()}
+                style={{ ...btnCss, background:'#0d6b5c', color:'#fff' }}>
+                {busy ? 'กำลังอัปโหลด…' : 'เลือกรูปใหม่จากเครื่อง'}
+              </button>
+              {override && (
+                <button disabled={busy} onClick={revert}
+                  style={{ ...btnCss, background:'#fff', color:'#b3261e', border:'1px solid #f0c8c4' }}>
+                  คืนรูปเดิม
+                </button>
+              )}
+              <button disabled={busy} onClick={() => setTarget(null)}
+                style={{ ...btnCss, background:'#f2f5f3', color:'#556' }}>ปิด</button>
+            </div>
+            <input ref={fileRef} type="file" accept="image/*" style={{ display:'none' }}
+              onChange={e => pickFile(e.target.files && e.target.files[0], e.target)}/>
+
+            <div style={{ fontSize:'11.5px', color:'#9aa8a0', marginTop:'14px', lineHeight:'1.8' }}>
+              ระบบย่อรูปให้อัตโนมัติ ไม่ต้องย่อมาเอง · รองรับ JPG / PNG / WEBP / GIF<br/>
+              รูปเดิมไฟล์นี้ถูกใช้ตรงไหนของเว็บบ้าง จะเปลี่ยนตามกันทุกจุด
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 function HPApp() {
   const [page,           setPage]          = useState('home');
   const [activeCategory, setActiveCategory] = useState('all');
@@ -5022,6 +5466,15 @@ function HPApp() {
     document.documentElement.style.zoom = zoom;
     localStorage.setItem('kss_zoom', String(zoom));
   }, [zoom]);
+  // รูปที่แอดมินเปลี่ยนไว้ — ลูกค้าทุกคนต้องได้รูปใหม่ ไม่ใช่เฉพาะแอดมิน
+  // (ค่าที่เคยโหลดถูกอ่านจาก localStorage ไปแล้วตั้งแต่เฟรมแรก ตรงนี้แค่ตามให้ตรงกับเซิร์ฟเวอร์)
+  const [, hpImgBump] = useReducer(x => x + 1, 0);
+  useEffect(() => {
+    HP_IMG_SUBS.add(hpImgBump);
+    hpApi('/settings').then(r => hpImgSetMap((r.settings || {}).images || {})).catch(() => {});
+    return () => HP_IMG_SUBS.delete(hpImgBump);
+  }, []);
+
   const zoomIn    = () => setZoom(z => Math.min(1.5, Math.round((z + 0.1) * 10) / 10));
   const zoomOut   = () => setZoom(z => Math.max(0.7, Math.round((z - 0.1) * 10) / 10));
   const zoomReset = () => setZoom(1);
@@ -5150,6 +5603,7 @@ function HPApp() {
       </main>
       <HPFooter onCategoryChange={onCategoryChange} onNavigate={onNavigate}/>
       <HPChatWidget onSelectProduct={onSelectProduct}/>
+      <HPImageEditor/>
       <div className="hp-zoom-ctrl" style={{ position:'fixed', right:'18px', bottom:'18px', display:'flex', flexDirection:'column', alignItems:'center', gap:'6px', background:'#fff', borderRadius:'12px', boxShadow:'0 6px 20px rgba(0,0,0,0.18)', padding:'8px', zIndex:9999 }}>
         <button onClick={zoomIn} title="ซูมเข้า" style={{ width:'36px', height:'36px', borderRadius:'8px', border:'1px solid #e2e8f0', background:'#f8fafc', fontSize:'18px', fontWeight:'700', color:'#06352e', cursor:'pointer' }}>+</button>
         <button onClick={zoomReset} title="รีเซ็ตขนาด" style={{ width:'36px', height:'28px', borderRadius:'8px', border:'1px solid #e2e8f0', background:'#f8fafc', fontSize:'11px', fontWeight:'700', color:'#7a8a82', cursor:'pointer' }}>{Math.round(zoom * 100)}%</button>

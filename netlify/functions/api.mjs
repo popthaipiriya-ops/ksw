@@ -286,6 +286,20 @@ async function leadRateOk(ip) {
   return true;
 }
 
+// ลูกค้าแนบรูปสินค้าที่อยากถามในแชท — จำกัดแยกจาก /lead เพราะรูปกินพื้นที่เก็บมากกว่า
+const CHATIMG_RATE_MAX = 15;
+const CHATIMG_RATE_WIN = 60 * 60 * 1000;
+async function chatImageRateOk(ip) {
+  const key = 'ratelimit/chatimg/' + (ip || 'unknown').replace(/[^a-zA-Z0-9.:_-]/g, '_');
+  const now = Date.now();
+  let rec = await readJson(key, null);
+  if (!rec || typeof rec.start !== 'number' || now - rec.start > CHATIMG_RATE_WIN) rec = { start: now, count: 0 };
+  if (rec.count >= CHATIMG_RATE_MAX) return false;
+  rec.count += 1;
+  await writeJson(key, rec);
+  return true;
+}
+
 // ---------- บทบาทและสิทธิ์ (แหล่งความจริงอยู่ที่เซิร์ฟเวอร์) ----------
 const ROLES = {
   super: { products:true,  editProduct:true,  deleteProduct:true,  resetAll:true,  users:true,  sales:true },
@@ -532,13 +546,18 @@ export default async (req) => {
       const pname = p && typeof p.name === 'string' ? p.name.trim().slice(0, 120) : '';
       const prodTxt = code ? `สินค้าที่ลูกค้าเปิดดู: ${code}${pname ? ' · ' + pname : ''}` : '';
 
+      // รูปที่ลูกค้าแนบมาในแชท — รับเฉพาะพาธของ endpoint เราเท่านั้น กัน URL ปลอมหลุดเข้าไปในข้อความ LINE
+      const imgUrl = typeof body.imageUrl === 'string' ? body.imageUrl : '';
+      const validImg = /^\/api\/chat-image\/[A-Za-z0-9_-]+$/.test(imgUrl);
+      const absImgUrl = validImg ? url.origin + imgUrl : '';
+
       const orderNo = await nextOrderNo();
       const when    = thaiTimeText();
 
       // เก็บออเดอร์ไว้เสมอ ต่อให้ส่งไลน์ไม่ผ่านก็ยังตามย้อนหลังได้
       try {
         const leads = await readJson('leads', []);
-        leads.push({ orderNo, at: new Date().toISOString(), ip, product: prodTxt, summary });
+        leads.push({ orderNo, at: new Date().toISOString(), ip, product: prodTxt, summary, image: absImgUrl || undefined });
         await writeJson('leads', leads.slice(-500));
       } catch (e) { console.error('lead save error:', e); }
 
@@ -549,10 +568,15 @@ export default async (req) => {
         return json({ ok:true, sent:false, orderNo, reason:'unconfigured', lineUrl: LINE_URL });
       }
       try {
+        const messages = [{ type:'text', text: orderMessage(orderNo, when, prodTxt, summary) }];
+        // LINE ต้องดึงรูปจาก URL https สาธารณะเอง — local dev เป็น http จึงข้ามส่วนนี้ (ยังส่งข้อความได้ตามปกติ)
+        if (absImgUrl && absImgUrl.startsWith('https://'))
+          messages.push({ type:'image', originalContentUrl: absImgUrl, previewImageUrl: absImgUrl });
+
         const r = await fetch('https://api.line.me/v2/bot/message/push', {
           method:'POST',
           headers:{ 'Content-Type':'application/json', 'Authorization': `Bearer ${token}` },
-          body: JSON.stringify({ to, messages:[{ type:'text', text: orderMessage(orderNo, when, prodTxt, summary) }] }),
+          body: JSON.stringify({ to, messages }),
         });
         // LINE ตอบ 4xx เมื่อโทเคนผิด/หมดอายุ หรือ LINE_TO ไม่ถูกต้อง — ต้องเห็นใน log ให้ชัด
         if (!r.ok) throw new Error(`LINE push ${r.status} ${(await r.text()).slice(0, 300)}`);
@@ -578,6 +602,40 @@ export default async (req) => {
           'Cache-Control': 'public, max-age=31536000, immutable',
         },
       });
+    }
+
+    // ---------- รูปที่ลูกค้าแนบมาในแชท (เปิดสาธารณะ) ----------
+    // ต้องเปิดสาธารณะเพราะ LINE ต้องดึงรูปนี้ไปแสดงในข้อความ push ให้ทีมงาน
+    if (path.startsWith('/chat-image/') && method === 'GET') {
+      const key = path.slice('/chat-image/'.length);
+      if (!/^[A-Za-z0-9_-]+$/.test(key)) return json({ error:'ชื่อไฟล์ไม่ถูกต้อง' }, 400);
+      const rec = await readJson('chatimg/' + key, null);
+      if (!rec || !rec.data) return json({ error:'ไม่พบรูป' }, 404);
+      const bytes = Buffer.from(rec.data, 'base64');
+      return new Response(bytes, {
+        status: 200,
+        headers: { 'Content-Type': rec.type || 'image/jpeg', 'Cache-Control': 'public, max-age=604800' },
+      });
+    }
+
+    // อัปโหลดรูปที่ลูกค้าแนบมาในแชท — เปิดสาธารณะ (ไม่ต้องล็อกอิน) แต่จำกัดจำนวนต่อ IP
+    // เก็บไว้เฉยๆ ไม่พยายามวิเคราะห์รูปเอง (ไม่มี AI ดูภาพ) แค่ส่งต่อให้ทีมงานดูเองทาง /lead
+    if (path === '/chat-image' && method === 'POST') {
+      const ip = clientIp(req);
+      if (!(await chatImageRateOk(ip)))
+        return json({ error:'แนบรูปบ่อยเกินไป รบกวนทักไลน์ @kirdsaengsawang โดยตรงนะครับ' }, 429);
+
+      const body = await req.json().catch(() => ({}));
+      const dataUrl = String(body.dataUrl || '');
+      const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(dataUrl);
+      if (!m) return json({ error:'รองรับเฉพาะไฟล์รูป JPG / PNG / WEBP' }, 400);
+
+      const [, type, b64] = m;
+      if (b64.length > 4 * 1024 * 1024) return json({ error:'ไฟล์ใหญ่เกินไป (จำกัด 3MB)' }, 400);
+
+      const key = crypto.randomUUID().replace(/-/g, '');
+      await writeJson('chatimg/' + key, { type, data: b64, at: Date.now() });
+      return json({ ok:true, url: `/api/chat-image/${key}` });
     }
 
     // ---------- ตั้งแต่บรรทัดนี้ ต้องล็อกอินแล้วเท่านั้น ----------
@@ -696,45 +754,75 @@ export default async (req) => {
       const str = (v, max) => String(v == null ? '' : v).trim().slice(0, max);
       // ยอมรับเฉพาะ http/https เพื่อกัน javascript: และลิงก์แปลกปลอม
       const okUrl = (v) => !v || /^https?:\/\//i.test(v);
+      const okImg = (v) => /^\/api\/catalog-image\/[A-Za-z0-9_-]+(\?v=\d+)?$/.test(v);
+
+      // หลังบ้านมีหลายที่ที่บันทึกการตั้งค่าคนละส่วนกัน (ฟอร์ม "ตั้งค่าเว็บไซต์" กับ "โหมดแก้รูป")
+      // ส่วนไหนไม่ได้ส่งมาในคำขอนี้ ต้องคงค่าเดิมไว้ ไม่ใช่ล้างทิ้ง
+      const prev = (await readJson('settings')) || {};
 
       // ---- แคตตาล็อก: ต่อแบรนด์มี ลิงก์ / ชื่อที่แสดง / ข้อความปุ่ม / ซ่อน ----
-      const catalog = {};
-      for (const [name, raw] of Object.entries(s.catalog || {})) {
-        if (!raw || typeof raw !== 'object') continue;
-        const url = str(raw.url, 500);
-        if (!okUrl(url)) return json({ error:`ลิงก์ของ ${name} ต้องขึ้นต้นด้วย http:// หรือ https://` }, 400);
-        const rec = {};
-        if (url)            rec.url    = url;
-        if (raw.label)      rec.label  = str(raw.label, 60);
-        if (raw.cta)        rec.cta    = str(raw.cta, 40);
-        if (raw.hidden === true) rec.hidden = true;
-        // รูปที่อัปโหลดเอง — รับเฉพาะพาธของ endpoint เราเท่านั้น
-        // กันไม่ให้ยัดลิงก์ภายนอกหรือ javascript: เข้ามาเป็น src ของรูป
-        const img = str(raw.img, 300);
-        if (img) {
-          if (!/^\/api\/catalog-image\/[A-Za-z0-9_-]+(\?v=\d+)?$/.test(img))
-            return json({ error:`รูปของ ${name} ไม่ถูกต้อง` }, 400);
-          rec.img = img;
+      let catalog = prev.catalog || {};
+      if ('catalog' in s) {
+        catalog = {};
+        for (const [name, raw] of Object.entries(s.catalog || {})) {
+          if (!raw || typeof raw !== 'object') continue;
+          const url = str(raw.url, 500);
+          if (!okUrl(url)) return json({ error:`ลิงก์ของ ${name} ต้องขึ้นต้นด้วย http:// หรือ https://` }, 400);
+          const rec = {};
+          if (url)            rec.url    = url;
+          if (raw.label)      rec.label  = str(raw.label, 60);
+          if (raw.cta)        rec.cta    = str(raw.cta, 40);
+          if (raw.hidden === true) rec.hidden = true;
+          // รูปที่อัปโหลดเอง — รับเฉพาะพาธของ endpoint เราเท่านั้น
+          // กันไม่ให้ยัดลิงก์ภายนอกหรือ javascript: เข้ามาเป็น src ของรูป
+          const img = str(raw.img, 300);
+          if (img) {
+            if (!okImg(img)) return json({ error:`รูปของ ${name} ไม่ถูกต้อง` }, 400);
+            rec.img = img;
+          }
+          if (Object.keys(rec).length) catalog[name] = rec;
         }
-        if (Object.keys(rec).length) catalog[name] = rec;
+      }
+
+      // ---- รูปภาพทั้งเว็บที่แอดมินเปลี่ยนเอง (โหมดแก้รูปบนหน้าเว็บจริง) ----
+      // คีย์ = พาธรูปเดิมที่ฝังอยู่ในเว็บ เช่น assets/banner1.png
+      // ค่า  = พาธรูปที่แอดมินอัปโหลดทับ ต้องเป็น endpoint ของเราเท่านั้น
+      let images = prev.images || {};
+      if ('images' in s) {
+        images = {};
+        for (const [slot, raw] of Object.entries(s.images || {})) {
+          // ชื่อไฟล์รูปในเว็บมีทั้งเว้นวรรคและภาษาไทย จึงกันเฉพาะตัวที่อันตราย
+          // (คีย์นี้เป็นแค่ชื่อช่องสำหรับเทียบ ไฟล์จริงเก็บด้วยชื่อที่แฮชมาอีกที)
+          if (slot.length > 200 || slot.includes('..') || /[\u0000-\u001f\\<>"]/.test(slot))
+            return json({ error:`รูปของ ${slot} ไม่ถูกต้อง` }, 400);
+          const v = str(raw, 300);
+          if (!v) continue;   // ค่าว่าง = คืนไปใช้รูปเดิมที่มากับเว็บ
+          if (!okImg(v)) return json({ error:`รูปของ ${slot} ไม่ถูกต้อง` }, 400);
+          images[slot] = v;
+          if (Object.keys(images).length >= 500) break;
+        }
       }
 
       // ---- ข้อมูลติดต่อ (ใช้ร่วมกันหลายหน้า) ----
-      const c = s.contact || {};
-      const lineUrl = str(c.lineUrl, 300);
-      if (!okUrl(lineUrl)) return json({ error:'ลิงก์ไลน์ต้องขึ้นต้นด้วย http:// หรือ https://' }, 400);
-      const contact = {
-        phone:   str(c.phone, 60),
-        lineId:  str(c.lineId, 60),
-        lineUrl,
-        hours:   str(c.hours, 120),
-        address: str(c.address, 300),
-      };
+      let contact = prev.contact || {};
+      if ('contact' in s) {
+        const c = s.contact || {};
+        const lineUrl = str(c.lineUrl, 300);
+        if (!okUrl(lineUrl)) return json({ error:'ลิงก์ไลน์ต้องขึ้นต้นด้วย http:// หรือ https://' }, 400);
+        contact = {
+          phone:   str(c.phone, 60),
+          lineId:  str(c.lineId, 60),
+          lineUrl,
+          hours:   str(c.hours, 120),
+          address: str(c.address, 300),
+        };
+      }
 
       const out = {
         catalog,
-        catalogFooter: str(s.catalogFooter, 80),
+        catalogFooter: 'catalogFooter' in s ? str(s.catalogFooter, 80) : str(prev.catalogFooter, 80),
         contact,
+        images,
         // เก็บรูปแบบเดิมไว้ด้วย เผื่อหน้าเว็บเวอร์ชันเก่ายังอ่านอยู่
         catalogUrls: Object.fromEntries(Object.entries(catalog).filter(([, v]) => v.url).map(([k, v]) => [k, v.url])),
       };

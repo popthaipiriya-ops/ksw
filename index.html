@@ -175,6 +175,22 @@
     .hp-admin-btn { display:flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:10px; cursor:pointer; flex-shrink:0; background:#f05a20; box-shadow:0 2px 8px rgba(240,90,32,0.3); transition:transform 0.15s ease; }
     .hp-admin-btn:hover { transform:translateY(-2px); }
 
+    /* ── โหมดแก้รูป (เฉพาะแอดมินที่ล็อกอินแล้ว) ──
+       ตีกรอบรูปทุกใบให้เห็นชัดว่ากดเปลี่ยนได้ ไม่ใช่รูปธรรมดา
+       ใช้ outline ไม่ใช่ border เพราะ outline ไม่กินพื้นที่ เลย์เอาต์เดิมจึงไม่ขยับ */
+    @keyframes hp-imgedit-pulse { 0%,100% { outline-color:#f05a20; } 50% { outline-color:#ffb38a; } }
+    body.hp-imgedit img[data-hpimg] {
+      outline:2px dashed #f05a20 !important; outline-offset:2px;
+      cursor:pointer !important; animation:hp-imgedit-pulse 2s ease-in-out infinite;
+    }
+    body.hp-imgedit img[data-hpimg]:hover {
+      outline:3px solid #f05a20 !important; animation:none;
+      box-shadow:0 0 0 5px rgba(240,90,32,0.28) !important;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      body.hp-imgedit img[data-hpimg] { animation:none !important; }
+    }
+
     /* ══ รองรับจอมือถือ/แท็บเล็ต ══
        เมนูบนสุดเดิมเรียงแถวเดียวเสมอ พอจอแคบกว่าความกว้างเมนูจะดันจนเว็บเลื่อนซ้าย-ขวาได้
        จึงสลับเป็นปุ่มเมนู (☰) เมื่อจอแคบ */
