@@ -4363,6 +4363,25 @@ function hpChatWindows(text, min = 4, max = 14) {
   return out;
 }
 
+// ลูกค้าไทยมักพิมพ์ชื่อแบรนด์เป็นภาษาไทย แต่ฐานข้อมูลเก็บเป็นอังกฤษ
+// ถ้าไม่จับคู่ให้ จะค้นไม่เจอทั้งที่ร้านมีของ (เช่น พิมพ์ "ยาซากิ" แต่ในระบบคือ "YAZAKI")
+const HP_BRAND_ALIAS = {
+  'ช้าง':'CHANG', 'ตราช้าง':'CHANG',
+  'นาโน':'NANO',
+  'พานาโซนิค':'PANASONIC', 'พานาโซนิก':'PANASONIC',
+  'ชไนเดอร์':'SCHNEIDER',
+  'เซฟทีคัท':'SAFETCUT', 'เซฟ-ที-คัท':'SAFETCUT', 'เซฟตี้คัท':'SAFETCUT',
+  'เซนโตชิ':'SENTOSHI',
+  'ยาซากิ':'YAZAKI', 'ยาซากิ้':'YAZAKI',
+  'อิวาชิ':'IWACHI',
+  'เรเซอร์':'RACER',
+  'ซีเบิร์ก':'ZEBERG', 'ซเบิร์ก':'ZEBERG',
+  'เอี่ยมพงศ์':'IAMPONG',
+  'กิจเจริญ':'KJL',
+  'ไทยยูเนี่ยน':'THAI UNION',
+  'บีซีซี':'BCC',
+};
+
 // รายชื่อหมวดทั้งหมด (มีไม่กี่สิบรายการ) คำนวณครั้งเดียวแล้วเก็บไว้ใช้ซ้ำ
 let hpChatCatCache = null;
 function hpChatAllCats(all) {
@@ -4374,7 +4393,11 @@ function hpChatAllCats(all) {
 // ให้คะแนนแบบชัดเจน: ตรงรหัสรุ่น > ตรงแบรนด์ > ตรงหมวด/ซีรีส์ > ตรงวลีในชื่อ
 function hpChatFindProducts(query, current) {
   const all = (typeof HP_ALL_BRAND_PRODUCTS !== 'undefined') ? HP_ALL_BRAND_PRODUCTS : [];
-  const raw  = String(query || '').toLowerCase();
+  let raw = String(query || '').toLowerCase();
+  // พิมพ์ชื่อแบรนด์เป็นไทย ให้เติมชื่ออังกฤษเข้าไปด้วย จะได้ค้นเจอ
+  for (const th in HP_BRAND_ALIAS) {
+    if (raw.includes(th)) raw += ' ' + HP_BRAND_ALIAS[th].toLowerCase();
+  }
   const norm = hpChatNorm(query);
   if (!all.length || norm.length < 2) return [];
 
@@ -4482,6 +4505,31 @@ const hpBotSpecs = (p, max = 6) =>
   (Array.isArray(p.specs) ? p.specs : [])
     .filter(s => s && s.l && s.v && !HP_BOT_SPEC_HIDE.test(String(s.l)))
     .slice(0, max);
+
+// ตัดคำถามออกให้เหลือแต่ชื่อสินค้า — ลิสต์ที่ส่งทีมงานจะได้อ่านรู้เรื่อง
+// (ไม่งั้นจะได้ "สินค้า/รุ่น: มีเบรกเกอร์ไหม" ซึ่งอ่านแล้วงง)
+function hpBotCleanItem(text) {
+  let s = String(text || '').trim();
+  for (let i = 0; i < 3; i++) {
+    s = s.replace(/^(มี|ขาย|ขอ|หา|อยากได้|ต้องการ|สนใจ|ดู)\s*/, '')
+         .replace(/\s*(ไหม|มั้ย|บ้าง|หน่อย|อยู่|ครับ|ค่ะ|คะ)\s*\??$/, '')
+         .trim();
+  }
+  return s || String(text || '').trim();
+}
+
+// ระหว่างเก็บความต้องการ ลูกค้ามักถามสินค้าแทรกเข้ามา
+// ถ้าเอาไปกรอกเป็นคำตอบดื้อๆ ลิสต์จะเพี้ยน (เช่น "จำนวน: สายไฟ")
+// จึงต้องแยกให้ออกว่าอันไหนคือคำถาม อันไหนคือคำตอบจริง
+function hpBotIsProductQuestion(text, stepKey) {
+  const t = String(text || '').trim().toLowerCase();
+  if (!t) return false;
+  // ถามชัดเจน — ถือเป็นคำถามเสมอ ยกเว้นช่องสินค้าที่คำถามคือคำตอบอยู่แล้ว
+  if (/ไหม|มั้ย|บ้าง|อะไร|แนะนำ|ขอดู|มีรุ่น|ยังไง/.test(t)) return stepKey !== 'item';
+  // ช่องที่ต้องมีตัวเลข แต่ตอบมาเป็นชื่อสินค้า = ลูกค้าเปลี่ยนเรื่องถาม
+  if ((stepKey === 'qty' || stepKey === 'tel') && !/\d/.test(t) && hpChatFindProducts(t, null).length > 0) return true;
+  return false;
+}
 
 // ตอบคำถามลูกค้าจากข้อมูลจริงล้วน
 // คืน { reply, ask } — ask=true แปลว่าให้ไหลต่อไปยังขั้นตอนถามความต้องการ
@@ -4688,9 +4736,20 @@ function HPChatWidget({ onSelectProduct }) {
     setInput('');
     setMsgs(m => [...m, { role:'user', content:q }]);
 
-    // อยู่ระหว่างเก็บความต้องการอยู่แล้ว — รับคำตอบแล้วถามข้อถัดไป
+    // อยู่ระหว่างเก็บความต้องการอยู่แล้ว
     if (form) {
-      askStep({ ...form.data, [FORM_STEPS[form.step].key]: q }, form.step + 1);
+      const stepKey = FORM_STEPS[form.step].key;
+      // ลูกค้าถามสินค้าแทรกกลางคัน — ต้องตอบให้ก่อน แล้วค่อยถามข้อเดิมซ้ำ
+      // ห้ามเอาคำถามไปกรอกเป็นคำตอบ ไม่งั้นลิสต์ที่ส่งทีมงานจะผิด
+      if (hpBotIsProductQuestion(q, stepKey)) {
+        const a = hpBotAnswer(q, product);
+        setMsgs(m => [...m,
+          { role:'assistant', content: a.reply, products: a.products },
+          { role:'assistant', content: FORM_STEPS[form.step].q },
+        ]);
+        return;
+      }
+      askStep({ ...form.data, [stepKey]: q }, form.step + 1);
       return;
     }
 
@@ -4705,7 +4764,7 @@ function HPChatWidget({ onSelectProduct }) {
         // ถ้าค้นเจอรุ่นชัดเจนรุ่นเดียว ใช้รุ่นนั้นเป็นสินค้าที่ลูกค้าสนใจได้เลย
         const hit = hpChatFindProducts(q, null);
         if (hit.length === 1) data.item = hit[0].code + (hit[0].name ? ' · ' + hit[0].name : '');
-        else if (!SUGGEST.includes(q) && !SUGGEST_PRODUCT.includes(q)) data.item = q;
+        else if (!SUGGEST.includes(q) && !SUGGEST_PRODUCT.includes(q)) data.item = hpBotCleanItem(q);
       }
       askStep(data, 0);
     }
