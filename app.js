@@ -855,26 +855,7 @@ function HPMainHeader({
   }, /*#__PURE__*/React.createElement("path", {
     d: "M12 2C6.48 2 2 5.92 2 10.8c0 3.27 1.96 6.16 4.95 7.87L6 21l3.24-1.62c.88.24 1.81.37 2.76.37 5.52 0 10-3.92 10-8.75S17.52 2 12 2z"
   }))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '40px',
-      height: '40px',
-      borderRadius: '10px',
-      background: '#f2f6f4',
-      border: '1px solid #e2ece7',
-      cursor: 'pointer',
-      transition: 'all 0.15s'
-    },
-    onMouseEnter: e => {
-      e.currentTarget.style.background = '#eaf6f5';
-      e.currentTarget.style.borderColor = '#0d5c50';
-    },
-    onMouseLeave: e => {
-      e.currentTarget.style.background = '#f2f6f4';
-      e.currentTarget.style.borderColor = '#e2ece7';
-    },
+    className: "hp-admin-btn",
     onClick: () => onNavigate('admin'),
     title: "\u0E40\u0E02\u0E49\u0E32\u0E23\u0E30\u0E1A\u0E1A\u0E2B\u0E25\u0E31\u0E07\u0E1A\u0E49\u0E32\u0E19 (\u0E2A\u0E33\u0E2B\u0E23\u0E31\u0E1A\u0E1C\u0E39\u0E49\u0E14\u0E39\u0E41\u0E25\u0E23\u0E30\u0E1A\u0E1A)"
   }, /*#__PURE__*/React.createElement("svg", {
@@ -882,16 +863,16 @@ function HPMainHeader({
     height: "20",
     viewBox: "0 0 24 24",
     fill: "none",
-    stroke: "#5a7a66",
+    stroke: "#fff",
     strokeWidth: "1.8",
     strokeLinecap: "round",
     strokeLinejoin: "round"
   }, /*#__PURE__*/React.createElement("circle", {
     cx: "12",
-    cy: "12",
-    r: "3.1"
+    cy: "8",
+    r: "3.6"
   }), /*#__PURE__*/React.createElement("path", {
-    d: "M19.1 14.6a1.5 1.5 0 00.3 1.66l.05.05a1.82 1.82 0 11-2.58 2.58l-.05-.05a1.5 1.5 0 00-1.66-.3 1.5 1.5 0 00-.91 1.37v.14a1.82 1.82 0 11-3.64 0v-.07a1.5 1.5 0 00-.98-1.37 1.5 1.5 0 00-1.66.3l-.05.05a1.82 1.82 0 11-2.58-2.58l.05-.05a1.5 1.5 0 00.3-1.66 1.5 1.5 0 00-1.37-.91H4.2a1.82 1.82 0 110-3.64h.07a1.5 1.5 0 001.37-.98 1.5 1.5 0 00-.3-1.66l-.05-.05a1.82 1.82 0 112.58-2.58l.05.05a1.5 1.5 0 001.66.3h.07a1.5 1.5 0 00.91-1.37V4.2a1.82 1.82 0 113.64 0v.07a1.5 1.5 0 00.91 1.37 1.5 1.5 0 001.66-.3l.05-.05a1.82 1.82 0 112.58 2.58l-.05.05a1.5 1.5 0 00-.3 1.66v.07a1.5 1.5 0 001.37.91h.14a1.82 1.82 0 110 3.64h-.07a1.5 1.5 0 00-1.37.91z"
+    d: "M4.8 20.2a7.2 7.2 0 0114.4 0"
   }))))), mobileOpen && /*#__PURE__*/React.createElement("div", {
     style: {
       borderTop: '1px solid #eef3ef',
@@ -6488,23 +6469,23 @@ function HPProductDetailPage({
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'flex-end',
-      marginBottom: '10px',
-      minHeight: '30px'
+      marginBottom: '14px',
+      minHeight: '40px'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'inline-flex',
       alignItems: 'center',
-      gap: '8px',
+      gap: '12px',
       background: '#fff',
       border: '1px solid #eef0f2',
       borderRadius: '999px',
-      padding: brandTab && brandTab.logo ? '5px 14px' : '6px 15px'
+      padding: brandTab && brandTab.logo ? '9px 22px' : '10px 22px'
     },
     title: brandTab ? brandTab.fullName || brandTab.label : product.brand
   }, /*#__PURE__*/React.createElement("span", {
     style: {
-      fontSize: '10.5px',
+      fontSize: '13px',
       fontWeight: '700',
       color: '#9aa8a0',
       letterSpacing: '0.04em',
@@ -6516,8 +6497,8 @@ function HPProductDetailPage({
     src: brandTab.logo,
     alt: brandTab.label || product.brand,
     style: {
-      maxWidth: '92px',
-      maxHeight: '26px',
+      maxWidth: '140px',
+      maxHeight: '40px',
       objectFit: 'contain',
       display: 'block'
     },
@@ -6526,7 +6507,7 @@ function HPProductDetailPage({
     }
   }) : /*#__PURE__*/React.createElement("span", {
     style: {
-      fontSize: '12.5px',
+      fontSize: '16px',
       fontWeight: '800',
       color: '#0d5c50',
       whiteSpace: 'nowrap'
@@ -6800,11 +6781,16 @@ function HPBrandProductsPage({
   const [zoomProduct, setZoomProduct] = useState(null);
   const [selectedBrand, setSelectedBrand] = useState(initialBrand || 'all');
   const [collapsed, setCollapsed] = useState({});
+  const [q, setQ] = useState('');
   const toggleCat = key => setCollapsed(prev => ({
     ...prev,
     [key]: !prev[key]
   }));
   const visibleBrands = selectedBrand === 'all' ? HP_BRAND_TABS : HP_BRAND_TABS.filter(t => t.key === selectedBrand);
+  // ค้นจากรหัสรุ่น ชื่อ แบรนด์ ซีรีส์ และหมวดหมู่ — ค้นเฉพาะในขอบเขตแบรนด์ที่กำลังกรองอยู่
+  const kw = q.trim().toLowerCase();
+  const searchScope = visibleBrands.flatMap(t => HP_BRAND_PRODUCTS[t.key]);
+  const searchResults = kw ? searchScope.filter(p => [p.code, p.name, p.brand, p.series, p.cat].some(v => String(v || '').toLowerCase().includes(kw))) : null;
   const radioRow = (checked, label, onClick, logo) => /*#__PURE__*/React.createElement("label", {
     onClick: onClick,
     style: {
@@ -6846,6 +6832,157 @@ function HPBrandProductsPage({
       color: checked ? '#0d5c50' : '#445'
     }
   }, label));
+  const card = (p, i) => {
+    const thumb = p.images && p.images[0] || p.img;
+    return /*#__PURE__*/React.createElement("div", {
+      key: `${p.brand}-${p.code}-${i}`,
+      style: {
+        background: '#fff',
+        border: '1px solid #eef0f2',
+        borderRadius: '12px',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        cursor: 'pointer',
+        transition: 'box-shadow 0.18s ease, transform 0.18s ease'
+      },
+      onMouseEnter: e => {
+        e.currentTarget.style.boxShadow = '0 10px 22px rgba(0,0,0,0.09)';
+        e.currentTarget.style.transform = 'translateY(-3px)';
+      },
+      onMouseLeave: e => {
+        e.currentTarget.style.boxShadow = 'none';
+        e.currentTarget.style.transform = 'translateY(0)';
+      },
+      onClick: () => onSelectProduct(p)
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: '140px',
+        background: '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative'
+      }
+    }, /*#__PURE__*/React.createElement("img", {
+      loading: "lazy",
+      decoding: "async",
+      src: thumb,
+      style: {
+        maxWidth: '100%',
+        maxHeight: '100%',
+        objectFit: 'contain',
+        mixBlendMode: 'multiply'
+      },
+      onError: e => e.target.style.display = 'none'
+    }), /*#__PURE__*/React.createElement("div", {
+      onClick: e => {
+        e.stopPropagation();
+        setZoomProduct(p);
+      },
+      title: "\u0E14\u0E39\u0E23\u0E39\u0E1B\u0E02\u0E19\u0E32\u0E14\u0E43\u0E2B\u0E0D\u0E48",
+      style: {
+        position: 'absolute',
+        bottom: '6px',
+        right: '6px',
+        width: '26px',
+        height: '26px',
+        borderRadius: '50%',
+        background: 'rgba(13,92,80,0.85)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "13",
+      height: "13",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "#fff",
+      strokeWidth: "2.4",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }, /*#__PURE__*/React.createElement("circle", {
+      cx: "11",
+      cy: "11",
+      r: "7"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M11 8v6M8 11h6"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M21 21l-4.35-4.35"
+    })))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: '11px 12px 13px',
+        borderTop: '1px solid #f2f4f2'
+      }
+    }, kw && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: '10px',
+        color: '#9e9e9e',
+        fontWeight: '700',
+        textTransform: 'uppercase',
+        letterSpacing: '0.04em',
+        marginBottom: '2px'
+      }
+    }, p.brand), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: '12.5px',
+        fontWeight: '800',
+        color: '#0d9488',
+        marginBottom: '3px'
+      }
+    }, p.code), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: '11.5px',
+        color: '#667',
+        lineHeight: '1.4',
+        marginBottom: '8px',
+        display: '-webkit-box',
+        WebkitLineClamp: 2,
+        WebkitBoxOrient: 'vertical',
+        overflow: 'hidden'
+      }
+    }, p.name), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: '11.5px',
+        color: '#0d5c50',
+        fontWeight: '700'
+      }
+    }, "\u0E14\u0E39\u0E23\u0E32\u0E22\u0E25\u0E30\u0E40\u0E2D\u0E35\u0E22\u0E14 \u2192"), /*#__PURE__*/React.createElement("button", {
+      onClick: e => {
+        e.stopPropagation();
+        hpAskAboutProduct(p);
+      },
+      style: {
+        width: '100%',
+        marginTop: '10px',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '6px',
+        background: '#fff',
+        color: '#0d6b5c',
+        border: '1px solid #cfe3dc',
+        borderRadius: '999px',
+        padding: '7px 8px',
+        fontSize: '11.5px',
+        fontWeight: '700',
+        cursor: 'pointer',
+        fontFamily: 'Inter, Noto Sans Thai, sans-serif'
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "13",
+      height: "13",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    }, /*#__PURE__*/React.createElement("path", {
+      d: "M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"
+    })), "\u0E2A\u0E2D\u0E1A\u0E16\u0E32\u0E21")));
+  };
   return /*#__PURE__*/React.createElement("section", {
     style: {
       background: '#fff',
@@ -6948,172 +7085,132 @@ function HPBrandProductsPage({
       color: '#06352e',
       letterSpacing: '0.01em'
     }
-  }, "\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E15\u0E32\u0E21\u0E41\u0E1A\u0E23\u0E19\u0E14\u0E4C"), /*#__PURE__*/React.createElement("div", {
+  }, "\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E15\u0E32\u0E21\u0E41\u0E1A\u0E23\u0E19\u0E14\u0E4C"), !embedded && /*#__PURE__*/React.createElement("div", {
+    className: "hp-cat-search",
     style: {
-      width: '46px',
-      height: '4px',
-      background: '#f5a623',
-      borderRadius: '3px',
-      margin: '14px auto 16px'
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '10px',
+      flexWrap: 'wrap',
+      marginTop: '20px'
     }
-  }), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
-      display: 'inline-block',
+      position: 'relative',
+      display: 'flex',
+      alignItems: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "16",
+    height: "16",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "#8fa39a",
+    strokeWidth: "2.2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    style: {
+      position: 'absolute',
+      left: '13px',
+      pointerEvents: 'none'
+    }
+  }, /*#__PURE__*/React.createElement("circle", {
+    cx: "11",
+    cy: "11",
+    r: "7"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M21 21l-4.35-4.35"
+  })), /*#__PURE__*/React.createElement("input", {
+    value: q,
+    onChange: e => setQ(e.target.value),
+    placeholder: "\u0E04\u0E49\u0E19\u0E2B\u0E32\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 \u0E40\u0E0A\u0E48\u0E19 \u0E23\u0E38\u0E48\u0E19 \u0E0A\u0E37\u0E48\u0E2D \u0E22\u0E35\u0E48\u0E2B\u0E49\u0E2D",
+    style: {
+      width: '320px',
+      maxWidth: '100%',
+      padding: '10px 34px 10px 38px',
+      fontSize: '13.5px',
+      border: '1px solid #dde7e2',
+      borderRadius: '999px',
+      outline: 'none',
+      background: '#fff',
+      fontFamily: 'Inter, Noto Sans Thai, sans-serif'
+    },
+    onFocus: e => e.target.style.borderColor = '#0d9488',
+    onBlur: e => e.target.style.borderColor = '#dde7e2'
+  }), q && /*#__PURE__*/React.createElement("button", {
+    onClick: () => setQ(''),
+    "aria-label": "\u0E25\u0E49\u0E32\u0E07\u0E04\u0E33\u0E04\u0E49\u0E19",
+    style: {
+      position: 'absolute',
+      right: '10px',
+      width: '20px',
+      height: '20px',
+      borderRadius: '50%',
+      border: 'none',
+      background: '#e2ece7',
+      color: '#5a7a66',
       fontSize: '12px',
+      lineHeight: 1,
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
+  }, "\u2715")), kw && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: '13px',
       color: '#0d9488',
       fontWeight: '700',
       background: '#e8f8f1',
       padding: '4px 12px',
-      borderRadius: '999px'
+      borderRadius: '999px',
+      whiteSpace: 'nowrap'
     }
-  }, visibleBrands.length, " \u0E41\u0E1A\u0E23\u0E19\u0E14\u0E4C")), visibleBrands.map((brandTab, bi) => {
+  }, searchResults.length, " \u0E23\u0E32\u0E22\u0E01\u0E32\u0E23"))), kw ? searchResults.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: 'center',
+      padding: '60px 20px',
+      color: '#8fa39a',
+      fontSize: '15px',
+      background: '#f7f9f8',
+      borderRadius: '12px',
+      lineHeight: '1.9'
+    }
+  }, "\u0E44\u0E21\u0E48\u0E1E\u0E1A\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E17\u0E35\u0E48\u0E15\u0E23\u0E07\u0E01\u0E31\u0E1A \u201C", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: '#3a4a42'
+    }
+  }, q.trim()), "\u201D", /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: '14px'
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setQ(''),
+    style: {
+      background: '#0d6b5c',
+      color: '#fff',
+      border: 'none',
+      borderRadius: '999px',
+      padding: '9px 22px',
+      fontSize: '13.5px',
+      fontWeight: '700',
+      cursor: 'pointer',
+      fontFamily: 'Inter, Noto Sans Thai, sans-serif'
+    }
+  }, "\u0E25\u0E49\u0E32\u0E07\u0E04\u0E33\u0E04\u0E49\u0E19"))) : /*#__PURE__*/React.createElement("div", {
+    className: "hp-product-grid",
+    style: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(5, 1fr)',
+      gap: '16px'
+    }
+  }, searchResults.map(card)) : visibleBrands.map((brandTab, bi) => {
     const products = HP_BRAND_PRODUCTS[brandTab.key];
     const categories = [];
     products.forEach(p => {
       if (!categories.includes(p.cat)) categories.push(p.cat);
     });
-    const card = (p, i) => {
-      const thumb = p.images && p.images[0] || p.img;
-      return /*#__PURE__*/React.createElement("div", {
-        key: i,
-        style: {
-          background: '#fff',
-          border: '1px solid #eef0f2',
-          borderRadius: '12px',
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-          cursor: 'pointer',
-          transition: 'box-shadow 0.18s ease, transform 0.18s ease'
-        },
-        onMouseEnter: e => {
-          e.currentTarget.style.boxShadow = '0 10px 22px rgba(0,0,0,0.09)';
-          e.currentTarget.style.transform = 'translateY(-3px)';
-        },
-        onMouseLeave: e => {
-          e.currentTarget.style.boxShadow = 'none';
-          e.currentTarget.style.transform = 'translateY(0)';
-        },
-        onClick: () => onSelectProduct(p)
-      }, /*#__PURE__*/React.createElement("div", {
-        style: {
-          height: '140px',
-          background: '#fff',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          position: 'relative'
-        }
-      }, /*#__PURE__*/React.createElement("img", {
-        loading: "lazy",
-        decoding: "async",
-        src: thumb,
-        style: {
-          maxWidth: '100%',
-          maxHeight: '100%',
-          objectFit: 'contain',
-          mixBlendMode: 'multiply'
-        },
-        onError: e => e.target.style.display = 'none'
-      }), /*#__PURE__*/React.createElement("div", {
-        onClick: e => {
-          e.stopPropagation();
-          setZoomProduct(p);
-        },
-        title: "\u0E14\u0E39\u0E23\u0E39\u0E1B\u0E02\u0E19\u0E32\u0E14\u0E43\u0E2B\u0E0D\u0E48",
-        style: {
-          position: 'absolute',
-          bottom: '6px',
-          right: '6px',
-          width: '26px',
-          height: '26px',
-          borderRadius: '50%',
-          background: 'rgba(13,92,80,0.85)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }
-      }, /*#__PURE__*/React.createElement("svg", {
-        width: "13",
-        height: "13",
-        viewBox: "0 0 24 24",
-        fill: "none",
-        stroke: "#fff",
-        strokeWidth: "2.4",
-        strokeLinecap: "round",
-        strokeLinejoin: "round"
-      }, /*#__PURE__*/React.createElement("circle", {
-        cx: "11",
-        cy: "11",
-        r: "7"
-      }), /*#__PURE__*/React.createElement("path", {
-        d: "M11 8v6M8 11h6"
-      }), /*#__PURE__*/React.createElement("path", {
-        d: "M21 21l-4.35-4.35"
-      })))), /*#__PURE__*/React.createElement("div", {
-        style: {
-          padding: '11px 12px 13px',
-          borderTop: '1px solid #f2f4f2'
-        }
-      }, /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontSize: '12.5px',
-          fontWeight: '800',
-          color: '#0d9488',
-          marginBottom: '3px'
-        }
-      }, p.code), /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontSize: '11.5px',
-          color: '#667',
-          lineHeight: '1.4',
-          marginBottom: '8px',
-          display: '-webkit-box',
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: 'vertical',
-          overflow: 'hidden'
-        }
-      }, p.name), /*#__PURE__*/React.createElement("span", {
-        style: {
-          fontSize: '11.5px',
-          color: '#0d5c50',
-          fontWeight: '700'
-        }
-      }, "\u0E14\u0E39\u0E23\u0E32\u0E22\u0E25\u0E30\u0E40\u0E2D\u0E35\u0E22\u0E14 \u2192"), /*#__PURE__*/React.createElement("button", {
-        onClick: e => {
-          e.stopPropagation();
-          hpAskAboutProduct(p);
-        },
-        style: {
-          width: '100%',
-          marginTop: '10px',
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '6px',
-          background: '#fff',
-          color: '#0d6b5c',
-          border: '1px solid #cfe3dc',
-          borderRadius: '999px',
-          padding: '7px 8px',
-          fontSize: '11.5px',
-          fontWeight: '700',
-          cursor: 'pointer',
-          fontFamily: 'Inter, Noto Sans Thai, sans-serif'
-        }
-      }, /*#__PURE__*/React.createElement("svg", {
-        width: "13",
-        height: "13",
-        viewBox: "0 0 24 24",
-        fill: "none",
-        stroke: "currentColor",
-        strokeWidth: "2",
-        strokeLinecap: "round",
-        strokeLinejoin: "round"
-      }, /*#__PURE__*/React.createElement("path", {
-        d: "M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"
-      })), "\u0E2A\u0E2D\u0E1A\u0E16\u0E32\u0E21")));
-    };
     return /*#__PURE__*/React.createElement("div", {
       key: brandTab.key,
       id: `brand-${brandTab.key}`,
@@ -7423,11 +7520,13 @@ function HPCatalogPage({
   }
   const base = brands[idx];
   const set = cfg[base.name] || {};
+  // set.img = รูปที่แอดมินอัปโหลดเองจากหลังบ้าน ถ้าไม่มีค่อยใช้รูปที่มากับโค้ด
   const b = {
     ...base,
     url: set.url || '',
     name: set.label || base.name,
-    cta: set.cta || ''
+    cta: set.cta || '',
+    product: set.img || base.product
   };
   // แบรนด์ที่ใส่ลิงก์ไว้ กดที่รูปแล้วเปิดเว็บแบรนด์ในแท็บใหม่ / ที่ยังไม่ใส่ กดแล้วซูมดูรูปเหมือนเดิม
   const openBrandSite = () => window.open(b.url, '_blank', 'noopener,noreferrer');
@@ -7580,15 +7679,16 @@ function HPCatalogPage({
     },
     onError: e => e.target.style.display = 'none'
   }), /*#__PURE__*/React.createElement("div", {
+    className: "hp-cat-zoom",
     title: "\u0E02\u0E22\u0E32\u0E22\u0E23\u0E39\u0E1B",
     style: {
       position: 'absolute',
       bottom: '8px',
       right: '8px',
-      width: '32px',
-      height: '32px',
+      width: '34px',
+      height: '34px',
       borderRadius: '50%',
-      background: 'rgba(13,92,80,0.85)',
+      background: 'rgba(13,92,80,0.82)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -7641,36 +7741,42 @@ function HPCatalogPage({
     },
     onError: e => e.target.style.display = 'none'
   }))), b.url ? /*#__PURE__*/React.createElement("a", {
+    className: "hp-cat-cta",
     href: b.url,
     target: "_blank",
     rel: "noopener noreferrer",
     style: {
-      background: '#0d5c50',
       color: '#fff',
-      textAlign: 'center',
       fontFamily: 'Inter, Noto Sans Thai, sans-serif',
-      fontSize: '13px',
-      fontWeight: '700',
-      padding: '12px',
-      letterSpacing: '0.03em',
-      position: 'relative',
+      fontSize: '14.5px',
+      fontWeight: '800',
+      padding: '15px 16px',
+      letterSpacing: '0.01em',
       zIndex: 2,
       textDecoration: 'none',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: '8px',
-      transition: 'background-color 0.18s ease'
-    },
-    onMouseEnter: e => e.currentTarget.style.backgroundColor = '#0a4a40',
-    onMouseLeave: e => e.currentTarget.style.backgroundColor = '#0d5c50'
+      gap: '10px'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '24px',
+      height: '24px',
+      borderRadius: '50%',
+      background: 'rgba(255,255,255,0.18)',
+      flexShrink: 0
+    }
   }, /*#__PURE__*/React.createElement("svg", {
-    width: "14",
-    height: "14",
+    width: "13",
+    height: "13",
     viewBox: "0 0 24 24",
     fill: "none",
     stroke: "currentColor",
-    strokeWidth: "2.2",
+    strokeWidth: "2.4",
     strokeLinecap: "round",
     strokeLinejoin: "round"
   }, /*#__PURE__*/React.createElement("path", {
@@ -7679,7 +7785,31 @@ function HPCatalogPage({
     d: "M15 3h6v6"
   }), /*#__PURE__*/React.createElement("path", {
     d: "M10 14L21 3"
-  })), b.cta || `เยี่ยมชมเว็บไซต์ ${b.name}`) : /*#__PURE__*/React.createElement("div", {
+  }))), /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: 'relative',
+      zIndex: 1
+    }
+  }, b.cta || `เยี่ยมชมเว็บไซต์ ${b.name}`), /*#__PURE__*/React.createElement("svg", {
+    className: "hp-cta-arrow",
+    width: "17",
+    height: "17",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "2.6",
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    style: {
+      flexShrink: 0,
+      position: 'relative',
+      zIndex: 1
+    }
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M5 12h13"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M12 5l7 7-7 7"
+  }))) : /*#__PURE__*/React.createElement("div", {
     style: {
       background: '#0d5c50',
       color: '#fff',
@@ -7750,7 +7880,7 @@ function HPCatalogPage({
   }, /*#__PURE__*/React.createElement("img", {
     loading: "lazy",
     decoding: "async",
-    src: t.product,
+    src: cfg[t.name] && cfg[t.name].img || t.product,
     style: {
       maxWidth: '80%',
       maxHeight: '80%',
@@ -9284,7 +9414,11 @@ function HPAdminLogin({
       color: 'rgba(255,255,255,0.62)',
       lineHeight: '1.75'
     }
-  }, "\u0E08\u0E31\u0E14\u0E01\u0E32\u0E23\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 \u0E2D\u0E2D\u0E01\u0E43\u0E1A\u0E40\u0E2A\u0E19\u0E2D\u0E23\u0E32\u0E04\u0E32 \u0E41\u0E25\u0E30\u0E14\u0E39\u0E41\u0E25\u0E17\u0E35\u0E21\u0E07\u0E32\u0E19", /*#__PURE__*/React.createElement("br", null), "\u0E43\u0E19\u0E17\u0E35\u0E48\u0E40\u0E14\u0E35\u0E22\u0E27"))), /*#__PURE__*/React.createElement("div", {
+  }, "\u0E08\u0E31\u0E14\u0E01\u0E32\u0E23\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 \u0E2D\u0E2D\u0E01\u0E43\u0E1A\u0E40\u0E2A\u0E19\u0E2D\u0E23\u0E32\u0E04\u0E32 \u0E41\u0E25\u0E30\u0E14\u0E39\u0E41\u0E25\u0E17\u0E35\u0E21\u0E07\u0E32\u0E19", /*#__PURE__*/React.createElement("br", null), "\u0E43\u0E19\u0E17\u0E35\u0E48\u0E40\u0E14\u0E35\u0E22\u0E27"))), /*#__PURE__*/React.createElement("form", {
+    onSubmit: e => {
+      e.preventDefault();
+      submit();
+    },
     style: {
       padding: '46px 42px',
       display: 'flex',
@@ -9309,7 +9443,8 @@ function HPAdminLogin({
       color: '#8b9c95'
     }
   }, "\u0E01\u0E23\u0E2D\u0E01\u0E0A\u0E37\u0E48\u0E2D\u0E1C\u0E39\u0E49\u0E43\u0E0A\u0E49\u0E41\u0E25\u0E30\u0E23\u0E2B\u0E31\u0E2A\u0E1C\u0E48\u0E32\u0E19\u0E17\u0E35\u0E48\u0E44\u0E14\u0E49\u0E23\u0E31\u0E1A\u0E08\u0E32\u0E01\u0E41\u0E2D\u0E14\u0E21\u0E34\u0E19\u0E2B\u0E25\u0E31\u0E01")), /*#__PURE__*/React.createElement("label", {
-    style: fieldLabel
+    style: fieldLabel,
+    htmlFor: "kss-username"
   }, "\u0E0A\u0E37\u0E48\u0E2D\u0E1C\u0E39\u0E49\u0E43\u0E0A\u0E49"), /*#__PURE__*/React.createElement("div", {
     style: {
       ...fieldWrap('u'),
@@ -9334,6 +9469,9 @@ function HPAdminLogin({
     cy: "7",
     r: "4"
   })), /*#__PURE__*/React.createElement("input", {
+    id: "kss-username",
+    name: "username",
+    type: "text",
     value: username,
     autoFocus: true,
     autoComplete: "username",
@@ -9345,11 +9483,15 @@ function HPAdminLogin({
       setError('');
     },
     onKeyDown: e => {
-      if (e.key === 'Enter') submit();
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        submit();
+      }
     },
     placeholder: "\u0E40\u0E0A\u0E48\u0E19 admin"
   })), /*#__PURE__*/React.createElement("label", {
-    style: fieldLabel
+    style: fieldLabel,
+    htmlFor: "kss-password"
   }, "\u0E23\u0E2B\u0E31\u0E2A\u0E1C\u0E48\u0E32\u0E19"), /*#__PURE__*/React.createElement("div", {
     style: {
       ...fieldWrap('p'),
@@ -9376,6 +9518,8 @@ function HPAdminLogin({
   }), /*#__PURE__*/React.createElement("path", {
     d: "M7 11V7a5 5 0 0110 0v4"
   })), /*#__PURE__*/React.createElement("input", {
+    id: "kss-password",
+    name: "password",
     type: show ? 'text' : 'password',
     value: pass,
     autoComplete: "current-password",
@@ -9387,10 +9531,14 @@ function HPAdminLogin({
       setError('');
     },
     onKeyDown: e => {
-      if (e.key === 'Enter') submit();
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        submit();
+      }
     },
     placeholder: "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"
   }), /*#__PURE__*/React.createElement("button", {
+    type: "button",
     onClick: () => setShow(s => !s),
     title: show ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน',
     style: {
@@ -9463,7 +9611,7 @@ function HPAdminLogin({
   }), /*#__PURE__*/React.createElement("path", {
     d: "M12 8v5M12 16h.01"
   })), /*#__PURE__*/React.createElement("span", null, error)), /*#__PURE__*/React.createElement("button", {
-    onClick: submit,
+    type: "submit",
     disabled: busy,
     style: {
       width: '100%',
@@ -10921,6 +11069,75 @@ function HPSiteSettings() {
     }
   }));
   const rec = name => catalog[name] || {};
+
+  // ---- อัปโหลดรูปหน้าแคตตาล็อก ----
+  const [uploading, setUploading] = useState('');
+  // ชื่อแบรนด์เป็นภาษาไทย/มีเว้นวรรคได้ แต่คีย์ไฟล์ต้องปลอดภัยกับ URL
+  // จึงแปลงเป็นรหัสคงที่จากชื่อ (แบรนด์เดิมได้คีย์เดิมเสมอ อัปทับรูปเก่าได้)
+  const imgKey = name => {
+    let h = 0;
+    for (let i = 0; i < name.length; i++) h = h * 31 + name.charCodeAt(i) >>> 0;
+    return 'cat' + h.toString(36);
+  };
+  // ย่อรูปในเบราว์เซอร์ก่อนส่งขึ้นเซิร์ฟเวอร์
+  // หน้าแคตตาล็อกโหลดรูปย่อครบทุกแบรนด์พร้อมกัน ถ้าปล่อยไฟล์กล้อง 3-5MB ขึ้นไปตรงๆ
+  // ลูกค้าจะโหลดหนักมากทุกครั้งที่เข้า — ย่อเหลือด้านยาวสุด 1600px ก็คมพอสำหรับดูเต็มจอแล้ว
+  const shrinkImage = file => new Promise((resolve, reject) => {
+    const MAX = 1600;
+    const fr = new FileReader();
+    fr.onerror = () => reject(new Error('อ่านไฟล์ไม่สำเร็จ'));
+    fr.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('ไฟล์นี้ไม่ใช่รูปที่เปิดได้'));
+      img.onload = () => {
+        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+        // เล็กอยู่แล้วและไม่ใหญ่เกิน 800KB ก็ส่งของเดิมไปเลย ไม่ต้องบีบซ้ำให้เสียคุณภาพ
+        if (scale === 1 && file.size <= 800 * 1024) return resolve(fr.result);
+        const cv = document.createElement('canvas');
+        cv.width = Math.round(img.width * scale);
+        cv.height = Math.round(img.height * scale);
+        const ctx = cv.getContext('2d');
+        // PNG โปร่งใสได้ ถ้าแปลงเป็น JPEG ต้องรองพื้นขาวก่อน ไม่งั้นพื้นจะกลายเป็นดำ
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, cv.width, cv.height);
+        ctx.drawImage(img, 0, 0, cv.width, cv.height);
+        resolve(cv.toDataURL('image/jpeg', 0.88));
+      };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+  const uploadImage = async (name, file, inputEl) => {
+    if (inputEl) inputEl.value = ''; // เลือกไฟล์เดิมซ้ำได้
+    if (!file) return;
+    setErr('');
+    setMsg('');
+    if (!/^image\//.test(file.type)) {
+      setErr('ต้องเป็นไฟล์รูปเท่านั้น');
+      return;
+    }
+    if (file.size > 12 * 1024 * 1024) {
+      setErr('ไฟล์ใหญ่เกิน 12MB กรุณาย่อรูปก่อน');
+      return;
+    }
+    setUploading(name);
+    try {
+      const dataUrl = await shrinkImage(file);
+      const r = await hpApi('/catalog-image', {
+        method: 'POST',
+        body: {
+          key: imgKey(name),
+          dataUrl
+        }
+      });
+      setField(name, 'img', r.url);
+      const kb = Math.round(dataUrl.length * 0.75 / 1024);
+      setMsg(`✔ อัปโหลดรูปแล้ว (${kb} KB) — อย่าลืมกด “บันทึกการตั้งค่า” ด้านล่าง`);
+    } catch (e) {
+      setErr('อัปโหลดไม่สำเร็จ: ' + (e.message || e));
+    }
+    setUploading('');
+  };
   const save = async () => {
     setErr('');
     setMsg('');
@@ -11161,6 +11378,84 @@ function HPSiteSettings() {
         background: '#f7fbf9'
       }
     }, /*#__PURE__*/React.createElement(Field, {
+      label: "\u0E23\u0E39\u0E1B\u0E2B\u0E19\u0E49\u0E32\u0E41\u0E04\u0E15\u0E15\u0E32\u0E25\u0E47\u0E2D\u0E01",
+      hint: "\u0E23\u0E2D\u0E07\u0E23\u0E31\u0E1A JPG / PNG / WEBP / GIF \u2014 \u0E23\u0E30\u0E1A\u0E1A\u0E22\u0E48\u0E2D\u0E23\u0E39\u0E1B\u0E43\u0E2B\u0E49\u0E2D\u0E31\u0E15\u0E42\u0E19\u0E21\u0E31\u0E15\u0E34 \u0E44\u0E21\u0E48\u0E15\u0E49\u0E2D\u0E07\u0E22\u0E48\u0E2D\u0E21\u0E32\u0E40\u0E2D\u0E07 \xB7 \u0E2D\u0E31\u0E1B\u0E41\u0E25\u0E49\u0E27\u0E01\u0E14 \u201C\u0E1A\u0E31\u0E19\u0E17\u0E36\u0E01\u0E01\u0E32\u0E23\u0E15\u0E31\u0E49\u0E07\u0E04\u0E48\u0E32\u201D \u0E14\u0E49\u0E32\u0E19\u0E25\u0E48\u0E32\u0E07\u0E14\u0E49\u0E27\u0E22"
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        gap: '14px',
+        alignItems: 'flex-start'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: '86px',
+        height: '110px',
+        flexShrink: 0,
+        border: '1px solid #e2e6e3',
+        borderRadius: '8px',
+        background: '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden'
+      }
+    }, /*#__PURE__*/React.createElement("img", {
+      src: r.img || b.product,
+      alt: "",
+      style: {
+        maxWidth: '100%',
+        maxHeight: '100%',
+        objectFit: 'contain'
+      },
+      onError: e => {
+        e.target.style.display = 'none';
+      }
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("label", {
+      style: {
+        display: 'inline-block',
+        background: '#0d6b5c',
+        color: '#fff',
+        borderRadius: '8px',
+        padding: '9px 18px',
+        fontSize: '13.5px',
+        fontWeight: '700',
+        cursor: uploading === b.name ? 'default' : 'pointer',
+        opacity: uploading === b.name ? 0.6 : 1
+      }
+    }, uploading === b.name ? 'กำลังอัปโหลด…' : 'เลือกรูปจากเครื่อง', /*#__PURE__*/React.createElement("input", {
+      type: "file",
+      accept: "image/*",
+      disabled: uploading === b.name,
+      onChange: e => uploadImage(b.name, e.target.files && e.target.files[0], e.target),
+      style: {
+        display: 'none'
+      }
+    })), r.img && /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: () => setField(b.name, 'img', ''),
+      style: {
+        marginLeft: '10px',
+        background: '#fff',
+        color: '#b3261e',
+        border: '1px solid #f0c8c4',
+        borderRadius: '8px',
+        padding: '9px 16px',
+        fontSize: '13px',
+        fontWeight: '700',
+        cursor: 'pointer'
+      }
+    }, "\u0E01\u0E25\u0E31\u0E1A\u0E44\u0E1B\u0E43\u0E0A\u0E49\u0E23\u0E39\u0E1B\u0E40\u0E14\u0E34\u0E21"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: '12px',
+        color: r.img ? '#0d6b5c' : '#9aa8a0',
+        marginTop: '8px'
+      }
+    }, r.img ? '● ใช้รูปที่อัปโหลดเองอยู่' : '○ ใช้รูปที่มากับเว็บ')))), /*#__PURE__*/React.createElement(Field, {
       label: "\u0E25\u0E34\u0E07\u0E01\u0E4C\u0E40\u0E27\u0E47\u0E1A\u0E44\u0E0B\u0E15\u0E4C\u0E41\u0E1A\u0E23\u0E19\u0E14\u0E4C",
       hint: "\u0E40\u0E27\u0E49\u0E19\u0E27\u0E48\u0E32\u0E07\u0E44\u0E14\u0E49 \u2014 \u0E16\u0E49\u0E32\u0E44\u0E21\u0E48\u0E43\u0E2A\u0E48 \u0E01\u0E14\u0E17\u0E35\u0E48\u0E23\u0E39\u0E1B\u0E08\u0E30\u0E40\u0E1B\u0E47\u0E19\u0E01\u0E32\u0E23\u0E02\u0E22\u0E32\u0E22\u0E14\u0E39\u0E23\u0E39\u0E1B\u0E40\u0E2B\u0E21\u0E37\u0E2D\u0E19\u0E40\u0E14\u0E34\u0E21"
     }, /*#__PURE__*/React.createElement("div", {
@@ -12953,12 +13248,261 @@ function HPAdminPanel({
 
 // ผู้ช่วย AI รับเรื่องลูกค้า — ถามความต้องการ แล้วส่งต่อให้ทีมงานทางไลน์ OA
 
-function HPChatWidget() {
+// ══════════════════════════════════════════════════════════════════════════════
+//  ยึดคำตอบผู้ช่วยไว้กับข้อมูลสินค้าจริง (grounding)
+//  ผู้ช่วยเป็นโมเดลภาษา ถ้าไม่ยื่นข้อมูลจริงให้ มันจะ "เดา" รุ่นสินค้าเอง
+//  จึงค้นแคตตาล็อกจริง (HP_ALL_BRAND_PRODUCTS 6,000+ รายการ) ทุกครั้งที่ลูกค้าถาม
+//  แล้วแนบผลค้นไปกับคำถามเป็น "หลักฐานชุดเดียวที่อ้างอิงได้"
+//  สำคัญ: ค้นไม่เจอก็ต้องส่งผลว่า "ไม่เจอ" ไปด้วย ไม่ใช่เงียบ
+//  เพราะการเงียบทำให้ผู้ช่วยเดาต่อว่ามีของ ซึ่งคือจุดที่ข้อมูลผิดถึงมือลูกค้า
+// ══════════════════════════════════════════════════════════════════════════════
+const HP_CHAT_MAX_FACTS = 12;
+
+// ตัดสัญลักษณ์และตัวคั่นออก เพื่อให้ "S-611" กับ "s 611" ถือว่าตรงกัน
+const hpChatNorm = s => String(s || '').toLowerCase().replace(/[\s\-_.\/()]+/g, '');
+
+// คำที่โผล่ในชื่อสินค้าเกือบทุกตัว จับแล้วไม่ได้บอกอะไร — ถ้าไม่ตัดทิ้ง
+// คำถามอย่าง "มีรุ่น XYZ-9999 ไหม" จะไปแมตช์สินค้าที่ชื่อมีคำว่า "รุ่น" ทั้งหมด
+// แล้วผู้ช่วยจะเข้าใจผิดว่าค้นเจอ ทั้งที่จริงไม่มีรุ่นนั้น
+const HP_CHAT_STOPWORDS = new Set(['รุ่น', 'แบบ', 'ขนาด', 'ชนิด', 'สำหรับ', 'พร้อม', 'และ', 'ทาง', 'ตัว', 'ช่อง', 'สี', 'มี', 'ไม่', 'ที่', 'ของ', 'แบบมี', 'นิ้ว', 'วัตต์', 'series', 'type', 'no.', 'model']);
+
+// แยกชื่อสินค้าเป็นวลีย่อย — ชื่อจริงมีเว้นวรรคอยู่แล้ว เช่น "สวิตซ์ 1 ทาง แบบมีพรายน้ำ"
+// ใช้เฉพาะวลีที่ยาวพอและไม่ใช่คำโหล จึงจะถือว่าบ่งชี้สินค้าได้จริง
+const hpChatPhrases = name => String(name || '').split(/[\s,·|/()]+/).filter(w => w.length >= 4 && !HP_CHAT_STOPWORDS.has(w.toLowerCase()));
+
+// ดึง "โทเคนที่หน้าตาเหมือนรหัสรุ่น" ออกจากข้อความลูกค้า
+// เกณฑ์: ขึ้นต้นด้วยตัวอักษร มีตัวเลขปนอย่างน้อย 1 ตัว ยาว >= 4
+// (ตัด "16A" "220V" ที่ขึ้นต้นด้วยเลข และ "E27" "T8" ที่สั้นเกินไปออกไป)
+const hpChatCodeTokens = q => (String(q || '').match(/[A-Za-z][A-Za-z0-9-]{3,}/g) || []).filter(t => /\d/.test(t));
+
+// รหัสที่ลูกค้าเอ่ยถึงแต่ไม่มีอยู่จริงในแคตตาล็อก
+// ข้อมูลนี้สำคัญไม่แพ้ผลค้น เพราะเป็นตัวกันไม่ให้ผู้ช่วยตอบว่า "มีครับ" ทั้งที่ไม่มี
+function hpChatUnknownCodes(query) {
+  const all = typeof HP_ALL_BRAND_PRODUCTS !== 'undefined' ? HP_ALL_BRAND_PRODUCTS : [];
+  if (!all.length) return [];
+  const tokens = hpChatCodeTokens(query);
+  if (!tokens.length) return [];
+  const out = [];
+  for (const t of tokens) {
+    const tN = hpChatNorm(t);
+    const hit = all.some(p => {
+      const cN = hpChatNorm(p.code);
+      return cN && (cN === tN || cN.includes(tN) || tN.includes(cN));
+    });
+    if (!hit && !out.includes(t)) out.push(t);
+  }
+  return out.slice(0, 5);
+}
+
+// ภาษาไทยไม่มีเว้นวรรคระหว่างคำ การตัดคำด้วยช่องว่างจึงไม่พอ
+// จึงไล่ "ท่อนคำ" จากข้อความลูกค้าทีละหน้าต่าง เอาไว้เทียบกับชื่อหมวดที่เขียนติดกัน
+// (เช่น ลูกค้าพิมพ์ "สายดิน" แต่หมวดจริงชื่อ "ระบบสายดิน" — ต้องเทียบสองทางถึงจะเจอ)
+function hpChatWindows(text, min = 4, max = 14) {
+  const s = String(text || '').toLowerCase();
+  const out = new Set();
+  for (let len = min; len <= max; len++) for (let i = 0; i + len <= s.length; i++) out.add(s.slice(i, i + len));
+  return out;
+}
+
+// รายชื่อหมวดทั้งหมด (มีไม่กี่สิบรายการ) คำนวณครั้งเดียวแล้วเก็บไว้ใช้ซ้ำ
+let hpChatCatCache = null;
+function hpChatAllCats(all) {
+  if (!hpChatCatCache) hpChatCatCache = [...new Set(all.map(p => p.cat).filter(Boolean))];
+  return hpChatCatCache;
+}
+
+// ค้นสินค้าจริงที่เกี่ยวข้องกับสิ่งที่ลูกค้าพิมพ์
+// ให้คะแนนแบบชัดเจน: ตรงรหัสรุ่น > ตรงแบรนด์ > ตรงหมวด/ซีรีส์ > ตรงวลีในชื่อ
+function hpChatFindProducts(query, current) {
+  const all = typeof HP_ALL_BRAND_PRODUCTS !== 'undefined' ? HP_ALL_BRAND_PRODUCTS : [];
+  const raw = String(query || '').toLowerCase();
+  const norm = hpChatNorm(query);
+  if (!all.length || norm.length < 2) return [];
+
+  // หาหมวดที่เกี่ยวข้องก่อน โดยเทียบสองทาง (คำถามครอบชื่อหมวด หรือชื่อหมวดครอบคำถาม)
+  const win = hpChatWindows(raw);
+  const catHit = new Set();
+  for (const c of hpChatAllCats(all)) {
+    const cl = c.toLowerCase();
+    if (raw.includes(cl)) {
+      catHit.add(c);
+      continue;
+    }
+    for (const w of win) if (cl.includes(w)) {
+      catHit.add(c);
+      break;
+    }
+  }
+  const scored = [];
+  for (const p of all) {
+    let score = 0;
+    const code = String(p.code || '');
+    // รหัสรุ่น — ตัวชี้ขาดที่สุด เทียบทั้งแบบดิบและแบบตัดตัวคั่น
+    // (ต้องยาว >= 3 หลังตัดตัวคั่น ไม่งั้นรหัสสั้นอย่าง "U-4" จะไปจับคำอื่นมั่ว)
+    if (code) {
+      const cN = hpChatNorm(code);
+      if (raw.includes(code.toLowerCase()) || cN.length >= 3 && norm.includes(cN)) score += 100;
+    }
+    if (p.brand && raw.includes(String(p.brand).toLowerCase())) score += 12;
+    if (p.cat && catHit.has(p.cat)) score += 8;
+    if (p.series && raw.includes(String(p.series).toLowerCase())) score += 8;
+    // เทียบระดับคำด้วย เพราะชื่อหมวดจริงมักมีส่วนต่อท้าย เช่น "สายไฟ THW"
+    // ถ้าเทียบทั้งก้อนอย่างเดียว ลูกค้าพิมพ์ "สายไฟ" เฉยๆ จะหาไม่เจอเลย
+    for (const w of hpChatPhrases(p.cat)) if (raw.includes(w.toLowerCase())) score += 6;
+    for (const w of hpChatPhrases(p.series)) if (raw.includes(w.toLowerCase())) score += 4;
+    for (const w of hpChatPhrases(p.name)) if (raw.includes(w.toLowerCase())) score += 3;
+    if (score > 0) scored.push({
+      p,
+      score
+    });
+  }
+  if (!scored.length) return [];
+  scored.sort((a, b) => b.score - a.score);
+  // สินค้าที่ลูกค้าเปิดหน้าอยู่ ต้องอยู่ในผลเสมอ ไม่ให้ตกไปเพราะคะแนนน้อยกว่าตัวอื่น
+  const out = [];
+  const seen = new Set();
+  const push = p => {
+    const k = p.brand + '|' + p.code;
+    if (seen.has(k) || out.length >= HP_CHAT_MAX_FACTS) return;
+    seen.add(k);
+    out.push(p);
+  };
+  if (current && current.code) push(current);
+  for (const s of scored) push(s.p);
+  return out;
+}
+
+// ส่งเฉพาะฟิลด์ที่จำเป็น และตัดความยาว — ฝั่งเซิร์ฟเวอร์กรองซ้ำอีกชั้น
+const hpChatFactOf = p => ({
+  code: String(p.code || '').slice(0, 80),
+  name: String(p.name || '').slice(0, 160),
+  brand: String(p.brand || '').slice(0, 60),
+  cat: String(p.cat || '').slice(0, 80),
+  series: String(p.series || '').slice(0, 80)
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  เครื่องตอบคำถามแบบกำหนดผลลัพธ์ได้ (deterministic) — ไม่ใช้โมเดลภาษาแต่งคำตอบ
+//
+//  เหตุผล: ถ้าให้โมเดลภาษาเป็นคนเรียบเรียงข้อมูลสินค้า จะไม่มีทางรับประกัน 100%
+//  เพราะโมเดลมีโอกาสเพี้ยนเสมอ แต่ขอบเขตงานของผู้ช่วยตัวนี้คือ
+//  "ตอบข้อมูลที่มีอยู่จริง + ถามความต้องการ" เท่านั้น (ไม่บอกราคา ไม่ทำใบเสนอราคา)
+//  จึงประกอบคำตอบจากแคตตาล็อกจริงและข้อมูลร้านที่ตายตัวได้ทั้งหมด
+//  ผลคือข้อมูลตรงกับฐานข้อมูล 100% ทุกครั้ง และทำงานได้โดยไม่ต้องใช้คีย์ AI
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ข้อเท็จจริงเรื่องร้าน — แหล่งเดียวที่ผู้ช่วยอ้างอิงได้
+const HP_STORE_FACTS = {
+  address: '87/11-12 ซอยเอกชัย 76 แยก 2 แขวงคลองบางพราน เขตบางบอน กรุงเทพมหานคร 10150',
+  phone: '02-894-4007, 02-894-4008',
+  lineId: '@kirdsaengsawang',
+  hours: 'จันทร์–เสาร์ 08:30–17:30 น. (หยุดวันอาทิตย์และวันหยุดนักขัตฤกษ์)',
+  services: 'รับประกอบตู้โหลด 3 เฟส · รับผลิตตู้ MDB ตามสเปก · บริการติดตั้ง · งานโครงการ · ปรึกษาระบบไฟ'
+};
+const hpBotHas = (text, words) => words.some(w => text.includes(w));
+
+// จำนวนการ์ดสินค้าที่แสดงในแชทต่อคำตอบ
+const HP_BOT_CARD_MAX = 5;
+
+// สเปกบางช่องเป็นข้อมูลที่ไม่ควรโชว์ในแชท
+// "สถานะสินค้า" เป็นสต็อกที่บันทึกไว้ตอนลงข้อมูล อาจไม่ตรงกับของหน้าร้านวันนี้
+// นโยบายคือให้ทีมงานเป็นคนยืนยันของพร้อมส่ง จึงตัดออกไม่ให้ลูกค้าเข้าใจผิด
+const HP_BOT_SPEC_HIDE = /สถานะสินค้า|สต็อก|สต๊อก|คงเหลือ|ราคา/;
+
+// ดึงสเปกจริงของสินค้ามาแสดง (คัดช่องที่ไม่ควรโชว์ออก)
+const hpBotSpecs = (p, max = 6) => (Array.isArray(p.specs) ? p.specs : []).filter(s => s && s.l && s.v && !HP_BOT_SPEC_HIDE.test(String(s.l))).slice(0, max);
+
+// ตอบคำถามลูกค้าจากข้อมูลจริงล้วน
+// คืน { reply, ask } — ask=true แปลว่าให้ไหลต่อไปยังขั้นตอนถามความต้องการ
+function hpBotAnswer(text, product) {
+  const t = String(text || '').toLowerCase();
+
+  // ── 1) ราคา / ใบเสนอราคา / สต็อก / ค่าส่ง ──
+  // นโยบายคือไม่ให้ราคาและไม่ทำใบเสนอราคาในแชท จึงตอบปฏิเสธอย่างชัดเจนแล้วเก็บความต้องการแทน
+  if (hpBotHas(t, ['ราคา', 'กี่บาท', 'เท่าไหร่', 'เท่าไร', 'ใบเสนอราคา', 'เสนอราคา', 'ส่วนลด', 'ลดราคา', 'โปรโมชั่น', 'ถูกกว่า'])) {
+    return {
+      ask: true,
+      reply: 'เรื่องราคาและใบเสนอราคา ผมขอให้ทีมงานเป็นคนแจ้งนะครับ เพราะราคาขึ้นกับรุ่น จำนวน และรอบส่งของ\n' + 'ผมขอเก็บรายละเอียดความต้องการไว้ก่อน แล้วส่งให้ทีมงานติดต่อกลับทางไลน์ครับ'
+    };
+  }
+  if (hpBotHas(t, ['มีของ', 'พร้อมส่ง', 'สต็อก', 'สต๊อก', 'ของหมด', 'มีในสต'])) {
+    return {
+      ask: true,
+      reply: 'ยอดคงเหลือหน้าร้านผมเช็กแทนทีมงานไม่ได้ครับ ต้องให้ทีมงานยืนยันอีกครั้ง\n' + 'ผมขอเก็บรายละเอียดไว้ แล้วส่งให้ทีมงานตรวจสอบและติดต่อกลับนะครับ'
+    };
+  }
+  if (hpBotHas(t, ['จัดส่ง', 'ส่งของ', 'ขนส่ง', 'ค่าส่ง', 'ส่งกี่วัน', 'กี่วันถึง'])) {
+    return {
+      ask: true,
+      reply: 'เรื่องรอบจัดส่งและค่าส่ง ทีมงานเป็นคนแจ้งครับ ขึ้นกับปลายทางและจำนวนที่สั่ง\n' + 'ผมขอเก็บรายละเอียดไว้ให้ทีมงานติดต่อกลับนะครับ'
+    };
+  }
+
+  // ── 2) ขอให้ทีมงานติดต่อกลับ — ต้องมาก่อนหัวข้อ "ช่องทางติดต่อ" ──
+  // ไม่งั้นคำว่า "ติดต่อ" จะไปเข้าเงื่อนไขแจ้งเบอร์ร้าน ทั้งที่ลูกค้าอยากฝากเบอร์ตัวเอง
+  if (hpBotHas(t, ['ติดต่อกลับ', 'ฝากทีมงาน', 'ฝากเบอร์', 'โทรกลับ', 'ให้ทีมงานติดต่อ'])) return {
+    ask: true,
+    reply: 'ได้เลยครับ ผมขอเก็บรายละเอียดสั้นๆ แล้วส่งให้ทีมงานติดต่อกลับนะครับ'
+  };
+
+  // ── 3) ข้อมูลร้าน — ข้อความตายตัว ตรงกับหน้าติดต่อเราเป๊ะ ──
+  if (hpBotHas(t, ['ที่อยู่', 'แผนที่', 'ร้านอยู่', 'ไปยังไง', 'พิกัด', 'สาขา', 'ตั้งอยู่'])) return {
+    ask: false,
+    reply: 'ร้านอยู่ที่นี่ครับ\n' + HP_STORE_FACTS.address
+  };
+  if (hpBotHas(t, ['เวลาทำการ', 'เปิดกี่โมง', 'ปิดกี่โมง', 'เปิดวันไหน', 'วันหยุด', 'เปิดทำการ', 'เปิดกี่', 'กี่โมง'])) return {
+    ask: false,
+    reply: 'เวลาทำการของร้านครับ\n' + HP_STORE_FACTS.hours
+  };
+  if (hpBotHas(t, ['เบอร์', 'โทร', 'ติดต่อ', 'ไลน์', 'line', 'แอดไลน์'])) return {
+    ask: false,
+    reply: 'ติดต่อทีมงานได้ตามนี้ครับ\nโทร ' + HP_STORE_FACTS.phone + '\nLINE ' + HP_STORE_FACTS.lineId + '\nเวลาทำการ ' + HP_STORE_FACTS.hours
+  };
+  // 'mdb' และ 'ตู้โหลด 3 เฟส' เป็นงานสั่งผลิต ไม่ใช่สินค้าที่มีรหัสรุ่นในแคตตาล็อก
+  // จึงต้องเข้าหัวข้อบริการ ไม่งั้นจะตกไปคำตอบกลางๆ ทั้งที่ร้านรับทำจริง
+  if (hpBotHas(t, ['บริการ', 'ติดตั้ง', 'ประกอบตู้', 'รับผลิต', 'งานโครงการ', 'รับทำ', 'mdb', '3 เฟส', 'สามเฟส'])) return {
+    ask: true,
+    reply: 'บริการที่ร้านรับทำครับ\n' + HP_STORE_FACTS.services + '\nรบกวนเล่ารายละเอียดงานคร่าวๆ ผมจะส่งให้ทีมงานดูแลต่อครับ'
+  };
+
+  // ── 3) รหัสรุ่นที่ลูกค้าเอ่ยถึงแต่ไม่มีในระบบ — ต้องบอกตรงๆ ห้ามเดา ──
+  const unknown = hpChatUnknownCodes(text);
+  const found = hpChatFindProducts(text, product);
+  if (unknown.length && !found.length) {
+    return {
+      ask: true,
+      reply: 'ผมค้นในระบบแล้วไม่พบรุ่น ' + unknown.join(', ') + ' ครับ\n' + 'อาจเป็นรุ่นที่ยังไม่ได้ลงข้อมูลไว้ ขอให้ทีมงานช่วยตรวจสอบอีกครั้งนะครับ'
+    };
+  }
+
+  // ── 4) เจอสินค้าจริงในแคตตาล็อก — ส่งข้อมูลสินค้ากลับไปแสดงเป็นการ์ด ──
+  // ทุกฟิลด์บนการ์ด (รูป รหัส ชื่อ แบรนด์ หมวด สเปก) อ่านจากฐานข้อมูลตรงๆ ไม่มีการแต่ง
+  if (found.length) {
+    const one = found.length === 1;
+    const head = one ? 'มีรุ่นนี้ในแคตตาล็อกครับ ข้อมูลตามนี้เลย' : `ผมค้นเจอ ${found.length} รายการครับ`;
+    const more = found.length > HP_BOT_CARD_MAX ? `\n(แสดง ${HP_BOT_CARD_MAX} รายการแรก กดที่การ์ดเพื่อดูรายละเอียดเต็มได้เลยครับ)` : '\n(กดที่การ์ดเพื่อดูรายละเอียดเต็มได้เลยครับ)';
+    return {
+      ask: true,
+      products: found.slice(0, HP_BOT_CARD_MAX),
+      reply: head + more + '\nส่วนราคาและของพร้อมส่ง ทีมงานจะเป็นคนแจ้งทางไลน์ครับ'
+    };
+  }
+
+  // ── 5) นอกเหนือจากนี้ — ไม่เดา ไม่แต่งข้อมูล เก็บความต้องการส่งทีมงาน ──
+  return {
+    ask: true,
+    reply: 'ผมขอเก็บรายละเอียดความต้องการไว้ แล้วส่งให้ทีมงานดูแลต่อทางไลน์นะครับ'
+  };
+}
+function HPChatWidget({
+  onSelectProduct
+}) {
   const LINE = HP_LINE_URL;
   const SUMMARY_TAG = 'สรุปให้ทีมงาน:';
   const GREET = 'สวัสดีครับ 👋 ผมเป็นผู้ช่วยของเกิดแสงสว่าง\nไม่ทราบว่าวันนี้ต้องการอะไรครับ? บอกมาคร่าวๆ ได้เลย เดี๋ยวผมสรุปส่งให้ทีมงานดูแลต่อทางไลน์ครับ';
-  const SUGGEST = ['อยากได้ราคา/ใบเสนอราคา', 'หาสินค้าอยู่', 'ปรึกษาเรื่องระบบไฟ'];
-  const SUGGEST_PRODUCT = ['อยากได้ราคารุ่นนี้', 'ต้องการหลายชิ้น', 'มีของพร้อมส่งไหม'];
+  // ปุ่มลัด — ไม่ชวนถามราคา/ใบเสนอราคาแล้ว เพราะผู้ช่วยไม่ได้มีหน้าที่ตอบเรื่องนั้น
+  const SUGGEST = ['หาสินค้าอยู่', 'ข้อมูลร้าน/เวลาทำการ', 'ฝากทีมงานติดต่อกลับ'];
+  const SUGGEST_PRODUCT = ['ขอรายละเอียดรุ่นนี้', 'ต้องการหลายชิ้น', 'ฝากทีมงานติดต่อกลับ'];
   const FORM_STEPS = [{
     key: 'item',
     label: 'สินค้า/รุ่น',
@@ -12987,12 +13531,12 @@ function HPChatWidget() {
     intro: true
   }]);
   const [input, setInput] = useState('');
-  const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
   const [product, setProduct] = useState(null);
-  // โหมดเก็บข้อมูลสำรอง — ใช้เมื่อผู้ช่วย AI ไม่พร้อม (ยังไม่ได้ตั้งคีย์ / โควตาหมด / เน็ตล่ม)
-  // ถามทีละข้อจนครบแล้วสร้างลิสต์รูปแบบเดียวกับที่ AI สร้าง ปุ่มส่งไลน์จึงทำงานได้เหมือนกัน
+  // ขั้นตอนเก็บความต้องการ — ถามทีละข้อจนครบแล้วสร้างลิสต์ให้ปุ่มส่งไลน์ใช้
   const [form, setForm] = useState(null); // { step, data }
+  // เก็บความต้องการครบแล้วหรือยัง — กันไม่ให้ถามวนซ้ำเมื่อลูกค้าถามอย่างอื่นต่อ
+  const [collected, setCollected] = useState(false);
   const bodyRef = React.useRef(null);
 
   // เปิดแชทจากหน้าสินค้า — เริ่มบทสนทนาใหม่โดยผูกกับสินค้าตัวที่ลูกค้ากดมา
@@ -13003,10 +13547,13 @@ function HPChatWidget() {
       setProduct(p);
       setInput('');
       setForm(null);
+      setCollected(false);
+      // แนบการ์ดสินค้าตัวที่ลูกค้ากดมาด้วย จะได้เห็นข้อมูลจริงตั้งแต่ข้อความแรก
       setMsgs([{
         role: 'assistant',
         intro: true,
-        content: 'สวัสดีครับ 👋 สนใจ ' + p.code + (p.name ? ' (' + p.name + ')' : '') + ' ใช่ไหมครับ\n' + 'ไม่ทราบว่าต้องการแบบไหนครับ? บอกจำนวนที่ต้องการหรืองานที่จะเอาไปใช้คร่าวๆ ได้เลย เดี๋ยวผมสรุปส่งให้ทีมงานดูแลต่อทางไลน์ครับ'
+        products: [p],
+        content: 'สวัสดีครับ 👋 สนใจรุ่นนี้ใช่ไหมครับ\n' + 'ไม่ทราบว่าต้องการแบบไหนครับ? บอกจำนวนที่ต้องการหรืองานที่จะเอาไปใช้คร่าวๆ ได้เลย เดี๋ยวผมสรุปส่งให้ทีมงานดูแลต่อทางไลน์ครับ'
       }]);
       setOpen(true);
     };
@@ -13029,8 +13576,10 @@ function HPChatWidget() {
   // '' = ยังไม่ได้ส่ง · 'sent' = เข้าไลน์บริษัทแล้ว · 'copy' = ส่งเองไม่ได้ คัดลอกไว้ให้วางแทน
   const [sendState, setSendState] = useState('');
   const [sending, setSending] = useState(false);
+  const [orderNo, setOrderNo] = useState(''); // เลขที่ออเดอร์ไว้ให้ลูกค้าอ้างอิงกับทีมงาน
   useEffect(() => {
     setSendState('');
+    setOrderNo('');
   }, [summary]);
   const leadText = () => 'สวัสดีครับ ผมคุยกับผู้ช่วยหน้าเว็บมาแล้ว\n' + (product ? 'สินค้าที่สนใจ: ' + product.code + (product.name ? ' · ' + product.name : '') + '\n' : '') + summary;
   const sendLead = async () => {
@@ -13053,6 +13602,7 @@ function HPChatWidget() {
       });
       const data = await r.json().catch(() => ({}));
       sent = !!(r.ok && data.sent);
+      if (data.orderNo) setOrderNo(data.orderNo);
     } catch {}
     // ส่งเข้าไลน์ไม่ได้ (ยังไม่ได้ตั้งค่า หรือเน็ตล่ม) — คัดลอกไว้ให้ลูกค้าวางเองแทน จะได้ไม่เสียเรื่อง
     if (!sent) {
@@ -13064,9 +13614,9 @@ function HPChatWidget() {
   };
   useEffect(() => {
     if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
-  }, [msgs, busy, open]);
+  }, [msgs, open]);
 
-  // ---- โหมดเก็บข้อมูลสำรอง (ไม่ต้องพึ่ง AI) ----
+  // ---- ขั้นตอนเก็บความต้องการของลูกค้า ----
   const formValue = v => {
     const s = (v || '').trim();
     return !s || /^(ข้าม|ไม่ระบุ|ไม่มี|-|—)$/i.test(s) ? 'ไม่ได้ระบุ' : s;
@@ -13084,35 +13634,27 @@ function HPChatWidget() {
       }]);
       return;
     }
-    // ครบแล้ว — สร้างลิสต์รูปแบบเดียวกับที่ AI สร้าง ปุ่มส่งไลน์จะจับได้เหมือนกัน
+    // ครบแล้ว — สร้างลิสต์ที่ปุ่มส่งไลน์จะหยิบไปใช้ต่อ
     setForm(null);
+    setCollected(true);
     const list = FORM_STEPS.map(s => `- ${s.label}: ${formValue(data[s.key])}`).join('\n');
     setMsgs(m => [...m, {
       role: 'assistant',
       content: 'ขอบคุณครับ 🙏 ผมสรุปตามนี้นะครับ กดปุ่มสีเขียวด้านล่างเพื่อส่งให้ทีมงานได้เลย\n\n' + SUMMARY_TAG + '\n' + list
     }]);
   };
-  const startForm = firstText => {
-    const data = {};
-    if (product) data.item = product.code + (product.name ? ' · ' + product.name : '');else if (firstText && !SUGGEST.includes(firstText) && !SUGGEST_PRODUCT.includes(firstText)) data.item = firstText;
-    setMsgs(m => [...m, {
-      role: 'assistant',
-      content: 'ขออภัยครับ ตอนนี้ผู้ช่วยอัจฉริยะไม่พร้อมใช้งาน ผมขอเก็บข้อมูลสั้นๆ แทน แล้วส่งให้ทีมงานดูแลต่อทางไลน์นะครับ'
-    }]);
-    askStep(data, 0);
-  };
-  const send = async text => {
+
+  // ตอบจากข้อมูลจริงล้วน ไม่เรียกโมเดลภาษา จึงไม่มีทางเพี้ยนและไม่ต้องรอเน็ต
+  const send = text => {
     const q = (text != null ? text : input).trim();
-    if (!q || busy) return;
+    if (!q) return;
     setInput('');
-    // ส่งเฉพาะบทสนทนาจริง ไม่รวมข้อความทักทายที่ฝั่งเราสร้างเอง
-    const next = [...msgs, {
+    setMsgs(m => [...m, {
       role: 'user',
       content: q
-    }];
-    setMsgs(next);
+    }]);
 
-    // อยู่ในโหมดเก็บข้อมูลอยู่แล้ว — ไม่ต้องยิงไปหลังบ้าน เก็บคำตอบแล้วถามข้อถัดไป
+    // อยู่ระหว่างเก็บความต้องการอยู่แล้ว — รับคำตอบแล้วถามข้อถัดไป
     if (form) {
       askStep({
         ...form.data,
@@ -13120,44 +13662,132 @@ function HPChatWidget() {
       }, form.step + 1);
       return;
     }
-    setBusy(true);
-    try {
-      const r = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          messages: next.filter(m => !m.intro).map(m => ({
-            role: m.role,
-            content: m.content
-          })),
-          product: product ? {
-            code: product.code,
-            name: product.name,
-            brand: product.brand,
-            cat: product.cat,
-            series: product.series
-          } : undefined
-        })
-      });
-      const data = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(data.error || 'ระบบขัดข้องชั่วคราว');
-      setMsgs(m => [...m, {
-        role: 'assistant',
-        content: data.reply
-      }]);
-    } catch (e) {
-      // ผู้ช่วย AI ใช้ไม่ได้ ไม่ปล่อยให้ลูกค้าเจอทางตัน — สลับไปเก็บข้อมูลเองแทน
-      startForm(q);
+    const a = hpBotAnswer(q, product);
+    setMsgs(m => [...m, {
+      role: 'assistant',
+      content: a.reply,
+      products: a.products
+    }]);
+
+    // เก็บความต้องการรอบเดียวต่อบทสนทนา ตอบคำถามเพิ่มได้เรื่อยๆ โดยไม่ถามวนซ้ำ
+    if (a.ask && !collected) {
+      const data = {};
+      if (product) data.item = product.code + (product.name ? ' · ' + product.name : '');else {
+        // ถ้าค้นเจอรุ่นชัดเจนรุ่นเดียว ใช้รุ่นนั้นเป็นสินค้าที่ลูกค้าสนใจได้เลย
+        const hit = hpChatFindProducts(q, null);
+        if (hit.length === 1) data.item = hit[0].code + (hit[0].name ? ' · ' + hit[0].name : '');else if (!SUGGEST.includes(q) && !SUGGEST_PRODUCT.includes(q)) data.item = q;
+      }
+      askStep(data, 0);
     }
-    setBusy(false);
+  };
+
+  // การ์ดข้อมูลสินค้า — ทุกค่าอ่านจากฐานข้อมูลจริงโดยตรง ไม่มีการเรียบเรียงใหม่
+  const productCard = (p, i) => {
+    const thumb = p.images && p.images[0] || p.img;
+    const specs = hpBotSpecs(p);
+    const open = () => {
+      if (onSelectProduct) {
+        onSelectProduct(p);
+        setOpen(false);
+      }
+    };
+    return /*#__PURE__*/React.createElement("div", {
+      key: `${p.brand}-${p.code}-${i}`,
+      onClick: open,
+      style: {
+        display: 'flex',
+        gap: '10px',
+        background: '#fff',
+        border: '1px solid #e2ece7',
+        borderRadius: '12px',
+        padding: '9px',
+        marginBottom: '7px',
+        cursor: onSelectProduct ? 'pointer' : 'default'
+      },
+      onMouseEnter: e => {
+        e.currentTarget.style.borderColor = '#0d9488';
+      },
+      onMouseLeave: e => {
+        e.currentTarget.style.borderColor = '#e2ece7';
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: '62px',
+        height: '62px',
+        flexShrink: 0,
+        background: '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: '8px',
+        overflow: 'hidden'
+      }
+    }, /*#__PURE__*/React.createElement("img", {
+      loading: "lazy",
+      decoding: "async",
+      src: thumb,
+      alt: p.code,
+      style: {
+        maxWidth: '100%',
+        maxHeight: '100%',
+        objectFit: 'contain',
+        mixBlendMode: 'multiply'
+      },
+      onError: e => {
+        e.target.style.display = 'none';
+      }
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        minWidth: 0,
+        flex: 1
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: '12.5px',
+        fontWeight: '800',
+        color: '#0d9488'
+      }
+    }, p.code), p.name && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: '11.5px',
+        color: '#4a5a52',
+        lineHeight: '1.45',
+        margin: '1px 0 3px',
+        display: '-webkit-box',
+        WebkitLineClamp: 2,
+        WebkitBoxOrient: 'vertical',
+        overflow: 'hidden'
+      }
+    }, p.name), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: '10.5px',
+        color: '#8fa39a'
+      }
+    }, [p.brand, p.cat, p.series].filter(Boolean).join(' · ')), specs.length > 0 && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '4px',
+        marginTop: '5px'
+      }
+    }, specs.map((s, k) => /*#__PURE__*/React.createElement("span", {
+      key: k,
+      style: {
+        fontSize: '10px',
+        color: '#0d6b5c',
+        background: '#eaf6f5',
+        borderRadius: '999px',
+        padding: '2px 8px',
+        whiteSpace: 'nowrap'
+      }
+    }, s.l, " ", s.v)))));
   };
   const bubble = (m, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     style: {
       display: 'flex',
-      justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start',
+      flexDirection: 'column',
+      alignItems: m.role === 'user' ? 'flex-end' : 'flex-start',
       marginBottom: '10px'
     }
   }, /*#__PURE__*/React.createElement("div", {
@@ -13172,7 +13802,12 @@ function HPChatWidget() {
       whiteSpace: 'pre-wrap',
       wordBreak: 'break-word'
     }
-  }, m.content));
+  }, m.content), m.products && m.products.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: '100%',
+      marginTop: '7px'
+    }
+  }, m.products.map(productCard)));
   return /*#__PURE__*/React.createElement(React.Fragment, null, !open && /*#__PURE__*/React.createElement("div", {
     className: "hp-chat-launcher",
     style: {
@@ -13352,13 +13987,7 @@ function HPChatWidget() {
       padding: '16px',
       background: '#fbfdfc'
     }
-  }, msgs.map(bubble), busy && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: '13px',
-      color: '#8fa39a',
-      padding: '4px 2px'
-    }
-  }, "\u0E01\u0E33\u0E25\u0E31\u0E07\u0E1E\u0E34\u0E21\u0E1E\u0E4C\u2026"), msgs.length === 1 && !busy && /*#__PURE__*/React.createElement("div", {
+  }, msgs.map(bubble), msgs.length === 1 && /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       flexWrap: 'wrap',
@@ -13415,7 +14044,14 @@ function HPChatWidget() {
       textAlign: 'center',
       marginBottom: '7px'
     }
-  }, "\u2714 \u0E2A\u0E48\u0E07\u0E25\u0E34\u0E2A\u0E15\u0E4C\u0E40\u0E02\u0E49\u0E32\u0E44\u0E25\u0E19\u0E4C\u0E1A\u0E23\u0E34\u0E29\u0E31\u0E17\u0E41\u0E25\u0E49\u0E27 \u0E17\u0E35\u0E21\u0E07\u0E32\u0E19\u0E08\u0E30\u0E15\u0E34\u0E14\u0E15\u0E48\u0E2D\u0E01\u0E25\u0E31\u0E1A\u0E04\u0E23\u0E31\u0E1A"), /*#__PURE__*/React.createElement("a", {
+  }, "\u2714 \u0E2A\u0E48\u0E07\u0E25\u0E34\u0E2A\u0E15\u0E4C\u0E40\u0E02\u0E49\u0E32\u0E44\u0E25\u0E19\u0E4C\u0E1A\u0E23\u0E34\u0E29\u0E31\u0E17\u0E41\u0E25\u0E49\u0E27 \u0E17\u0E35\u0E21\u0E07\u0E32\u0E19\u0E08\u0E30\u0E15\u0E34\u0E14\u0E15\u0E48\u0E2D\u0E01\u0E25\u0E31\u0E1A\u0E04\u0E23\u0E31\u0E1A", orderNo && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: '800',
+      color: '#06352e',
+      marginTop: '4px',
+      letterSpacing: '0.03em'
+    }
+  }, "\u0E40\u0E25\u0E02\u0E17\u0E35\u0E48\u0E2D\u0E2D\u0E40\u0E14\u0E2D\u0E23\u0E4C ", orderNo)), /*#__PURE__*/React.createElement("a", {
     href: LINE,
     target: "_blank",
     rel: "noopener noreferrer",
@@ -13531,7 +14167,6 @@ function HPChatWidget() {
     },
     maxLength: 1000,
     placeholder: "\u0E1E\u0E34\u0E21\u0E1E\u0E4C\u0E04\u0E33\u0E16\u0E32\u0E21\u0E17\u0E35\u0E48\u0E19\u0E35\u0E48\u2026",
-    disabled: busy,
     style: {
       flex: 1,
       minWidth: 0,
@@ -13544,7 +14179,7 @@ function HPChatWidget() {
     }
   }), /*#__PURE__*/React.createElement("button", {
     onClick: () => send(),
-    disabled: busy || !input.trim(),
+    disabled: !input.trim(),
     "aria-label": "\u0E2A\u0E48\u0E07",
     style: {
       width: '40px',
@@ -13552,9 +14187,9 @@ function HPChatWidget() {
       flexShrink: 0,
       borderRadius: '50%',
       border: 'none',
-      background: busy || !input.trim() ? '#c3d4cd' : '#0d6b5c',
+      background: !input.trim() ? '#c3d4cd' : '#0d6b5c',
       color: '#fff',
-      cursor: busy || !input.trim() ? 'default' : 'pointer',
+      cursor: !input.trim() ? 'default' : 'pointer',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center'
@@ -13581,7 +14216,7 @@ function HPChatWidget() {
       background: '#fff',
       lineHeight: '1.5'
     }
-  }, "\u0E1C\u0E39\u0E49\u0E0A\u0E48\u0E27\u0E22 AI \u0E2D\u0E32\u0E08\u0E15\u0E2D\u0E1A\u0E1C\u0E34\u0E14\u0E1E\u0E25\u0E32\u0E14\u0E44\u0E14\u0E49 \xB7 \u0E23\u0E32\u0E04\u0E32\u0E41\u0E25\u0E30\u0E2A\u0E15\u0E47\u0E2D\u0E01\u0E01\u0E23\u0E38\u0E13\u0E32\u0E2A\u0E2D\u0E1A\u0E16\u0E32\u0E21\u0E17\u0E32\u0E07\u0E44\u0E25\u0E19\u0E4C")));
+  }, "\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E2D\u0E49\u0E32\u0E07\u0E2D\u0E34\u0E07\u0E08\u0E32\u0E01\u0E41\u0E04\u0E15\u0E15\u0E32\u0E25\u0E47\u0E2D\u0E01\u0E08\u0E23\u0E34\u0E07\u0E02\u0E2D\u0E07\u0E23\u0E49\u0E32\u0E19 \xB7 \u0E23\u0E32\u0E04\u0E32\u0E41\u0E25\u0E30\u0E02\u0E2D\u0E07\u0E1E\u0E23\u0E49\u0E2D\u0E21\u0E2A\u0E48\u0E07 \u0E17\u0E35\u0E21\u0E07\u0E32\u0E19\u0E40\u0E1B\u0E47\u0E19\u0E1C\u0E39\u0E49\u0E41\u0E08\u0E49\u0E07\u0E17\u0E32\u0E07\u0E44\u0E25\u0E19\u0E4C")));
 }
 
 // ─── หน้าเดียวจบ (one-page) ───────────────────────────────────────────────────
@@ -13932,7 +14567,9 @@ function HPApp() {
   })), /*#__PURE__*/React.createElement(HPFooter, {
     onCategoryChange: onCategoryChange,
     onNavigate: onNavigate
-  }), /*#__PURE__*/React.createElement(HPChatWidget, null), /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement(HPChatWidget, {
+    onSelectProduct: onSelectProduct
+  }), /*#__PURE__*/React.createElement("div", {
     className: "hp-zoom-ctrl",
     style: {
       position: 'fixed',

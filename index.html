@@ -86,6 +86,38 @@
     @keyframes hp-pageflip { from { opacity:0; transform:rotateY(8deg) translateX(14px); } to { opacity:1; transform:rotateY(0) translateX(0); } }
     .hp-page-flip { animation:hp-pageflip 0.35s ease-out both; transform-origin:left center; }
 
+    /* ── แถบเรียกให้กดใต้หน้าแคตตาล็อก ──
+       เดิมเป็นแถบเขียวเรียบๆ ลูกค้าไม่รู้ว่ากดได้ จึงเพิ่มไล่สี + แสงกวาดผ่านเบาๆ
+       และลูกศรขยับตอนชี้ ให้อ่านออกทันทีว่าเป็นปุ่ม ไม่ใช่แค่ป้ายชื่อ */
+    @keyframes hp-cta-shine { 0% { transform:translateX(-150%) skewX(-18deg); } 55%, 100% { transform:translateX(320%) skewX(-18deg); } }
+    @keyframes hp-cta-pulse { 0%, 100% { box-shadow:0 -2px 14px rgba(18,134,107,0.00); } 50% { box-shadow:0 -2px 18px rgba(18,134,107,0.45); } }
+    .hp-cat-cta {
+      position:relative; overflow:hidden;
+      background:linear-gradient(100deg,#0b5147 0%,#12866b 48%,#0b5147 100%);
+      animation:hp-cta-pulse 3.4s ease-in-out infinite;
+      transition:filter 0.2s ease;
+    }
+    .hp-cat-cta::after {
+      content:''; position:absolute; top:0; left:0; width:36%; height:100%; pointer-events:none;
+      background:linear-gradient(90deg, transparent, rgba(255,255,255,0.30), transparent);
+      animation:hp-cta-shine 3.6s ease-in-out infinite;
+    }
+    .hp-cat-cta:hover { filter:brightness(1.14); }
+    .hp-cta-arrow { transition:transform 0.2s ease; }
+    .hp-cat-cta:hover .hp-cta-arrow { transform:translateX(5px); }
+
+    /* ปุ่มแว่นขยายบนรูป — ทำให้ดูเป็นกระจกฝ้า อ่านออกว่ากดได้ ไม่ลอยเคว้ง */
+    .hp-cat-zoom {
+      backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+      border:1px solid rgba(255,255,255,0.35);
+      transition:transform 0.18s ease, background 0.18s ease;
+    }
+    .hp-cat-zoom:hover { transform:scale(1.12); background:rgba(13,92,80,0.95); }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hp-cat-cta, .hp-cat-cta::after { animation:none !important; }
+    }
+
     @keyframes tb-glow   { 0%,100% { transform:scale(1) translate(0,0); opacity:0.22; } 50% { transform:scale(1.25) translate(-20px,20px); opacity:0.4; } }
     @keyframes tb-float  { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-10px); } }
     @keyframes tb-badge  { 0%,100% { transform:translateY(0) rotate(0deg); } 50% { transform:translateY(-6px) rotate(2deg); } }
@@ -138,6 +170,10 @@
     .hs-cardborder::before { content:''; position:absolute; top:50%; left:50%; width:220%; height:220%; transform:translate(-50%,-50%); animation:hs-bordertravel 5s linear infinite; }
     .hs-spark { position:absolute; bottom:0; width:4px; height:4px; border-radius:50%; }
     .hs-scanline { position:absolute; left:0; right:0; height:2px; z-index:2; pointer-events:none; background:linear-gradient(90deg, transparent, rgba(110,255,225,0.9), transparent); box-shadow:0 0 14px rgba(110,255,225,0.7); animation:hs-scan 6s ease-in-out infinite; }
+
+    /* ปุ่มเข้าระบบหลังบ้าน (ไอคอนคน) — สีพื้นเรียบโทนส้มแบรนด์ ให้สไตล์เดียวกับปุ่มไลน์ข้างๆ */
+    .hp-admin-btn { display:flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:10px; cursor:pointer; flex-shrink:0; background:#f05a20; box-shadow:0 2px 8px rgba(240,90,32,0.3); transition:transform 0.15s ease; }
+    .hp-admin-btn:hover { transform:translateY(-2px); }
 
     /* ══ รองรับจอมือถือ/แท็บเล็ต ══
        เมนูบนสุดเดิมเรียงแถวเดียวเสมอ พอจอแคบกว่าความกว้างเมนูจะดันจนเว็บเลื่อนซ้าย-ขวาได้

@@ -12,3 +12,6 @@ node_modules/
 Thumbs.db
 desktop.ini
 .netlify/
+
+# โฟลเดอร์ทำงานของเครื่องมือช่วยเขียนโค้ด — ไม่เกี่ยวกับเว็บ ห้ามขึ้น git/deploy
+.claude/

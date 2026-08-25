@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 //  ระบบหลังบ้าน — ตรวจสอบสิทธิ์ฝั่งเซิร์ฟเวอร์ทั้งหมด
 //  เบราว์เซอร์แก้ค่าอะไรก็ไม่มีผล เพราะทุกคำสั่งถูกตรวจซ้ำที่นี่
 // ============================================================================
@@ -34,9 +34,12 @@ const CHAT_SYSTEM = `คุณคือผู้ช่วยตอบคำถ�
 หลอดไฟ/โคมไฟ LED · สวิตช์และเต้ารับ · ฝาหน้ากาก · คัตเอาท์ · ท่อร้อยสายไฟ · รางไฟ ·
 บล็อคยาง · สายดินและล่อฟ้า · พัดลมดูดอากาศ · อุปกรณ์ฮาร์ดแวร์ไฟฟ้า
 
-แบรนด์ที่จำหน่าย
-Nano · CHANG (ช้าง) · Panasonic · KJL · SAFE-T-CUT · Sentoshi · Zeberg · IWACHI · Vena ·
-Schneider Electric · Reckon · SOKAWA · Lucky Misu · ท่อน้ำไทย · ทองไทยเบเกอร์ไลท์ และอื่นๆ
+แบรนด์ที่มีสินค้าอยู่ในระบบจริง (ห้ามเพิ่มแบรนด์นอกรายการนี้เองเด็ดขาด)
+CHANG (ตราช้าง) · NANO · KJL · IWACHI · FSL · GONGNIU/GONEO · BLUE CARBON ·
+SAFE-T-CUT · IAMPONG (เอี่ยมพงศ์พัฒนา) · Panasonic · Sentoshi · Schneider Electric ·
+RACER · ZEBERG · และแบรนด์สายไฟ BCC · YAZAKI · THAI UNION · UNITED · NNN
+ถ้าลูกค้าถามถึงแบรนด์ที่ไม่อยู่ในรายการนี้ ห้ามตอบว่า "มี" หรือ "ไม่มี"
+ให้บอกว่าต้องให้ทีมงานตรวจสอบให้ แล้วสรุปส่งต่อไลน์
 
 บริการ
 รับประกอบตู้โหลด 3 เฟส · รับผลิตตู้ MDB ตามสเปก · บริการติดตั้ง · งานโครงการ · ปรึกษาระบบไฟ
@@ -68,11 +71,25 @@ Schneider Electric · Reckon · SOKAWA · Lucky Misu · ท่อน้ำไท
 ก่อนบล็อกสรุป ให้บอกลูกค้าว่ากดปุ่มสีเขียวด้านล่างเพื่อส่งลิสต์นี้ให้ทีมงานทางไลน์
 ใช้บล็อก "สรุปให้ทีมงาน:" เฉพาะตอนจะส่งต่อจริงเท่านั้น ห้ามใส่ทุกข้อความ
 
+กฎการอ้างอิงข้อมูลสินค้า (สำคัญที่สุด ห้ามละเมิด)
+ทุกครั้งที่ลูกค้าถามถึงสินค้า ระบบจะค้นฐานข้อมูลสินค้าจริงให้ก่อน
+แล้วแนบผลค้นมาให้คุณในหัวข้อ "ผลค้นจากฐานข้อมูลสินค้าจริง"
+- ผลค้นนั้นคือ "ความจริงชุดเดียว" ที่คุณอ้างอิงได้ ห้ามอ้างรุ่นหรือรหัสสินค้านอกผลค้นเด็ดขาด
+- ถ้าระบบแจ้งว่า "ไม่พบรายการที่ตรงกับคำค้นนี้" แปลว่าคุณไม่มีข้อมูลรุ่นนั้น
+  ห้ามตอบว่ามีของ ห้ามเดารหัสรุ่น ห้ามแต่งสเปก ให้บอกตรงๆ ว่าขอให้ทีมงานตรวจสอบให้
+  แล้วเก็บรายละเอียดเพื่อสรุปส่งต่อไลน์
+- ถ้าไม่มีหัวข้อผลค้นแนบมาเลย ให้ถือว่าคุณไม่มีข้อมูลสินค้า ห้ามเดาเช่นกัน
+- ห้ามยืนยันว่าสินค้ารุ่นใด "มีของพร้อมส่ง" เพราะผลค้นบอกแค่ว่ามีรุ่นนี้ในแคตตาล็อก
+  ไม่ได้บอกสต็อกคงเหลือ
+
 กฎเหล็ก
 - ตอบเป็นภาษาไทยเสมอ สุภาพ เป็นกันเอง กระชับ (ปกติ 2-4 ประโยค)
 - ห้ามบอกราคา สต็อก หรือระยะเวลาส่งของเด็ดขาด เพราะคุณไม่มีข้อมูลนั้น
+  ห้ามพิมพ์ตัวเลขคู่กับคำว่า "บาท" หรือสัญลักษณ์ ฿ ในทุกกรณี แม้ลูกค้าจะเป็นคนเอ่ยราคามาก่อน
   ถ้าลูกค้าถามราคา/ขอใบเสนอราคา/ถามว่ามีของไหม ให้ถามรายละเอียดสินค้าที่ต้องการสั้นๆ
   แล้วสรุปส่งต่อไลน์ทันที
+- ช่องทางติดต่อที่พิมพ์ได้มีแค่ของบริษัทเท่านั้น: โทร 02-894-4007 / 02-894-4008
+  และ LINE @kirdsaengsawang — ห้ามพิมพ์เบอร์โทร ไอดีไลน์ หรือลิงก์เว็บอื่นเด็ดขาด
 - ถ้าลูกค้าถามความรู้เรื่องไฟฟ้า (เลือกขนาดเบรกเกอร์ ขนาดสายไฟ ความต่างของตู้แต่ละแบบ
   ระบบ 1 เฟส/3 เฟส มาตรฐาน มอก./IEC) ให้ตอบสั้นๆ ก่อน แล้วค่อยถามต่อว่าจะให้ทีมงานช่วยจัดของไหม
 - ห้ามแต่งข้อมูลสเปกสินค้าหรือรุ่นที่ไม่แน่ใจ ถ้าไม่รู้ให้บอกตรงๆ แล้วส่งต่อไลน์
@@ -80,6 +97,132 @@ Schneider Electric · Reckon · SOKAWA · Lucky Misu · ท่อน้ำไท
 - ห้ามแนะนำร้านคู่แข่งหรือเว็บไซต์ร้านอื่น
 - ตอบเฉพาะเรื่องที่เกี่ยวกับไฟฟ้า อุปกรณ์ไฟฟ้า และร้าน ถ้าถูกถามเรื่องอื่นให้ปฏิเสธอย่างสุภาพ
   แล้วชวนกลับมาคุยเรื่องอุปกรณ์ไฟฟ้า`;
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  ด่านตรวจคำตอบก่อนถึงลูกค้า
+//  กฎในพรอมป์ต์เป็นแค่ "คำขอ" โมเดลพลาดได้เสมอ ด่านนี้คือตัวบังคับจริงระดับโค้ด
+//  ครอบเฉพาะเรื่องที่ผิดแล้วลูกค้าเสียหายจริงและตรวจได้แน่นอน 100%:
+//  ราคา · เบอร์โทร · ไอดีไลน์ · ลิงก์ภายนอก
+//  (สเปกสินค้าตรวจด้วย regex ไม่ได้ จึงคุมด้วยการยัดข้อมูลจริงเข้าไปแทน — ดู CHAT_CATALOG)
+// ══════════════════════════════════════════════════════════════════════════════
+const OFFICIAL_PHONES  = ['028944007', '028944008'];
+const OFFICIAL_LINE_ID = '@kirdsaengsawang';
+const CHAT_SAFE_REPLY  =
+  'ขออภัยครับ ข้อมูลส่วนนี้ผมยืนยันแทนทีมงานไม่ได้ (เช่น ราคา สต็อก หรือช่องทางติดต่อ)\n'
+  + 'รบกวนทักไลน์ @kirdsaengsawang หรือโทร 02-894-4007 เพื่อคุยกับทีมงานโดยตรงนะครับ';
+
+// คืนชื่อกฎที่ถูกละเมิด ('' = ผ่าน)
+function chatReplyViolation(reply) {
+  // ราคา — ผู้ช่วยไม่มีข้อมูลราคา ตัวเลขติดกับ บาท/฿ จึงผิดเสมอ
+  if (/\d[\d,.]*\s*(บาท|฿)|฿\s*\d/.test(reply)) return 'price';
+
+  // เบอร์โทร — ต้องเป็นเบอร์บริษัทเท่านั้น
+  for (const m of reply.match(/0\d[\d\s-]{7,12}\d/g) || []) {
+    if (!OFFICIAL_PHONES.includes(m.replace(/\D/g, ''))) return 'phone';
+  }
+
+  // ไอดีไลน์ — ต้องเป็นของบริษัทเท่านั้น
+  for (const m of reply.match(/@[A-Za-z0-9._-]+/g) || []) {
+    if (m.toLowerCase() !== OFFICIAL_LINE_ID) return 'line';
+  }
+
+  // ลิงก์ — กันแนะนำเว็บร้านอื่น
+  for (const m of reply.match(/https?:\/\/\S+/gi) || []) {
+    if (!m.startsWith(LINE_URL)) return 'url';
+  }
+
+  return '';
+}
+
+// แปลงผลค้นสินค้าจากหน้าเว็บเป็นบล็อกข้อเท็จจริงให้ผู้ช่วยอ้างอิง
+// ข้อมูลนี้มาจากเบราว์เซอร์ จึงต้องล้างให้สะอาดก่อน กันการยัดคำสั่งปลอมเข้าพรอมป์ต์
+function chatCatalogBlock(catalog) {
+  if (!Array.isArray(catalog)) return null;   // ไม่ได้ค้นมา
+  const clean = (v, max) => String(v == null ? '' : v)
+    .replace(/[\u0000-\u001f]+/g, ' ')   // ยุบอักขระควบคุม/ขึ้นบรรทัดใหม่ (ไม่แตะ '-' ที่รหัสรุ่นใช้)
+    .trim().slice(0, max);
+
+  const lines = catalog.slice(0, 12).map(f => {
+    if (!f || typeof f !== 'object') return '';
+    const code = clean(f.code, 80);
+    if (!code) return '';
+    const bits = [`รหัส/รุ่น: ${code}`];
+    const name = clean(f.name, 160);   if (name)   bits.push(`ชื่อ: ${name}`);
+    const brand = clean(f.brand, 60);  if (brand)  bits.push(`แบรนด์: ${brand}`);
+    const cat = clean(f.cat, 80);      if (cat)    bits.push(`หมวด: ${cat}`);
+    const series = clean(f.series, 80); if (series) bits.push(`ซีรีส์: ${series}`);
+    return '- ' + bits.join(' · ');
+  }).filter(Boolean);
+
+  if (!lines.length) return 'ผลค้นจากฐานข้อมูลสินค้าจริง: ไม่พบรายการที่ตรงกับคำค้นนี้\n'
+    + 'คุณจึงไม่มีข้อมูลสินค้าที่ลูกค้าถามถึง ห้ามยืนยันว่ามีของ ห้ามเดารหัสรุ่นหรือสเปก\n'
+    + 'ให้บอกตรงๆ ว่าขอให้ทีมงานตรวจสอบให้ แล้วเก็บรายละเอียดเพื่อสรุปส่งต่อไลน์';
+
+  return 'ผลค้นจากฐานข้อมูลสินค้าจริง (อ้างอิงได้เฉพาะรายการนี้เท่านั้น):\n'
+    + lines.join('\n')
+    + '\nรายการข้างบนยืนยันแค่ว่า "มีรุ่นนี้ในแคตตาล็อก" ไม่ได้บอกราคาและไม่ได้บอกสต็อกคงเหลือ';
+}
+
+// รหัสที่ลูกค้าเอ่ยถึงแต่ค้นแล้วไม่มีในระบบ — ต้องบอกผู้ช่วยตรงๆ
+// กันเคสที่ผลค้นมีสินค้าใกล้เคียงติดมา แล้วผู้ช่วยเข้าใจผิดว่ารหัสที่ถามมีอยู่จริง
+function chatUnknownCodesBlock(codes) {
+  if (!Array.isArray(codes)) return null;
+  const list = codes
+    .map(c => String(c == null ? '' : c).replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, 60))
+    .filter(Boolean)
+    .slice(0, 5);
+  if (!list.length) return null;
+  return 'ตรวจแล้ว: รหัส/รุ่นต่อไปนี้ที่ลูกค้าเอ่ยถึง ไม่มีอยู่ในฐานข้อมูลสินค้าของร้าน\n'
+    + list.map(c => `- ${c}`).join('\n')
+    + '\nห้ามตอบว่ามีรุ่นนี้ ห้ามแต่งสเปกของรุ่นนี้เด็ดขาด\n'
+    + 'ให้บอกลูกค้าตรงๆ ว่าไม่พบรุ่นนี้ในระบบและขอให้ทีมงานตรวจสอบให้อีกครั้ง\n'
+    + 'ถ้าในผลค้นมีสินค้าประเภทใกล้เคียง จะเสนอเป็น "ทางเลือกใกล้เคียง" ได้ แต่ต้องบอกชัดว่าไม่ใช่รุ่นที่ลูกค้าถาม';
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  ออเดอร์จากหน้าเว็บ → ไลน์ทีมงาน
+//  ทีมงานต้องอ้างอิงออเดอร์กันได้ จึงต้องมีเลขที่และเวลาที่อ่านง่ายติดไปด้วย
+//  ใช้เวลาไทย (UTC+7) เสมอ ไม่ว่าเซิร์ฟเวอร์จะตั้งโซนเวลาอะไรไว้
+// ══════════════════════════════════════════════════════════════════════════════
+const thaiNow = () => new Date(Date.now() + 7 * 60 * 60 * 1000);
+
+// 22/08/2026 13:45 น.
+function thaiTimeText() {
+  const d = thaiNow();
+  const p = (n) => String(n).padStart(2, '0');
+  return `${p(d.getUTCDate())}/${p(d.getUTCMonth() + 1)}/${d.getUTCFullYear()} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())} น.`;
+}
+
+// เลขที่ออเดอร์ WEB-YYMMDD-NNN — เริ่มนับใหม่ทุกวัน
+async function nextOrderNo() {
+  const d = thaiNow();
+  const p = (n) => String(n).padStart(2, '0');
+  const ymd = `${String(d.getUTCFullYear()).slice(2)}${p(d.getUTCMonth() + 1)}${p(d.getUTCDate())}`;
+  let n = 1;
+  try {
+    const seq = await readJson('orderseq', {});
+    n = (Number(seq[ymd]) || 0) + 1;
+    seq[ymd] = n;
+    // เก็บย้อนหลังพอประมาณ ไม่ให้ไฟล์โตไปเรื่อยๆ
+    const keep = Object.keys(seq).sort().slice(-14);
+    await writeJson('orderseq', Object.fromEntries(keep.map(k => [k, seq[k]])));
+  } catch (e) {
+    console.error('order seq error:', e);   // นับไม่ได้ก็ยังต้องส่งออเดอร์ให้ทีมงานได้
+  }
+  return `WEB-${ymd}-${String(n).padStart(3, '0')}`;
+}
+
+// ข้อความออเดอร์ที่ทีมงานจะเห็นในไลน์
+function orderMessage(orderNo, when, prodTxt, summary) {
+  return 'ออเดอร์ใหม่จากเว็บไซต์\n'
+    + `เลขที่: ${orderNo}\n`
+    + `เวลา: ${when}\n`
+    + (prodTxt ? `${prodTxt}\n` : '')
+    + '--------------------\n'
+    + summary
+    + '\n--------------------\n'
+    + 'ส่งอัตโนมัติจากหน้าเว็บ · กรุณาติดต่อกลับลูกค้า';
+}
 
 // ---------- กันเดารหัสผ่านหน้าล็อกอิน ----------
 const LOGIN_MAX_FAIL = 5;                 // ผิดได้กี่ครั้ง
@@ -332,6 +475,13 @@ export default async (req) => {
           '\nให้ถามความต้องการเพิ่ม เช่น จำนวนที่ต้องการ และงานที่จะเอาไปใช้ แล้วสรุปส่งทีมงาน โดยต้องมีรุ่น/รหัสสินค้าอยู่ในบรรทัดสรุปเสมอ' });
       }
 
+      // ผลค้นจากแคตตาล็อกจริง — หัวใจของความแม่นยำ
+      // ต้องแนบเสมอแม้ค้นไม่เจอ เพราะ "ไม่เจอ" ก็เป็นข้อเท็จจริงที่กันการเดาได้
+      const catalogBlock = chatCatalogBlock(body.catalog);
+      if (catalogBlock) system.push({ type:'text', text: catalogBlock });
+      const unknownBlock = chatUnknownCodesBlock(body.unknownCodes);
+      if (unknownBlock) system.push({ type:'text', text: unknownBlock });
+
       try {
         const anthropic = new Anthropic();
         const resp = await anthropic.beta.messages.create({
@@ -349,7 +499,16 @@ export default async (req) => {
           return json({ reply:'ขออภัยครับ คำถามนี้ผมตอบให้ไม่ได้ รบกวนทักไลน์ @kirdsaengsawang เพื่อคุยกับทีมงานโดยตรงนะครับ', lineUrl: LINE_URL });
 
         const reply = resp.content.filter(b => b.type === 'text').map(b => b.text).join('').trim();
-        return json({ reply: reply || 'ขออภัยครับ ผมยังตอบคำถามนี้ไม่ได้ รบกวนทักไลน์ @kirdsaengsawang นะครับ', lineUrl: LINE_URL });
+        if (!reply)
+          return json({ reply:'ขออภัยครับ ผมยังตอบคำถามนี้ไม่ได้ รบกวนทักไลน์ @kirdsaengsawang นะครับ', lineUrl: LINE_URL });
+
+        // ด่านสุดท้าย — คำตอบที่ละเมิดกฎห้ามถึงมือลูกค้า ต่อให้โมเดลตั้งใจตอบดีก็ตาม
+        const bad = chatReplyViolation(reply);
+        if (bad) {
+          console.error('chat reply blocked:', bad);
+          return json({ reply: CHAT_SAFE_REPLY, blocked: bad, lineUrl: LINE_URL });
+        }
+        return json({ reply, lineUrl: LINE_URL });
       } catch (e) {
         console.error('chat error:', e);
         return json({ error:'ระบบผู้ช่วยขัดข้องชั่วคราว รบกวนทักไลน์ @kirdsaengsawang นะครับ', lineUrl: LINE_URL }, 502);
@@ -371,33 +530,54 @@ export default async (req) => {
       const p = body.product && typeof body.product === 'object' ? body.product : null;
       const code = p && typeof p.code === 'string' ? p.code.trim().slice(0, 80) : '';
       const pname = p && typeof p.name === 'string' ? p.name.trim().slice(0, 120) : '';
-      const prodTxt = code ? `สินค้าที่ลูกค้าเปิดดู: ${code}${pname ? ' · ' + pname : ''}\n` : '';
+      const prodTxt = code ? `สินค้าที่ลูกค้าเปิดดู: ${code}${pname ? ' · ' + pname : ''}` : '';
 
-      // เก็บลิสต์ไว้เสมอ ต่อให้ส่งไลน์ไม่ผ่านก็ยังตามอ่านย้อนหลังได้
+      const orderNo = await nextOrderNo();
+      const when    = thaiTimeText();
+
+      // เก็บออเดอร์ไว้เสมอ ต่อให้ส่งไลน์ไม่ผ่านก็ยังตามย้อนหลังได้
       try {
         const leads = await readJson('leads', []);
-        leads.push({ at: new Date().toISOString(), ip, product: prodTxt.trim(), summary });
+        leads.push({ orderNo, at: new Date().toISOString(), ip, product: prodTxt, summary });
         await writeJson('leads', leads.slice(-500));
       } catch (e) { console.error('lead save error:', e); }
 
       const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
       const to    = process.env.LINE_TO;
       if (!token || !to) {
-        console.warn('lead: ยังไม่ได้ตั้ง LINE_CHANNEL_ACCESS_TOKEN / LINE_TO — เก็บลิสต์อย่างเดียว');
-        return json({ ok:true, sent:false, lineUrl: LINE_URL });
+        console.warn('lead: ยังไม่ได้ตั้ง LINE_CHANNEL_ACCESS_TOKEN / LINE_TO — เก็บออเดอร์อย่างเดียว');
+        return json({ ok:true, sent:false, orderNo, reason:'unconfigured', lineUrl: LINE_URL });
       }
       try {
         const r = await fetch('https://api.line.me/v2/bot/message/push', {
           method:'POST',
           headers:{ 'Content-Type':'application/json', 'Authorization': `Bearer ${token}` },
-          body: JSON.stringify({ to, messages:[{ type:'text', text:`ลูกค้าใหม่จากหน้าเว็บ\n${prodTxt}${summary}` }] }),
+          body: JSON.stringify({ to, messages:[{ type:'text', text: orderMessage(orderNo, when, prodTxt, summary) }] }),
         });
-        if (!r.ok) throw new Error(`LINE push ${r.status} ${await r.text()}`);
-        return json({ ok:true, sent:true, lineUrl: LINE_URL });
+        // LINE ตอบ 4xx เมื่อโทเคนผิด/หมดอายุ หรือ LINE_TO ไม่ถูกต้อง — ต้องเห็นใน log ให้ชัด
+        if (!r.ok) throw new Error(`LINE push ${r.status} ${(await r.text()).slice(0, 300)}`);
+        return json({ ok:true, sent:true, orderNo, lineUrl: LINE_URL });
       } catch (e) {
         console.error('lead push error:', e);
-        return json({ ok:true, sent:false, lineUrl: LINE_URL });
+        return json({ ok:true, sent:false, orderNo, reason:'push-failed', lineUrl: LINE_URL });
       }
+    }
+
+    // ---------- รูปแคตตาล็อกที่แอดมินอัปโหลดเอง (เปิดสาธารณะ เพราะหน้าเว็บต้องแสดง) ----------
+    if (path.startsWith('/catalog-image/') && method === 'GET') {
+      const key = path.slice('/catalog-image/'.length);
+      if (!/^[A-Za-z0-9_-]+$/.test(key)) return json({ error:'ชื่อไฟล์ไม่ถูกต้อง' }, 400);
+      const rec = await readJson('catalogimg/' + key, null);
+      if (!rec || !rec.data) return json({ error:'ไม่พบรูป' }, 404);
+      const bytes = Buffer.from(rec.data, 'base64');
+      return new Response(bytes, {
+        status: 200,
+        headers: {
+          'Content-Type': rec.type || 'image/jpeg',
+          // ?v=... เปลี่ยนทุกครั้งที่อัปใหม่ จึงแคชยาวได้โดยไม่ค้างรูปเก่า
+          'Cache-Control': 'public, max-age=31536000, immutable',
+        },
+      });
     }
 
     // ---------- ตั้งแต่บรรทัดนี้ ต้องล็อกอินแล้วเท่านั้น ----------
@@ -487,6 +667,25 @@ export default async (req) => {
     }
 
     // ---------- ตั้งค่าเว็บไซต์ (แคตตาล็อก + ข้อมูลติดต่อ) ----------
+    // ---------- อัปโหลดรูปหน้าแคตตาล็อก (แอดมินที่แก้สินค้าได้เท่านั้น) ----------
+    if (path === '/catalog-image' && method === 'POST') {
+      if (!can(me, 'editProduct')) return json({ error:'บทบาทของคุณไม่มีสิทธิ์อัปโหลดรูป' }, 403);
+      const body = await req.json().catch(() => ({}));
+      const key = String(body.key || '');
+      if (!/^[A-Za-z0-9_-]{1,40}$/.test(key)) return json({ error:'ชื่อรูปไม่ถูกต้อง' }, 400);
+
+      const dataUrl = String(body.dataUrl || '');
+      const m = /^data:(image\/(?:jpeg|png|webp|gif));base64,([A-Za-z0-9+/=]+)$/.exec(dataUrl);
+      if (!m) return json({ error:'รองรับเฉพาะไฟล์รูป JPG / PNG / WEBP / GIF' }, 400);
+
+      const [, type, b64] = m;
+      // base64 ยาวกว่าไฟล์จริง ~33% — 4MB base64 ≈ ไฟล์ 3MB
+      if (b64.length > 4 * 1024 * 1024) return json({ error:'ไฟล์ใหญ่เกินไป (จำกัด 3MB)' }, 400);
+
+      await writeJson('catalogimg/' + key, { type, data: b64, at: Date.now() });
+      return json({ ok:true, url: `/api/catalog-image/${key}?v=${Date.now()}` });
+    }
+
     if (path === '/settings' && method === 'POST') {
       if (!can(me, 'editProduct')) return json({ error:'บทบาทของคุณไม่มีสิทธิ์แก้ไขการตั้งค่าเว็บไซต์' }, 403);
       const body = await req.json().catch(() => ({}));
@@ -509,6 +708,14 @@ export default async (req) => {
         if (raw.label)      rec.label  = str(raw.label, 60);
         if (raw.cta)        rec.cta    = str(raw.cta, 40);
         if (raw.hidden === true) rec.hidden = true;
+        // รูปที่อัปโหลดเอง — รับเฉพาะพาธของ endpoint เราเท่านั้น
+        // กันไม่ให้ยัดลิงก์ภายนอกหรือ javascript: เข้ามาเป็น src ของรูป
+        const img = str(raw.img, 300);
+        if (img) {
+          if (!/^\/api\/catalog-image\/[A-Za-z0-9_-]+(\?v=\d+)?$/.test(img))
+            return json({ error:`รูปของ ${name} ไม่ถูกต้อง` }, 400);
+          rec.img = img;
+        }
         if (Object.keys(rec).length) catalog[name] = rec;
       }
 
@@ -564,7 +771,10 @@ export default async (req) => {
 
     return json({ error:'ไม่พบปลายทางที่เรียก' }, 404);
   } catch (e) {
-    return json({ error:'เกิดข้อผิดพลาดบนเซิร์ฟเวอร์', detail:String(e && e.message || e) }, 500);
+    // รายละเอียดข้อผิดพลาดลง log ของ Netlify เท่านั้น ไม่ส่งกลับให้ผู้เรียก
+    // (ข้อความ error ภายในมักหลุดชื่อไฟล์/โครงสร้างระบบ ซึ่งเป็นข้อมูลให้คนไม่หวังดี)
+    console.error('api error:', path, method, e);
+    return json({ error:'เกิดข้อผิดพลาดบนเซิร์ฟเวอร์ กรุณาลองใหม่อีกครั้ง' }, 500);
   }
 };
 

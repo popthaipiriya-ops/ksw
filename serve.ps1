@@ -83,9 +83,12 @@ $CHAT_SYSTEM = @'
 หลอดไฟ/โคมไฟ LED · สวิตช์และเต้ารับ · ฝาหน้ากาก · คัตเอาท์ · ท่อร้อยสายไฟ · รางไฟ ·
 บล็อคยาง · สายดินและล่อฟ้า · พัดลมดูดอากาศ · อุปกรณ์ฮาร์ดแวร์ไฟฟ้า
 
-แบรนด์ที่จำหน่าย
-Nano · CHANG (ช้าง) · Panasonic · KJL · SAFE-T-CUT · Sentoshi · Zeberg · IWACHI · Vena ·
-Schneider Electric · Reckon · SOKAWA · Lucky Misu · ท่อน้ำไทย · ทองไทยเบเกอร์ไลท์ และอื่นๆ
+แบรนด์ที่มีสินค้าอยู่ในระบบจริง (ห้ามเพิ่มแบรนด์นอกรายการนี้เองเด็ดขาด)
+CHANG (ตราช้าง) · NANO · KJL · IWACHI · FSL · GONGNIU/GONEO · BLUE CARBON ·
+SAFE-T-CUT · IAMPONG (เอี่ยมพงศ์พัฒนา) · Panasonic · Sentoshi · Schneider Electric ·
+RACER · ZEBERG · และแบรนด์สายไฟ BCC · YAZAKI · THAI UNION · UNITED · NNN
+ถ้าลูกค้าถามถึงแบรนด์ที่ไม่อยู่ในรายการนี้ ห้ามตอบว่า "มี" หรือ "ไม่มี"
+ให้บอกว่าต้องให้ทีมงานตรวจสอบให้ แล้วสรุปส่งต่อไลน์
 
 บริการ
 รับประกอบตู้โหลด 3 เฟส · รับผลิตตู้ MDB ตามสเปก · บริการติดตั้ง · งานโครงการ · ปรึกษาระบบไฟ
@@ -117,11 +120,25 @@ Schneider Electric · Reckon · SOKAWA · Lucky Misu · ท่อน้ำไท
 ก่อนบล็อกสรุป ให้บอกลูกค้าว่ากดปุ่มสีเขียวด้านล่างเพื่อส่งลิสต์นี้ให้ทีมงานทางไลน์
 ใช้บล็อก "สรุปให้ทีมงาน:" เฉพาะตอนจะส่งต่อจริงเท่านั้น ห้ามใส่ทุกข้อความ
 
+กฎการอ้างอิงข้อมูลสินค้า (สำคัญที่สุด ห้ามละเมิด)
+ทุกครั้งที่ลูกค้าถามถึงสินค้า ระบบจะค้นฐานข้อมูลสินค้าจริงให้ก่อน
+แล้วแนบผลค้นมาให้คุณในหัวข้อ "ผลค้นจากฐานข้อมูลสินค้าจริง"
+- ผลค้นนั้นคือ "ความจริงชุดเดียว" ที่คุณอ้างอิงได้ ห้ามอ้างรุ่นหรือรหัสสินค้านอกผลค้นเด็ดขาด
+- ถ้าระบบแจ้งว่า "ไม่พบรายการที่ตรงกับคำค้นนี้" แปลว่าคุณไม่มีข้อมูลรุ่นนั้น
+  ห้ามตอบว่ามีของ ห้ามเดารหัสรุ่น ห้ามแต่งสเปก ให้บอกตรงๆ ว่าขอให้ทีมงานตรวจสอบให้
+  แล้วเก็บรายละเอียดเพื่อสรุปส่งต่อไลน์
+- ถ้าไม่มีหัวข้อผลค้นแนบมาเลย ให้ถือว่าคุณไม่มีข้อมูลสินค้า ห้ามเดาเช่นกัน
+- ห้ามยืนยันว่าสินค้ารุ่นใด "มีของพร้อมส่ง" เพราะผลค้นบอกแค่ว่ามีรุ่นนี้ในแคตตาล็อก
+  ไม่ได้บอกสต็อกคงเหลือ
+
 กฎเหล็ก
 - ตอบเป็นภาษาไทยเสมอ สุภาพ เป็นกันเอง กระชับ (ปกติ 2-4 ประโยค)
 - ห้ามบอกราคา สต็อก หรือระยะเวลาส่งของเด็ดขาด เพราะคุณไม่มีข้อมูลนั้น
+  ห้ามพิมพ์ตัวเลขคู่กับคำว่า "บาท" หรือสัญลักษณ์ ฿ ในทุกกรณี แม้ลูกค้าจะเป็นคนเอ่ยราคามาก่อน
   ถ้าลูกค้าถามราคา/ขอใบเสนอราคา/ถามว่ามีของไหม ให้ถามรายละเอียดสินค้าที่ต้องการสั้นๆ
   แล้วสรุปส่งต่อไลน์ทันที
+- ช่องทางติดต่อที่พิมพ์ได้มีแค่ของบริษัทเท่านั้น: โทร 02-894-4007 / 02-894-4008
+  และ LINE @kirdsaengsawang — ห้ามพิมพ์เบอร์โทร ไอดีไลน์ หรือลิงก์เว็บอื่นเด็ดขาด
 - ถ้าลูกค้าถามความรู้เรื่องไฟฟ้า (เลือกขนาดเบรกเกอร์ ขนาดสายไฟ ความต่างของตู้แต่ละแบบ
   ระบบ 1 เฟส/3 เฟส มาตรฐาน มอก./IEC) ให้ตอบสั้นๆ ก่อน แล้วค่อยถามต่อว่าจะให้ทีมงานช่วยจัดของไหม
 - ห้ามแต่งข้อมูลสเปกสินค้าหรือรุ่นที่ไม่แน่ใจ ถ้าไม่รู้ให้บอกตรงๆ แล้วส่งต่อไลน์
@@ -131,12 +148,128 @@ Schneider Electric · Reckon · SOKAWA · Lucky Misu · ท่อน้ำไท
   แล้วชวนกลับมาคุยเรื่องอุปกรณ์ไฟฟ้า
 '@
 
+# ══════════════════════════════════════════════════════════════════════════
+#  ด่านตรวจคำตอบก่อนถึงลูกค้า (ต้องตรงกับ netlify/functions/api.mjs เสมอ)
+#  กฎในพรอมป์ต์เป็นแค่ "คำขอ" โมเดลพลาดได้ ด่านนี้คือตัวบังคับจริงระดับโค้ด
+# ══════════════════════════════════════════════════════════════════════════
+$OFFICIAL_PHONES  = @('028944007', '028944008')
+$OFFICIAL_LINE_ID = '@kirdsaengsawang'
+$CHAT_SAFE_REPLY  = "ขออภัยครับ ข้อมูลส่วนนี้ผมยืนยันแทนทีมงานไม่ได้ (เช่น ราคา สต็อก หรือช่องทางติดต่อ)`r`nรบกวนทักไลน์ @kirdsaengsawang หรือโทร 02-894-4007 เพื่อคุยกับทีมงานโดยตรงนะครับ"
+
+# คืนชื่อกฎที่ถูกละเมิด ('' = ผ่าน)
+function Get-ChatViolation([string]$reply) {
+  # ราคา — ผู้ช่วยไม่มีข้อมูลราคา ตัวเลขติดกับ บาท/฿ จึงผิดเสมอ
+  if ($reply -match '\d[\d,.]*\s*(บาท|฿)' -or $reply -match '฿\s*\d') { return 'price' }
+  # เบอร์โทร — ต้องเป็นเบอร์บริษัทเท่านั้น
+  foreach ($m in [regex]::Matches($reply, '0\d[\d\s-]{7,12}\d')) {
+    $digits = ($m.Value -replace '\D', '')
+    if ($OFFICIAL_PHONES -notcontains $digits) { return 'phone' }
+  }
+  # ไอดีไลน์ — ต้องเป็นของบริษัทเท่านั้น
+  foreach ($m in [regex]::Matches($reply, '@[A-Za-z0-9._-]+')) {
+    if ($m.Value.ToLower() -ne $OFFICIAL_LINE_ID) { return 'line' }
+  }
+  # ลิงก์ — กันแนะนำเว็บร้านอื่น
+  foreach ($m in [regex]::Matches($reply, 'https?://\S+')) {
+    if (-not $m.Value.StartsWith($LINE_URL)) { return 'url' }
+  }
+  return ''
+}
+
+# แปลงผลค้นสินค้าจากหน้าเว็บเป็นบล็อกข้อเท็จจริงให้ผู้ช่วยอ้างอิง
+# เรียกเฉพาะตอนหน้าเว็บส่ง catalog มาจริงเท่านั้น (ผู้เรียกเป็นคนเช็ค)
+# ว่างหรือ $null ที่ส่งเข้ามา = ค้นแล้วไม่เจอ ซึ่งต้องบอกผู้ช่วยให้รู้ ไม่ใช่เงียบ
+function Get-ChatCatalogBlock($catalog) {
+  $clean = {
+    param($v, $max)
+    $s = ([string]$v) -replace '[\u0000-\u001f]+', ' '
+    $s = $s.Trim()
+    if ($s.Length -gt $max) { $s = $s.Substring(0, $max) }
+    return $s
+  }
+  $lines = @()
+  foreach ($f in @($catalog) | Select-Object -First 12) {
+    if ($null -eq $f) { continue }
+    $code = & $clean $f.code 80
+    if (-not $code) { continue }
+    $bits = @("รหัส/รุ่น: $code")
+    $v = & $clean $f.name 160;   if ($v) { $bits += "ชื่อ: $v" }
+    $v = & $clean $f.brand 60;   if ($v) { $bits += "แบรนด์: $v" }
+    $v = & $clean $f.cat 80;     if ($v) { $bits += "หมวด: $v" }
+    $v = & $clean $f.series 80;  if ($v) { $bits += "ซีรีส์: $v" }
+    $lines += ('- ' + ($bits -join ' · '))
+  }
+  if ($lines.Count -eq 0) {
+    return "ผลค้นจากฐานข้อมูลสินค้าจริง: ไม่พบรายการที่ตรงกับคำค้นนี้`r`n" +
+           "คุณจึงไม่มีข้อมูลสินค้าที่ลูกค้าถามถึง ห้ามยืนยันว่ามีของ ห้ามเดารหัสรุ่นหรือสเปก`r`n" +
+           "ให้บอกตรงๆ ว่าขอให้ทีมงานตรวจสอบให้ แล้วเก็บรายละเอียดเพื่อสรุปส่งต่อไลน์"
+  }
+  return "ผลค้นจากฐานข้อมูลสินค้าจริง (อ้างอิงได้เฉพาะรายการนี้เท่านั้น):`r`n" +
+         ($lines -join "`r`n") +
+         "`r`nรายการข้างบนยืนยันแค่ว่า ""มีรุ่นนี้ในแคตตาล็อก"" ไม่ได้บอกราคาและไม่ได้บอกสต็อกคงเหลือ"
+}
+
+# รหัสที่ลูกค้าเอ่ยถึงแต่ค้นแล้วไม่มีในระบบ — ต้องบอกผู้ช่วยตรงๆ
+# กันเคสที่ผลค้นมีสินค้าใกล้เคียงติดมา แล้วผู้ช่วยเข้าใจผิดว่ารหัสที่ถามมีอยู่จริง
+function Get-ChatUnknownCodesBlock($codes) {
+  $list = @()
+  foreach ($c in @($codes) | Select-Object -First 5) {
+    $s = (([string]$c) -replace '[\u0000-\u001f]+', ' ').Trim()
+    if ($s.Length -gt 60) { $s = $s.Substring(0, 60) }
+    if ($s) { $list += $s }
+  }
+  if ($list.Count -eq 0) { return $null }
+  return "ตรวจแล้ว: รหัส/รุ่นต่อไปนี้ที่ลูกค้าเอ่ยถึง ไม่มีอยู่ในฐานข้อมูลสินค้าของร้าน`r`n" +
+         (($list | ForEach-Object { "- $_" }) -join "`r`n") +
+         "`r`nห้ามตอบว่ามีรุ่นนี้ ห้ามแต่งสเปกของรุ่นนี้เด็ดขาด`r`n" +
+         "ให้บอกลูกค้าตรงๆ ว่าไม่พบรุ่นนี้ในระบบและขอให้ทีมงานตรวจสอบให้อีกครั้ง`r`n" +
+         "ถ้าในผลค้นมีสินค้าประเภทใกล้เคียง จะเสนอเป็น ""ทางเลือกใกล้เคียง"" ได้ แต่ต้องบอกชัดว่าไม่ใช่รุ่นที่ลูกค้าถาม"
+}
+
+# ══════════════════════════════════════════════════════════════════════════
+#  ออเดอร์จากหน้าเว็บ → ไลน์ทีมงาน (ต้องตรงกับ netlify/functions/api.mjs)
+#  ทีมงานต้องอ้างอิงออเดอร์กันได้ จึงต้องมีเลขที่และเวลาไทยติดไปด้วย
+# ══════════════════════════════════════════════════════════════════════════
+$fOrderSeq = Join-Path $data "orderseq.json"
+
+function Get-ThaiNow { [DateTime]::UtcNow.AddHours(7) }
+function Get-ThaiTimeText { (Get-ThaiNow).ToString('dd/MM/yyyy HH:mm') + ' น.' }
+
+# เลขที่ออเดอร์ WEB-YYMMDD-NNN — เริ่มนับใหม่ทุกวัน
+function Get-NextOrderNo {
+  $ymd = (Get-ThaiNow).ToString('yyMMdd')
+  $n = 1
+  try {
+    $seq = To-Hashtable (Read-Json $fOrderSeq @{})
+    $n = [int]$seq[$ymd] + 1
+    $seq[$ymd] = $n
+    # เก็บย้อนหลังพอประมาณ ไม่ให้ไฟล์โตไปเรื่อยๆ
+    $keep = @($seq.Keys | Sort-Object | Select-Object -Last 14)
+    $trim = @{}
+    foreach ($k in $keep) { $trim[$k] = $seq[$k] }
+    Write-JsonObj $fOrderSeq $trim
+  } catch {
+    Write-Host ("order seq error: {0}" -f $_.Exception.Message) -ForegroundColor Yellow
+  }
+  return ("WEB-{0}-{1:D3}" -f $ymd, $n)
+}
+
+# ข้อความออเดอร์ที่ทีมงานจะเห็นในไลน์
+function Get-OrderMessage([string]$orderNo, [string]$when, [string]$prodTxt, [string]$summary) {
+  $head = "ออเดอร์ใหม่จากเว็บไซต์`r`nเลขที่: $orderNo`r`nเวลา: $when`r`n"
+  if ($prodTxt) { $head += "$prodTxt`r`n" }
+  return $head + "--------------------`r`n" + $summary +
+         "`r`n--------------------`r`nส่งอัตโนมัติจากหน้าเว็บ · กรุณาติดต่อกลับลูกค้า"
+}
+
 # ---------- ไฟล์เก็บข้อมูล ----------
 $fUsers   = Join-Path $data "users.json"
 $fQuotes  = Join-Path $data "quotes.json"
 $fProds   = Join-Path $data "products.json"
 $fSetting = Join-Path $data "settings.json"
 $fLeads   = Join-Path $data "leads.json"
+$dImg     = Join-Path $data "catalogimg"
+if (-not (Test-Path $dImg)) { New-Item -ItemType Directory -Force $dImg | Out-Null }
 $fSecret  = Join-Path $data "secret.key"
 
 function Read-Json([string]$path, $fallback) {
@@ -169,6 +302,13 @@ function Trim-Max($v, [int]$max) {
 function To-Hashtable($o) {
   $h = @{}
   if ($null -eq $o) { return $h }
+  # ถ้าเป็น hashtable/dictionary อยู่แล้ว ต้องก๊อปจากคีย์จริงเท่านั้น
+  # ห้ามไปอ่าน PSObject.Properties เพราะจะได้ Count/Keys/Values ของตัว hashtable
+  # กลายมาเป็น "คีย์" ปลอม แล้ว $h.Keys จะคืนค่าว่างทั้งที่มีข้อมูลอยู่
+  if ($o -is [System.Collections.IDictionary]) {
+    foreach ($k in $o.Keys) { $h[$k] = $o[$k] }
+    return $h
+  }
   foreach ($p in $o.PSObject.Properties) { $h[$p.Name] = $p.Value }
   return $h
 }
@@ -381,13 +521,32 @@ while ($listener.IsListening) {
       }
 
       # อ่านสินค้าเปิดสาธารณะ (หน้าร้านต้องใช้)
+      # ต้องครอบ @() เสมอ — Read-Json คืน @() ออกมาเป็น $null ทำให้ JSON กลายเป็น {} ไม่ใช่ []
+      # ฝั่งเว็บเช็ค Array.isArray ถ้าไม่ใช่ array จะข้ามการซิงค์ ทำให้ล้างสินค้าแล้วเครื่องอื่นไม่อัปเดตตาม
       if ($ep -eq '/products' -and $method -eq 'GET') {
-        Send-Json $res @{ products=(Read-Json $fProds @()) } 200; continue
+        Send-Json $res @{ products=@(Read-Json $fProds @()) } 200; continue
       }
 
       # อ่านการตั้งค่าเว็บเปิดสาธารณะ (หน้าแคตตาล็อกต้องใช้แสดงลิงก์แบรนด์)
       if ($ep -eq '/settings' -and $method -eq 'GET') {
         Send-Json $res @{ settings=(Read-Json $fSetting @{}) } 200; continue
+      }
+
+      # รูปแคตตาล็อกที่แอดมินอัปโหลดเอง (เปิดสาธารณะ เพราะหน้าเว็บต้องแสดง)
+      if ($ep -like '/catalog-image/*' -and $method -eq 'GET') {
+        $key = $ep.Substring('/catalog-image/'.Length)
+        if ($key -notmatch '^[A-Za-z0-9_-]+$') { Send-Json $res @{ error='ชื่อไฟล์ไม่ถูกต้อง' } 400; continue }
+        $imgFile = Join-Path $dImg ("$key.json")
+        if (-not (Test-Path -LiteralPath $imgFile)) { Send-Json $res @{ error='ไม่พบรูป' } 404; continue }
+        $recImg = Read-Json $imgFile $null
+        if (-not $recImg -or -not $recImg.data) { Send-Json $res @{ error='ไม่พบรูป' } 404; continue }
+        $bytes = [Convert]::FromBase64String([string]$recImg.data)
+        $res.ContentType = if ($recImg.type) { [string]$recImg.type } else { 'image/jpeg' }
+        $res.Headers.Add('Cache-Control', 'public, max-age=31536000, immutable')
+        $res.ContentLength64 = $bytes.Length
+        $res.OutputStream.Write($bytes, 0, $bytes.Length)
+        $res.OutputStream.Close()
+        continue
       }
 
       # ---------- ผู้ช่วย AI ตอบลูกค้า (เปิดสาธารณะ ลูกค้าหน้าเว็บใช้ได้เลย) ----------
@@ -446,6 +605,19 @@ while ($listener.IsListening) {
           }
         }
 
+        # ผลค้นจากแคตตาล็อกจริง — หัวใจของความแม่นยำ
+        # ต้องแนบเสมอแม้ค้นไม่เจอ เพราะ "ไม่เจอ" ก็เป็นข้อเท็จจริงที่กันการเดาได้
+        # (PowerShell แปลง JSON array ว่างเป็น @() ไม่ใช่ $null จึงแยกสองกรณีนี้ได้)
+        if ($b.PSObject.Properties.Name -contains 'catalog') {
+          $catItems = @($b.catalog)   # อาจว่าง = ค้นแล้วไม่เจอ ซึ่งก็เป็นข้อเท็จจริงที่ต้องบอก
+          $catBlock = Get-ChatCatalogBlock $catItems
+          if ($catBlock) { $sysBlocks += @{ type='text'; text=$catBlock } }
+        }
+        if ($b.unknownCodes) {
+          $unkBlock = Get-ChatUnknownCodesBlock @($b.unknownCodes)
+          if ($unkBlock) { $sysBlocks += @{ type='text'; text=$unkBlock } }
+        }
+
         try {
           [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
           $payload = @{
@@ -474,7 +646,15 @@ while ($listener.IsListening) {
             Send-Json $res @{ reply='ขออภัยครับ คำถามนี้ผมตอบให้ไม่ได้ รบกวนทักไลน์ @kirdsaengsawang นะครับ'; lineUrl=$LINE_URL } 200; continue
           }
           $reply = (@($obj.content | Where-Object { $_.type -eq 'text' } | ForEach-Object { $_.text }) -join '').Trim()
-          if (-not $reply) { $reply = 'ขออภัยครับ ผมยังตอบคำถามนี้ไม่ได้ รบกวนทักไลน์ @kirdsaengsawang นะครับ' }
+          if (-not $reply) {
+            Send-Json $res @{ reply='ขออภัยครับ ผมยังตอบคำถามนี้ไม่ได้ รบกวนทักไลน์ @kirdsaengsawang นะครับ'; lineUrl=$LINE_URL } 200; continue
+          }
+          # ด่านสุดท้าย — คำตอบที่ละเมิดกฎห้ามถึงมือลูกค้า ต่อให้โมเดลตั้งใจตอบดีก็ตาม
+          $bad = Get-ChatViolation $reply
+          if ($bad) {
+            Write-Host ("chat reply blocked: {0}" -f $bad) -ForegroundColor Yellow
+            Send-Json $res @{ reply=$CHAT_SAFE_REPLY; blocked=$bad; lineUrl=$LINE_URL } 200; continue
+          }
           Send-Json $res @{ reply=$reply; lineUrl=$LINE_URL } 200; continue
         } catch {
           Write-Host ("chat error: {0}" -f $_.Exception.Message) -ForegroundColor Red
@@ -502,13 +682,15 @@ while ($listener.IsListening) {
           $prodTxt = "สินค้าที่ลูกค้าเปิดดู: " + (Trim-Max $b.product.code 80)
           $pn = Trim-Max $b.product.name 120
           if ($pn) { $prodTxt += " · $pn" }
-          $prodTxt += "`r`n"
         }
 
-        # เก็บลิสต์ไว้ในเครื่องเสมอ ต่อให้ส่งไลน์ไม่ผ่านก็ยังไม่หาย
+        $orderNo = Get-NextOrderNo
+        $when    = Get-ThaiTimeText
+
+        # เก็บออเดอร์ไว้ในเครื่องเสมอ ต่อให้ส่งไลน์ไม่ผ่านก็ยังไม่หาย
         try {
           $leads = @(Read-Json $fLeads @())
-          $leads += @{ at=(Get-Date).ToString('yyyy-MM-dd HH:mm:ss'); ip=$ip; product=$prodTxt.Trim(); summary=$summary }
+          $leads += @{ orderNo=$orderNo; at=(Get-Date).ToString('yyyy-MM-dd HH:mm:ss'); ip=$ip; product=$prodTxt; summary=$summary }
           if ($leads.Count -gt 500) { $leads = $leads[($leads.Count - 500)..($leads.Count - 1)] }
           Write-Json $fLeads $leads
         } catch { Write-Host ("lead save error: {0}" -f $_.Exception.Message) -ForegroundColor Yellow }
@@ -516,20 +698,21 @@ while ($listener.IsListening) {
         $push = Get-LinePush
         if (-not $push) {
           Write-Host "lead: ยังไม่ได้ตั้งค่า LINE_CHANNEL_ACCESS_TOKEN / LINE_TO — เก็บลงไฟล์อย่างเดียว" -ForegroundColor Yellow
-          Send-Json $res @{ ok=$true; sent=$false; lineUrl=$LINE_URL } 200; continue
+          Send-Json $res @{ ok=$true; sent=$false; orderNo=$orderNo; reason='unconfigured'; lineUrl=$LINE_URL } 200; continue
         }
         try {
           [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-          $text = "ลูกค้าใหม่จากหน้าเว็บ`r`n$prodTxt$summary"
+          $text = Get-OrderMessage $orderNo $when $prodTxt $summary
           $payload = @{ to=$push.to; messages=@(@{ type='text'; text=$text }) }
           $bytes = [System.Text.Encoding]::UTF8.GetBytes((ConvertTo-Json -InputObject $payload -Depth 8 -Compress))
           Invoke-WebRequest -Uri 'https://api.line.me/v2/bot/message/push' -Method Post `
             -Headers @{ 'Authorization' = "Bearer $($push.token)" } -Body $bytes `
             -ContentType 'application/json; charset=utf-8' -UseBasicParsing -TimeoutSec 30 | Out-Null
-          Send-Json $res @{ ok=$true; sent=$true; lineUrl=$LINE_URL } 200; continue
+          Write-Host ("lead sent: {0}" -f $orderNo) -ForegroundColor Green
+          Send-Json $res @{ ok=$true; sent=$true; orderNo=$orderNo; lineUrl=$LINE_URL } 200; continue
         } catch {
           Write-Host ("lead push error: {0}" -f $_.Exception.Message) -ForegroundColor Red
-          Send-Json $res @{ ok=$true; sent=$false; lineUrl=$LINE_URL } 200; continue
+          Send-Json $res @{ ok=$true; sent=$false; orderNo=$orderNo; reason='push-failed'; lineUrl=$LINE_URL } 200; continue
         }
       }
 
@@ -625,6 +808,22 @@ while ($listener.IsListening) {
         Send-Json $res @{ ok=$true; count=@($b.products).Count } 200; continue
       }
 
+      # ---------- อัปโหลดรูปหน้าแคตตาล็อก (แอดมินที่แก้สินค้าได้เท่านั้น) ----------
+      if ($ep -eq '/catalog-image' -and $method -eq 'POST') {
+        if (-not (Can $me 'editProduct')) { Send-Json $res @{ error='บทบาทของคุณไม่มีสิทธิ์อัปโหลดรูป' } 403; continue }
+        $b = Read-Body $req
+        $key = [string]$b.key
+        if ($key -notmatch '^[A-Za-z0-9_-]{1,40}$') { Send-Json $res @{ error='ชื่อรูปไม่ถูกต้อง' } 400; continue }
+        $dataUrl = [string]$b.dataUrl
+        $m = [regex]::Match($dataUrl, '^data:(image/(?:jpeg|png|webp|gif));base64,([A-Za-z0-9+/=]+)$')
+        if (-not $m.Success) { Send-Json $res @{ error='รองรับเฉพาะไฟล์รูป JPG / PNG / WEBP / GIF' } 400; continue }
+        $b64 = $m.Groups[2].Value
+        if ($b64.Length -gt 4MB) { Send-Json $res @{ error='ไฟล์ใหญ่เกินไป (จำกัด 3MB)' } 400; continue }
+        Write-JsonObj (Join-Path $dImg "$key.json") @{ type=$m.Groups[1].Value; data=$b64; at=[DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() }
+        $stamp = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        Send-Json $res @{ ok=$true; url=("/api/catalog-image/{0}?v={1}" -f $key, $stamp) } 200; continue
+      }
+
       # ---------- ตั้งค่าเว็บไซต์ (ลิงก์แบรนด์ในหน้าแคตตาล็อก ฯลฯ) ----------
       if ($ep -eq '/settings' -and $method -eq 'POST') {
         if (-not (Can $me 'editProduct')) { Send-Json $res @{ error='บทบาทของคุณไม่มีสิทธิ์แก้ไขการตั้งค่าเว็บไซต์' } 403; continue }
@@ -637,6 +836,7 @@ while ($listener.IsListening) {
         $catalog = @{}
         $urlMap  = @{}
         $badKey  = $null
+        $badImg  = $null
         foreach ($k in @($inCat.Keys)) {
           $raw = $inCat[$k]
           if ($null -eq $raw) { continue }
@@ -647,9 +847,16 @@ while ($listener.IsListening) {
           if ($raw.label)            { $rec['label']  = Trim-Max $raw.label 60 }
           if ($raw.cta)              { $rec['cta']    = Trim-Max $raw.cta 40 }
           if ($raw.hidden -eq $true) { $rec['hidden'] = $true }
+          # รูปที่อัปโหลดเอง — รับเฉพาะพาธของ endpoint เราเท่านั้น
+          $img = Trim-Max $raw.img 300
+          if ($img) {
+            if ($img -notmatch '^/api/catalog-image/[A-Za-z0-9_-]+(\?v=\d+)?$') { $badImg = $k; break }
+            $rec['img'] = $img
+          }
           if ($rec.Count -gt 0)      { $catalog[[string]$k] = $rec }
         }
         if ($badKey) { Send-Json $res @{ error=("ลิงก์ของ {0} ต้องขึ้นต้นด้วย http:// หรือ https://" -f $badKey) } 400; continue }
+        if ($badImg) { Send-Json $res @{ error=("รูปของ {0} ไม่ถูกต้อง" -f $badImg) } 400; continue }
 
         # ---- ข้อมูลติดต่อ (ใช้ร่วมกันหลายหน้า) ----
         $c = $b.settings.contact
