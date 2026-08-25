@@ -7748,31 +7748,31 @@ function HPCatalogPage({
     style: {
       color: '#fff',
       fontFamily: 'Inter, Noto Sans Thai, sans-serif',
-      fontSize: '14.5px',
+      fontSize: '16px',
       fontWeight: '800',
-      padding: '15px 16px',
+      padding: '27px 18px',
       letterSpacing: '0.01em',
       zIndex: 2,
       textDecoration: 'none',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: '10px'
+      gap: '12px'
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      width: '24px',
-      height: '24px',
+      width: '30px',
+      height: '30px',
       borderRadius: '50%',
       background: 'rgba(255,255,255,0.18)',
       flexShrink: 0
     }
   }, /*#__PURE__*/React.createElement("svg", {
-    width: "13",
-    height: "13",
+    width: "16",
+    height: "16",
     viewBox: "0 0 24 24",
     fill: "none",
     stroke: "currentColor",
@@ -7792,8 +7792,8 @@ function HPCatalogPage({
     }
   }, b.cta || `เยี่ยมชมเว็บไซต์ ${b.name}`), /*#__PURE__*/React.createElement("svg", {
     className: "hp-cta-arrow",
-    width: "17",
-    height: "17",
+    width: "20",
+    height: "20",
     viewBox: "0 0 24 24",
     fill: "none",
     stroke: "currentColor",

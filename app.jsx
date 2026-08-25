@@ -2465,17 +2465,17 @@ function HPCatalogPage({ embedded }) {
             {/* footer strip — เป็นลิงก์ไปเว็บแบรนด์ถ้ามี url */}
             {b.url ? (
               <a className="hp-cat-cta" href={b.url} target="_blank" rel="noopener noreferrer"
-                style={{ color:'#fff', fontFamily:'Inter, Noto Sans Thai, sans-serif', fontSize:'14.5px', fontWeight:'800',
-                         padding:'15px 16px', letterSpacing:'0.01em', zIndex:2, textDecoration:'none',
-                         display:'flex', alignItems:'center', justifyContent:'center', gap:'10px' }}>
-                <span style={{ display:'flex', alignItems:'center', justifyContent:'center', width:'24px', height:'24px',
+                style={{ color:'#fff', fontFamily:'Inter, Noto Sans Thai, sans-serif', fontSize:'16px', fontWeight:'800',
+                         padding:'27px 18px', letterSpacing:'0.01em', zIndex:2, textDecoration:'none',
+                         display:'flex', alignItems:'center', justifyContent:'center', gap:'12px' }}>
+                <span style={{ display:'flex', alignItems:'center', justifyContent:'center', width:'30px', height:'30px',
                                borderRadius:'50%', background:'rgba(255,255,255,0.18)', flexShrink:0 }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><path d="M15 3h6v6"/><path d="M10 14L21 3"/>
                   </svg>
                 </span>
                 <span style={{ position:'relative', zIndex:1 }}>{b.cta || `เยี่ยมชมเว็บไซต์ ${b.name}`}</span>
-                <svg className="hp-cta-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink:0, position:'relative', zIndex:1 }}>
+                <svg className="hp-cta-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink:0, position:'relative', zIndex:1 }}>
                   <path d="M5 12h13"/><path d="M12 5l7 7-7 7"/>
                 </svg>
               </a>
