@@ -2601,7 +2601,7 @@ function HPCatalogPage({ embedded }) {
                     <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><path d="M15 3h6v6"/><path d="M10 14L21 3"/>
                   </svg>
                 </span>
-                <span style={{ position:'relative', zIndex:1 }}>{b.cta || `เยี่ยมชมเว็บไซต์ ${b.name}`}</span>
+                <span style={{ position:'relative', zIndex:1 }}>{b.cta || `ดูแคตตาล็อกสินค้า ${b.name}`}</span>
                 <svg className="hp-cta-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink:0, position:'relative', zIndex:1 }}>
                   <path d="M5 12h13"/><path d="M12 5l7 7-7 7"/>
                 </svg>
@@ -3788,9 +3788,9 @@ function HPSiteSettings() {
                       <input value={r.label || ''} onChange={e => setField(b.name, 'label', e.target.value)}
                         placeholder={b.name} maxLength={60} style={inputCss}/>
                     </Field>
-                    <Field label="ข้อความปุ่มด้านล่าง" hint={`เว้นว่าง = "เยี่ยมชมเว็บไซต์ ${r.label || b.name}"`}>
+                    <Field label="ข้อความปุ่มด้านล่าง" hint={`เว้นว่าง = "ดูแคตตาล็อกสินค้า ${r.label || b.name}"`}>
                       <input value={r.cta || ''} onChange={e => setField(b.name, 'cta', e.target.value)}
-                        placeholder="เยี่ยมชมเว็บไซต์" maxLength={40} style={inputCss}/>
+                        placeholder="ดูแคตตาล็อกสินค้า" maxLength={40} style={inputCss}/>
                     </Field>
                   </div>
 
