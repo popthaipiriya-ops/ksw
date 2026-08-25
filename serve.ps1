@@ -10,6 +10,25 @@ $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $data = Join-Path $root ".data"
 if (-not (Test-Path $data)) { New-Item -ItemType Directory -Force $data | Out-Null }
 
+# ══════════════════════════════════════════════════════════════════════════
+#  เปิดให้เข้าถึงโฟลเดอร์ .data ผ่าน URL ได้
+#  ────────────────────────────────────────────────────────────────────────
+#  ⚠ อ่านก่อนใช้งาน — เปิดไว้ตามที่ผู้ใช้สั่ง
+#  .data ไม่ได้มีแค่ข้อมูลธรรมดา แต่มีของที่หลุดแล้วเสียหายจริงอยู่ด้วย
+#    secret.key   = คีย์เซ็น token เซสชัน · ใครอ่านได้ ปลอมคุกกี้เป็น super admin ได้เลย
+#    users.json   = salt + hash รหัสผ่าน เอาไปไล่เดารหัสแบบออฟไลน์ได้
+#    anthropic.key / line.json = คีย์ของบริการภายนอก
+#    leads.json / quotes.json  = ชื่อและเบอร์ลูกค้า
+#  เซิร์ฟเวอร์นี้ผูกกับ localhost เท่านั้น คนนอกยิงตรงเข้ามาไม่ได้
+#  แต่เว็บใดก็ตามที่เปิดในเบราว์เซอร์เครื่องเดียวกันยิงมาที่ localhost ได้
+#  ปิดกลับเมื่อไรก็ตั้งเป็น $false บรรทัดเดียวจบ
+#
+#  หมายเหตุ: เว็บจริงบน Netlify ไม่ได้รับผลจากตัวแปรนี้
+#  เพราะ .data ถูก .gitignore ไว้ (ไม่เคยถูกอัปขึ้นไป) และ netlify.toml
+#  ยัง redirect /.data/* เป็น 404 ไว้อีกชั้น
+# ══════════════════════════════════════════════════════════════════════════
+$EXPOSE_DATA = $true
+
 $UTF8   = New-Object System.Text.UTF8Encoding($false)
 $ITER   = 150000
 $TTLSEC = 60 * 60 * 8
@@ -298,6 +317,11 @@ function Write-Json([string]$path, $obj) {
 function Write-JsonObj([string]$path, $obj) {
   $json = ConvertTo-Json -InputObject $obj -Depth 12 -Compress
   [System.IO.File]::WriteAllText($path, $json, $UTF8)
+}
+# หนีอักขระพิเศษก่อนเอาชื่อไฟล์ไปวางใน HTML
+# (System.Web ไม่ได้ถูกโหลดมาให้เองใน PowerShell 5.1 จึงเขียนเองสั้นๆ)
+function Html-Escape($v) {
+  ([string]$v).Replace('&','&amp;').Replace('<','&lt;').Replace('>','&gt;').Replace('"','&quot;')
 }
 # ตัดช่องว่างหัวท้ายและจำกัดความยาว (รับ $null ได้)
 function Trim-Max($v, [int]$max) {
@@ -1016,13 +1040,62 @@ while ($listener.IsListening) {
 
     # ================= ไฟล์สแตติก =================
     if ($path -eq "/") { $path = "/index.html" }
-    $rel = [System.Uri]::UnescapeDataString($path).TrimStart("/").Replace("/", "\")
+    # ตัด \ ปิดท้ายทิ้ง ไม่งั้น "/.data/" กับ "/.data" จะถูกมองเป็นคนละพาธ
+    $rel = [System.Uri]::UnescapeDataString($path).TrimStart("/").Replace("/", "\").TrimEnd("\")
     $file = Join-Path $root $rel
 
-    if ((Test-Path $file -PathType Leaf) -and ($rel -notlike ".data\*")) {
-      $ext = [System.IO.Path]::GetExtension($file).ToLower()
-      $res.ContentType = if ($mime[$ext]) { $mime[$ext] } else { "application/octet-stream" }
-      $bytes = [System.IO.File]::ReadAllBytes($file)
+    # กันการไต่ออกนอกโฟลเดอร์โปรเจกต์ด้วย ..\ — สำคัญขึ้นมากเมื่อเปิด .data ให้เข้าถึงได้
+    # เทียบจากพาธที่คลี่เต็มแล้ว ไม่ใช่จากข้อความใน URL ซึ่งปลอมได้หลายแบบ
+    $rootFull = [System.IO.Path]::GetFullPath($root).TrimEnd('\') + '\'
+    $fileFull = ''
+    try { $fileFull = [System.IO.Path]::GetFullPath($file) } catch { $fileFull = '' }
+    $inRoot = $fileFull -and ($fileFull + '\').StartsWith($rootFull, [System.StringComparison]::OrdinalIgnoreCase)
+
+    $isData    = ($rel -eq ".data" -or $rel -like ".data\*")
+    $dataBlock = $isData -and (-not $EXPOSE_DATA)   # ปิดอยู่ = ทำเหมือนไม่มีไฟล์
+
+    # ---------- หน้ารายชื่อไฟล์ในโฟลเดอร์ ----------
+    # โฟลเดอร์ .data ไม่มี index.html ถ้าไม่มีหน้ารายการก็ต้องเดาชื่อไฟล์เอาเอง
+    if ($inRoot -and $isData -and $EXPOSE_DATA -and (Test-Path -LiteralPath $fileFull -PathType Container)) {
+      $urlBase = '/' + ($rel.Replace('\', '/')).TrimEnd('/')
+      $rows = ''
+      foreach ($item in (Get-ChildItem -LiteralPath $fileFull | Sort-Object { -not $_.PSIsContainer }, Name)) {
+        $nm   = Html-Escape $item.Name
+        $href = $urlBase + '/' + [System.Uri]::EscapeDataString($item.Name)
+        $size = if ($item.PSIsContainer) { '&lt;โฟลเดอร์&gt;' } else { '{0:N0} ไบต์' -f $item.Length }
+        $when = $item.LastWriteTime.ToString('dd/MM/yyyy HH:mm')
+        $rows += "<tr><td><a href=""$href"">$nm</a></td><td class=n>$size</td><td class=n>$when</td></tr>"
+      }
+      $up = if ($rel -eq '.data') { '' } else { "<p><a href=""$($urlBase.Substring(0, $urlBase.LastIndexOf('/')))"">.. ขึ้นบน</a></p>" }
+      $html = @"
+<!DOCTYPE html><html lang="th"><head><meta charset="utf-8">
+<title>$(Html-Escape $rel)</title>
+<style>body{font-family:Consolas,'Noto Sans Thai',monospace;background:#0f1613;color:#dfeae5;padding:28px;line-height:1.7}
+h1{font-size:16px;color:#52cfb6;margin:0 0 4px}p.w{color:#ff9059;font-size:12.5px;margin:0 0 18px}
+table{border-collapse:collapse;font-size:13px}td{padding:5px 22px 5px 0;border-bottom:1px solid #21312b}
+td.n{color:#8aa098;text-align:right;white-space:nowrap}a{color:#dfeae5}a:hover{color:#52cfb6}</style>
+</head><body><h1>$(Html-Escape $rel)</h1>
+<p class=w>โฟลเดอร์นี้มีคีย์เซสชันและ hash รหัสผ่านอยู่ ปิดกลับได้ที่ \$EXPOSE_DATA ใน serve.ps1</p>
+$up<table>$rows</table></body></html>
+"@
+      $res.ContentType = 'text/html; charset=utf-8'
+      $res.Headers.Add('Cache-Control', 'no-store')
+      $bytes = [System.Text.Encoding]::UTF8.GetBytes($html)
+      $res.ContentLength64 = $bytes.Length
+      $res.OutputStream.Write($bytes, 0, $bytes.Length)
+      $res.OutputStream.Close()
+      continue
+    }
+
+    if ($inRoot -and (-not $dataBlock) -and (Test-Path -LiteralPath $fileFull -PathType Leaf)) {
+      $ext = [System.IO.Path]::GetExtension($fileFull).ToLower()
+      # ไฟล์ใน .data เป็น json/ตัวหนังสือล้วน อยากให้เปิดอ่านในเบราว์เซอร์ได้เลย
+      # ไม่ใช่เด้งดาวน์โหลด (.key ไม่มีในตาราง mime จึงต้องบอกชนิดให้เอง)
+      $res.ContentType = if ($isData) {
+        if ($ext -eq '.json') { 'application/json; charset=utf-8' } else { 'text/plain; charset=utf-8' }
+      } elseif ($mime[$ext]) { $mime[$ext] } else { 'application/octet-stream' }
+      if ($isData) { $res.Headers.Add('Cache-Control', 'no-store') }
+      $bytes = [System.IO.File]::ReadAllBytes($fileFull)
       $res.ContentLength64 = $bytes.Length
       $res.OutputStream.Write($bytes, 0, $bytes.Length)
     } else {
