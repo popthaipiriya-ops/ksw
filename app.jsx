@@ -4898,6 +4898,38 @@ function HPChatWidget({ onSelectProduct }) {
   const [attachedImage, setAttachedImage] = useState(null);  // { url } รูปที่จะติดไปกับลิสต์เข้าไลน์
   const [pendingImage,  setPendingImage]  = useState(null);  // { url, preview } รูปที่เลือกไว้แต่ยังไม่กดส่ง
   const [attaching, setAttaching]         = useState(false);
+
+  // ── ผู้ช่วย AI ──
+  // ยิง /api/chat พร้อมแนบ "ผลค้นจากแคตตาล็อกจริง" ทุกครั้ง เพื่อบังคับให้ AI
+  // อ้างอิงได้เฉพาะสินค้าที่มีอยู่จริง (เซิร์ฟเวอร์ยัดผลค้นเข้า system prompt ให้)
+  // ถ้าใช้ไม่ได้ — ยังไม่ตั้งคีย์ / เกินลิมิต / เน็ตล่ม — จะคืน null แล้วให้กฎเดิมตอบแทน
+  // ลูกค้าจึงไม่มีทางเจอหน้าแชทเสีย
+  const [thinking, setThinking] = useState(false);
+  const [aiOff, setAiOff]       = useState(false);   // รู้แล้วว่าใช้ไม่ได้ ไม่ต้องลองซ้ำทั้งบทสนทนา
+
+  const askAI = async (q, history) => {
+    if (aiOff) return null;
+    const hits = hpChatFindProducts(q, product);
+    try {
+      const r = await fetch('/api/chat', {
+        method:'POST', headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify({
+          messages: history,
+          product: product ? hpChatFactOf(product) : undefined,
+          // ส่งเสมอแม้เป็นอาร์เรย์ว่าง — "ค้นแล้วไม่เจอ" ก็เป็นข้อเท็จจริงที่กัน AI เดารุ่น
+          catalog: hits.map(hpChatFactOf),
+          unknownCodes: hpChatUnknownCodes(q),
+        }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.reply) {
+        // 503 = ยังไม่ได้ตั้งคีย์ · 429 = คุยเกินลิมิตแล้ว — สองกรณีนี้ลองซ้ำไปก็ไม่ผ่าน
+        if (r.status === 503 || r.status === 429) setAiOff(true);
+        return null;
+      }
+      return { reply: d.reply, products: hits.slice(0, HP_BOT_CARD_MAX) };
+    } catch (e) { return null; }
+  };
   const bodyRef = React.useRef(null);
   const fileInputRef = React.useRef(null);
 
@@ -4967,7 +4999,7 @@ function HPChatWidget({ onSelectProduct }) {
 
   useEffect(() => {
     if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
-  }, [msgs, open]);
+  }, [msgs, open, thinking]);
 
   // ---- ขั้นตอนเก็บความต้องการของลูกค้า ----
   const formValue = (v) => {
@@ -5028,8 +5060,9 @@ function HPChatWidget({ onSelectProduct }) {
     return null;
   };
 
-  // ตอบจากข้อมูลจริงล้วน ไม่เรียกโมเดลภาษา จึงไม่มีทางเพี้ยนและไม่ต้องรอเน็ต
-  const send = (text) => {
+  // ให้ AI ตอบก่อน (อ้างอิงผลค้นจากแคตตาล็อกจริงเท่านั้น)
+  // ถ้า AI ใช้ไม่ได้ ตกกลับมาใช้ตัวตอบด้วยกฎ ซึ่งตอบจากฐานข้อมูลล้วนและไม่ต้องรอเน็ต
+  const send = async (text) => {
     const q = (text != null ? text : input).trim();
     const img = pendingImage;
     if (!q && !img) return;
@@ -5082,6 +5115,21 @@ function HPChatWidget({ onSelectProduct }) {
       return;
     }
 
+    // ── ให้ AI ตอบก่อน ──
+    // AI เก็บความต้องการเองได้ในบทสนทนา (พรอมป์ตสั่งให้ปิดท้ายด้วยบล็อก "สรุปให้ทีมงาน:")
+    // ซึ่งกล่องแชทดึงไปทำลิสต์ส่งไลน์อยู่แล้ว จึงไม่ต้องเดินฟอร์ม 9 ข้อซ้อนอีก
+    const history = [...msgs, { role:'user', content:q }]
+      .filter(m => m.content && (m.role === 'user' || m.role === 'assistant'))
+      .map(m => ({ role: m.role, content: m.content }));
+    setThinking(true);
+    const ai = await askAI(q, history);
+    setThinking(false);
+    if (ai) {
+      setMsgs(m => [...m, { role:'assistant', content: ai.reply, products: ai.products }]);
+      return;
+    }
+
+    // ── AI ใช้ไม่ได้ → ตัวตอบด้วยกฎ (ตอบจากฐานข้อมูลล้วน) ──
     const a = hpBotAnswer(q, product);
     setMsgs(m => [...m, { role:'assistant', content: a.reply, products: a.products }]);
 
@@ -5246,6 +5294,13 @@ function HPChatWidget({ onSelectProduct }) {
           {/* ข้อความ */}
           <div ref={bodyRef} style={{ flex:1, overflowY:'auto', padding:'16px', background:'#fbfdfc' }}>
             {msgs.map(bubble)}
+            {/* AI ต้องรอเน็ต ต่างจากตัวตอบด้วยกฎที่ตอบทันที — ต้องบอกให้รู้ว่ากำลังคิดอยู่ */}
+            {thinking && (
+              <div style={{ display:'flex', justifyContent:'flex-start', marginBottom:'10px' }}>
+                <div style={{ background:'#f1f5f3', color:'#7d918a', borderRadius:'14px 14px 14px 4px',
+                              padding:'10px 16px', fontSize:'14px' }}>กำลังพิมพ์…</div>
+              </div>
+            )}
             {/* คำถามยอดฮิต — แสดงเฉพาะตอนยังไม่ได้เริ่มคุย */}
             {msgs.length === 1 && (
               <div style={{ display:'flex', flexWrap:'wrap', gap:'7px', marginTop:'6px' }}>
@@ -5349,14 +5404,15 @@ function HPChatWidget({ onSelectProduct }) {
               <input ref={fileInputRef} type="file" accept="image/*" style={{ display:'none' }}
                 onChange={e => attachImage(e.target.files && e.target.files[0], e.target)}/>
               <input value={input} onChange={e => setInput(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !thinking) { e.preventDefault(); send(); } }}
                 maxLength={1000} placeholder={pendingImage ? 'อยากถามอะไรเกี่ยวกับรูปนี้…' : 'พิมพ์คำถามที่นี่…'}
                 style={{ flex:1, minWidth:0, padding:'10px 13px', fontSize:'14px', border:'1px solid #dde7e2',
                          borderRadius:'999px', outline:'none', fontFamily:'Inter, Noto Sans Thai, sans-serif' }}/>
-              <button onClick={() => send()} disabled={!input.trim() && !pendingImage} aria-label="ส่ง"
+              {/* กันกดซ้ำระหว่างรอ AI ตอบ ไม่งั้นยิงซ้อนกันหลายรอบและเปลืองโควตา */}
+              <button onClick={() => send()} disabled={thinking || (!input.trim() && !pendingImage)} aria-label="ส่ง"
                 style={{ width:'40px', height:'40px', flexShrink:0, borderRadius:'50%', border:'none',
-                         background: (!input.trim() && !pendingImage) ? '#c3d4cd' : '#0d6b5c', color:'#fff',
-                         cursor: (!input.trim() && !pendingImage) ? 'default' : 'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                         background: (thinking || (!input.trim() && !pendingImage)) ? '#c3d4cd' : '#0d6b5c', color:'#fff',
+                         cursor: (thinking || (!input.trim() && !pendingImage)) ? 'default' : 'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
               </button>
             </div>
