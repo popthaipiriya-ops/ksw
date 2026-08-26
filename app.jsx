@@ -4645,6 +4645,15 @@ function hpBotUsage(text) {
   return hit ? hit.v : '';
 }
 
+// ลูกค้าบอกมาแล้วหรือยังว่าต้องการช่างติดตั้งด้วย — จับได้ก็ไม่ต้องถามซ้ำ
+// เช็คฝั่ง "ไม่เอา" ก่อน เพราะ 'ไม่ต้องติดตั้ง' มีคำว่า 'ติดตั้ง' อยู่ในนั้น
+function hpBotInstall(text) {
+  const t = String(text || '').toLowerCase();
+  if (/ไม่ต้องติดตั้ง|ไม่เอาติดตั้ง|ซื้ออย่างเดียว|เอาแต่ของ|ติดตั้งเอง|มีช่างแล้ว/.test(t)) return 'ซื้ออย่างเดียว';
+  if (/ติดตั้ง|ขอช่าง|ต้องการช่าง|มาติดให้|เดินสายให้/.test(t)) return 'ต้องการบริการติดตั้ง';
+  return '';
+}
+
 // จำนวนการ์ดสินค้าที่แสดงในแชทต่อคำตอบ
 const HP_BOT_CARD_MAX = 5;
 
@@ -4855,12 +4864,24 @@ function HPChatWidget({ onSelectProduct }) {
   // ปุ่มลัด — ไม่ชวนถามราคา/ใบเสนอราคาแล้ว เพราะผู้ช่วยไม่ได้มีหน้าที่ตอบเรื่องนั้น
   const SUGGEST = ['หาสินค้าอยู่', 'ข้อมูลร้าน/เวลาทำการ', 'ฝากทีมงานติดต่อกลับ'];
   const SUGGEST_PRODUCT = ['ขอรายละเอียดรุ่นนี้', 'ต้องการหลายชิ้น', 'ฝากทีมงานติดต่อกลับ'];
+  // opt:true = ข้อไม่บังคับ ลูกค้าพิมพ์ "ข้าม" ได้ และถ้าข้ามติดกัน 2 ข้อ
+  // ระบบจะข้ามข้อไม่บังคับที่เหลือให้หมด แล้วรีบไปเก็บชื่อกับเบอร์ปิดจ๊อบ
+  // (ถามละเอียดได้ข้อมูลดีก็จริง แต่ถามยาวเกินลูกค้าหนีกลางคัน)
   const FORM_STEPS = [
-    { key:'item',  label:'สินค้า/รุ่น',   q:'ต้องการสินค้าอะไรครับ? บอกรุ่นหรือลักษณะงานคร่าวๆ ได้เลยครับ' },
-    { key:'qty',   label:'จำนวน',        q:'ต้องการจำนวนเท่าไรครับ?' },
-    { key:'usage', label:'ใช้กับงาน',     q:'เอาไปใช้กับงานแบบไหนครับ เช่น บ้าน อาคาร โรงงาน' },
-    { key:'name',  label:'ชื่อผู้ติดต่อ', q:'ขอชื่อผู้ติดต่อด้วยครับ' },
-    { key:'tel',   label:'เบอร์/ไลน์',    q:'ขอเบอร์โทรหรือไอดีไลน์ไว้ติดต่อกลับครับ (ถ้าไม่สะดวก พิมพ์ว่า ข้าม ได้เลย)' },
+    { key:'item',    label:'สินค้า/รุ่น',    q:'ต้องการสินค้าอะไรครับ? บอกรุ่นหรือลักษณะงานคร่าวๆ ได้เลยครับ' },
+    { key:'spec',    label:'สเปก/ขนาด',      opt:true,
+      q:'ต้องการขนาดหรือสเปกประมาณไหนครับ? เช่น กี่แอมป์ กี่ช่อง หรือสายกี่ sq.mm.\n(ยังไม่แน่ใจก็พิมพ์ว่า ข้าม ได้เลย เดี๋ยวทีมงานช่วยดูให้)' },
+    { key:'qty',     label:'จำนวน',          q:'ต้องการจำนวนเท่าไรครับ?' },
+    { key:'usage',   label:'ใช้กับงาน',      opt:true,
+      q:'เอาไปใช้กับงานแบบไหนครับ เช่น บ้าน อาคาร โรงงาน' },
+    { key:'install', label:'บริการติดตั้ง',  opt:true,
+      q:'ต้องการให้ทีมงานติดตั้งให้ด้วยไหมครับ? (ซื้ออย่างเดียว หรือ ต้องการติดตั้ง)' },
+    { key:'when',    label:'กำหนดที่ต้องใช้', opt:true,
+      q:'ต้องการใช้ของประมาณเมื่อไรครับ? เร่งหรือพอมีเวลา' },
+    { key:'deliver', label:'รับของ',         opt:true,
+      q:'สะดวกรับที่ร้านบางบอน หรือให้จัดส่งครับ? ถ้าจัดส่งขอทราบพื้นที่ปลายทางด้วย' },
+    { key:'name',    label:'ชื่อผู้ติดต่อ',  q:'ขอชื่อผู้ติดต่อด้วยครับ' },
+    { key:'tel',     label:'เบอร์/ไลน์',     q:'ขอเบอร์โทรหรือไอดีไลน์ไว้ติดต่อกลับครับ (ถ้าไม่สะดวก พิมพ์ว่า ข้าม ได้เลย)' },
   ];
 
   const [open, setOpen]       = useState(false);
@@ -4954,7 +4975,10 @@ function HPChatWidget({ onSelectProduct }) {
     return (!s || /^(ข้าม|ไม่ระบุ|ไม่มี|-|—)$/i.test(s)) ? 'ไม่ได้ระบุ' : s;
   };
   const askStep = (data, step) => {
-    while (step < FORM_STEPS.length && data[FORM_STEPS[step].key]) step++;
+    // ข้ามข้อไม่บังคับติดกัน 2 ครั้ง = ลูกค้าไม่อยากตอบแล้ว
+    // ข้ามข้อไม่บังคับที่เหลือให้หมด ไปเก็บชื่อกับเบอร์แล้วจบเลย
+    const bail = (data._skips || 0) >= 2;
+    while (step < FORM_STEPS.length && (data[FORM_STEPS[step].key] || (bail && FORM_STEPS[step].opt))) step++;
     if (step < FORM_STEPS.length) {
       setForm({ step, data });
       setMsgs(m => [...m, { role:'assistant', content: FORM_STEPS[step].q }]);
@@ -4963,7 +4987,11 @@ function HPChatWidget({ onSelectProduct }) {
     // ครบแล้ว — สร้างลิสต์ที่ปุ่มส่งไลน์จะหยิบไปใช้ต่อ
     setForm(null);
     setCollected(true);
-    const list = FORM_STEPS.map(s => `- ${s.label}: ${formValue(data[s.key])}`).join('\n');
+    // ข้อไม่บังคับที่ลูกค้าไม่ได้ตอบ ไม่ต้องขึ้นในลิสต์ให้รก
+    // ทีมงานจะได้เห็นเฉพาะข้อมูลที่มีจริง
+    const list = FORM_STEPS
+      .filter(s => !s.opt || formValue(data[s.key]) !== 'ไม่ได้ระบุ')
+      .map(s => `- ${s.label}: ${formValue(data[s.key])}`).join('\n');
     setMsgs(m => [...m, { role:'assistant', content:
       'ขอบคุณครับ 🙏 ผมสรุปตามนี้นะครับ กดปุ่มสีเขียวด้านล่างเพื่อส่งให้ทีมงานได้เลย\n\n' + SUMMARY_TAG + '\n' + list }]);
   };
@@ -5034,8 +5062,11 @@ function HPChatWidget({ onSelectProduct }) {
         const a = hpBotAnswer(q, product || lastShownProduct());
         // ลูกค้ามักบอกลักษณะงานติดมากับคำถาม (เช่น "แนะนำสำหรับใช้ในงานบ้าน")
         // เก็บใส่ลิสต์เลย จะได้ไม่ต้องถามซ้ำตอนถึงขั้นตอน "ใช้กับงาน"
-        const usage = hpBotUsage(q);
-        const data  = (usage && !form.data.usage) ? { ...form.data, usage } : form.data;
+        const usage   = hpBotUsage(q);
+        const install = hpBotInstall(q);
+        let data = form.data;
+        if (usage   && !data.usage)   data = { ...data, usage };
+        if (install && !data.install) data = { ...data, install };
         if (data !== form.data) setForm({ step: form.step, data });
         setMsgs(m => [...m,
           { role:'assistant', content: a.reply, products: a.products },
@@ -5044,7 +5075,10 @@ function HPChatWidget({ onSelectProduct }) {
         ]);
         return;
       }
-      askStep({ ...form.data, [stepKey]: q }, form.step + 1);
+      // นับการข้ามติดกัน เพื่อรู้ว่าลูกค้าเริ่มไม่อยากตอบแล้ว (รีเซ็ตเมื่อตอบจริง)
+      const isSkip = /^(ข้าม|ไม่ระบุ|ไม่มี|ไม่ทราบ|ยังไม่รู้|-|—)$/i.test(q.trim());
+      const skips  = (FORM_STEPS[form.step].opt && isSkip) ? (form.data._skips || 0) + 1 : 0;
+      askStep({ ...form.data, [stepKey]: q, _skips: skips }, form.step + 1);
       return;
     }
 
@@ -5061,6 +5095,12 @@ function HPChatWidget({ onSelectProduct }) {
         if (hit.length === 1) data.item = hit[0].code + (hit[0].name ? ' · ' + hit[0].name : '');
         else if (!SUGGEST.includes(q) && !SUGGEST_PRODUCT.includes(q)) data.item = hpBotCleanItem(q);
       }
+      // ข้อความแรกมักมีลักษณะงานหรือความต้องการติดตั้งติดมาด้วย
+      // เก็บตั้งแต่ตรงนี้เลย จะได้ไม่ถามซ้ำสิ่งที่ลูกค้าเพิ่งบอกไป
+      const usage0   = hpBotUsage(q);
+      const install0 = hpBotInstall(q);
+      if (usage0)   data.usage   = usage0;
+      if (install0) data.install = install0;
       askStep(data, 0);
     }
   };
