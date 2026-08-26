@@ -13641,6 +13641,31 @@ const HP_STORE_FACTS = {
 };
 const hpBotHas = (text, words) => words.some(w => text.includes(w));
 
+// ลักษณะงานที่ลูกค้ามักเอ่ยมาพร้อมคำถาม เช่น "แนะนำสำหรับใช้ในงานบ้าน"
+// จับไว้เพื่อสองอย่าง: ตอบให้ตรงบริบท และเก็บลงลิสต์เลยจะได้ไม่ต้องถามซ้ำทีหลัง
+// เรียงจากคำเฉพาะเจาะจงไปกว้าง เพราะ 'ร้าน' ซ้อนอยู่ใน 'ร้านค้า'
+const HP_BOT_USAGE = [{
+  k: ['คอนโด', 'ห้องเช่า', 'อพาร์ท', 'หอพัก'],
+  v: 'คอนโด / ห้องเช่า'
+}, {
+  k: ['โรงงาน', 'ไลน์ผลิต', 'industrial'],
+  v: 'โรงงาน'
+}, {
+  k: ['สำนักงาน', 'ออฟฟิศ', 'อาคาร', 'ตึก'],
+  v: 'อาคาร / สำนักงาน'
+}, {
+  k: ['โกดัง', 'คลังสินค้า', 'ร้านค้า', 'หน้าร้าน'],
+  v: 'ร้านค้า / โกดัง'
+}, {
+  k: ['บ้าน', 'ที่พัก', 'ทาวน์เฮ้าส์', 'ทาวน์โฮม'],
+  v: 'บ้านพักอาศัย'
+}];
+function hpBotUsage(text) {
+  const t = String(text || '').toLowerCase();
+  const hit = HP_BOT_USAGE.find(u => u.k.some(w => t.includes(w)));
+  return hit ? hit.v : '';
+}
+
 // จำนวนการ์ดสินค้าที่แสดงในแชทต่อคำตอบ
 const HP_BOT_CARD_MAX = 5;
 
@@ -13727,6 +13752,47 @@ function hpBotAnswer(text, product) {
     ask: true,
     reply: 'บริการที่ร้านรับทำครับ\n' + HP_STORE_FACTS.services + '\nรบกวนเล่ารายละเอียดงานคร่าวๆ ผมจะส่งให้ทีมงานดูแลต่อครับ'
   };
+
+  // ── 3.5) ขอคำแนะนำว่าควรใช้รุ่นไหน ──
+  // เดิมคำถามแบบนี้ตกไปคำตอบกลางๆ "ขอเก็บรายละเอียดไว้..." แล้ววนถามคำถามเดิมซ้ำ
+  // ซึ่งลูกค้าไม่ได้อะไรกลับไปเลย
+  //
+  // ผู้ช่วยชี้แทนทีมงานไม่ได้ว่ารุ่นไหน "เหมาะ" กับงานลูกค้า เพราะต้องดูขนาดโหลด
+  // และหน้างานจริงประกอบ — แต่บอกได้ว่าร้านมีอะไรอยู่บ้าง ซึ่งเป็นข้อเท็จจริง
+  // จากแคตตาล็อกตรงๆ จึงตอบด้วยของจริงแทนการเดา
+  if (hpBotHas(t, ['แนะนำ', 'ควรใช้', 'ใช้แบบไหน', 'แบบไหนดี', 'รุ่นไหนดี', 'อันไหนดี', 'ตัวไหนดี', 'เหมาะกับ', 'เลือกยังไง', 'เลือกแบบไหน'])) {
+    const usage = hpBotUsage(text);
+    const forWork = usage ? `งาน${usage}` : 'งานที่ใช้';
+
+    // มีสินค้าที่คุยกันอยู่ — เสนอรุ่นอื่นในหมวดเดียวกันให้เทียบ
+    if (product && product.cat) {
+      const sameCat = HP_ALL_BRAND_PRODUCTS.filter(p => p.cat === product.cat && p.code !== product.code);
+      if (sameCat.length) {
+        const brands = [...new Set(sameCat.map(p => p.brand).filter(Boolean))];
+        return {
+          ask: true,
+          products: sameCat.slice(0, HP_BOT_CARD_MAX),
+          reply: `ผมชี้แทนทีมงานไม่ได้ว่ารุ่นไหนเหมาะกับ${forWork}ที่สุดครับ เพราะต้องดูขนาดโหลดและหน้างานจริงประกอบ\n` + `แต่บอกได้ว่าหมวด ${product.cat} ร้านมีทั้งหมด ${(sameCat.length + 1).toLocaleString('th-TH')} รายการ` + (brands.length > 1 ? `\nแบรนด์ที่มี: ${brands.slice(0, 6).join(' · ')}` : '') + `\nขอยกตัวอย่างมาให้เทียบกับรุ่น ${product.code} ที่ดูอยู่ครับ กดที่การ์ดเพื่อดูสเปกเต็มได้เลย`
+        };
+      }
+    }
+
+    // ไม่มีสินค้าในบริบท — ลองค้นจากคำที่ลูกค้าพิมพ์มาก่อน
+    const hit = hpChatFindProducts(text, product);
+    if (hit.length) {
+      return {
+        ask: true,
+        products: hit.slice(0, HP_BOT_CARD_MAX),
+        reply: `ผมยืนยันแทนทีมงานไม่ได้ว่ารุ่นไหนเหมาะกับ${forWork}ที่สุดครับ ต้องให้ทีมงานดูรายละเอียดงานก่อน\n` + `แต่ที่ร้านมีตรงกับที่ถาม ${(hit.total || hit.length).toLocaleString('th-TH')} รายการ ขอยกตัวอย่างมาให้ดูครับ`
+      };
+    }
+
+    // ค้นไม่เจอจริงๆ — ห้ามเดา ให้ถามต่อว่าจะใช้กับอะไร
+    return {
+      ask: true,
+      reply: `ยินดีช่วยหาครับ แต่ผมขอถามเพิ่มอีกนิดเพื่อให้ทีมงานแนะนำได้ตรงจริงๆ\n` + (usage ? `ทราบแล้วว่าเป็น${forWork} ` : '') + `ไม่ทราบว่าต้องการอุปกรณ์ประเภทไหนครับ เช่น สายไฟ เบรกเกอร์ ตู้ไฟ หลอดไฟ หรือสวิตช์/ปลั๊ก`
+    };
+  }
 
   // ── 3) รหัสรุ่นที่ลูกค้าเอ่ยถึงแต่ไม่มีในระบบ — ต้องบอกตรงๆ ห้ามเดา ──
   const unknown = hpChatUnknownCodes(text);
@@ -13987,6 +14053,15 @@ function HPChatWidget({
     setAttaching(false);
   };
 
+  // สินค้าตัวล่าสุดที่ผู้ช่วยเพิ่งแสดงการ์ดไป — ใช้เป็นบริบทเวลาลูกค้าถามต่อโดยไม่ระบุรุ่น
+  const lastShownProduct = () => {
+    for (let i = msgs.length - 1; i >= 0; i--) {
+      const m = msgs[i];
+      if (m.role === 'assistant' && m.products && m.products.length) return m.products[0];
+    }
+    return null;
+  };
+
   // ตอบจากข้อมูลจริงล้วน ไม่เรียกโมเดลภาษา จึงไม่มีทางเพี้ยนและไม่ต้องรอเน็ต
   const send = text => {
     const q = (text != null ? text : input).trim();
@@ -14025,14 +14100,29 @@ function HPChatWidget({
       // ลูกค้าถามสินค้าแทรกกลางคัน — ต้องตอบให้ก่อน แล้วค่อยถามข้อเดิมซ้ำ
       // ห้ามเอาคำถามไปกรอกเป็นคำตอบ ไม่งั้นลิสต์ที่ส่งทีมงานจะผิด
       if (hpBotIsProductQuestion(q, stepKey)) {
-        const a = hpBotAnswer(q, product);
+        // ถ้าไม่ได้กดมาจากหน้าสินค้า ให้ยึดสินค้าตัวล่าสุดที่เพิ่งโชว์การ์ดไปเป็นบริบท
+        // ไม่งั้นลูกค้าที่ค้น "สายไฟ" แล้วถามต่อว่า "แนะนำ" จะโดนถามซ้ำว่าอยากได้ประเภทไหน
+        const a = hpBotAnswer(q, product || lastShownProduct());
+        // ลูกค้ามักบอกลักษณะงานติดมากับคำถาม (เช่น "แนะนำสำหรับใช้ในงานบ้าน")
+        // เก็บใส่ลิสต์เลย จะได้ไม่ต้องถามซ้ำตอนถึงขั้นตอน "ใช้กับงาน"
+        const usage = hpBotUsage(q);
+        const data = usage && !form.data.usage ? {
+          ...form.data,
+          usage
+        } : form.data;
+        if (data !== form.data) setForm({
+          step: form.step,
+          data
+        });
         setMsgs(m => [...m, {
           role: 'assistant',
           content: a.reply,
           products: a.products
-        }, {
+        },
+        // ขึ้นต้นด้วย "กลับมาที่คำถามเดิม" ไม่งั้นอ่านแล้วเหมือนบอทวนถามไม่รู้จบ
+        {
           role: 'assistant',
-          content: FORM_STEPS[form.step].q
+          content: 'กลับมาที่คำถามเดิมนะครับ — ' + FORM_STEPS[form.step].q
         }]);
         return;
       }
