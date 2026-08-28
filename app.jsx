@@ -2039,6 +2039,28 @@ function hpSafeCoverFit(imgEl, frameEl, maxCropFraction = 0.16) {
   } catch { return 'contain'; }
 }
 
+// จำกัดการซูมไม่ให้เกินความละเอียดที่ไฟล์รูปมีจริง
+//
+// ตัวซูมอัตโนมัติขยายสินค้าให้เต็มกรอบได้ถึง 1.8 เท่า ซึ่งดีกับรูปความละเอียดสูง
+// แต่รูปสินค้าหลายตัวเล็กมาก (บางไฟล์แค่ 250px) พอโดนขยายซ้ำเข้าไปอีก
+// จะได้รูปที่ใหญ่ขึ้นแต่เบลอลง — ยืดพิกเซลเดิมให้กว้างขึ้นเฉยๆ ไม่ได้รายละเอียดเพิ่ม
+//
+// จึงคำนวณว่าถ้าซูมเท่านี้ จะเหลือพิกเซลต้นฉบับกี่พิกเซลต่อพิกเซลหน้าจอ
+// ถ้าต่ำกว่า 1 ต่อ 1 เมื่อไร แปลว่าเริ่มยืดเกินตัวแล้ว ให้หยุดแค่นั้น
+// รูปคมชัดแต่เล็กลงนิดหน่อย ดีกว่าใหญ่เต็มกรอบแต่มัว
+function hpCapScaleToRes(imgEl, scale) {
+  try {
+    if (!(scale > 1)) return scale;
+    const nw = imgEl.naturalWidth, nh = imgEl.naturalHeight;
+    const boxW = imgEl.clientWidth, boxH = imgEl.clientHeight;
+    if (!nw || !nh || !boxW || !boxH) return scale;
+    // objectFit:contain — ด้านที่ชนกรอบก่อนเป็นตัวกำหนดขนาดที่แสดงจริง
+    const shownW = (boxW / boxH > nw / nh) ? boxH * (nw / nh) : boxW;
+    if (!shownW) return scale;
+    return Math.max(1, Math.min(scale, nw / shownW));
+  } catch { return scale; }
+}
+
 function HPAutoFillImg({ src, style, alt, onError, frameRef }) {
   const ref = React.useRef(null);
   const [scale, setScale] = useState(1);
@@ -2049,7 +2071,7 @@ function HPAutoFillImg({ src, style, alt, onError, frameRef }) {
     // (เพราะเป็นรูปที่ไม่มีขอบขาวในตัวเองแบบแบนเนอร์) ไม่ต้อง zoom ซ้อนกับที่ cover ทำอยู่แล้ว
     const f = frameRef && frameRef.current ? hpSafeCoverFit(el, frameRef.current) : 'contain';
     setFit(f);
-    setScale(f === 'cover' ? 1 : hpDetectContentScale(el));
+    setScale(f === 'cover' ? 1 : hpCapScaleToRes(el, hpDetectContentScale(el)));
   };
   useEffect(() => {
     setScale(1); setFit('contain');
@@ -2072,8 +2094,13 @@ function HPProductGallery({ images, title }) {
   const next = () => setIdx(i => (i + 1) % list.length);
   return (
     <div>
+      {/* พื้นกรอบเป็นเทาอ่อนแทนขาวล้วน — สินค้าหลายตัวเป็นพลาสติกสีขาวถ่ายบนพื้นขาว
+          (เช่น ฝาปิดช่องว่าง ต่างจากพื้นแค่ ~19 ระดับจาก 255) วางบนพื้นขาวแล้วแทบมองไม่เห็นขอบ
+          หมายเหตุ: รูปใช้ mixBlendMode:multiply อยู่ พื้นเทาจึงคูณทับตัวสินค้าด้วย
+          ทำให้ทั้งใบเข้มขึ้นพร้อมกัน ไม่ได้เพิ่มคอนทราสต์ในตัวรูป
+          แต่ทำให้ "ขอบเขตของรูป" อ่านออกและสินค้าดูลอยขึ้นมาจากพื้น */}
       <div ref={frameRef}
-        style={{ height:'380px', background:'#fff', border:'1px solid #eef0f2', borderRadius:'16px', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', cursor:'zoom-in', position:'relative' }}
+        style={{ height:'380px', background:'linear-gradient(160deg,#f7f9f8 0%,#eef2f0 100%)', border:'1px solid #e4eae7', borderRadius:'16px', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', cursor:'zoom-in', position:'relative' }}
         onClick={() => setOpen(true)}>
         {/* เอา padding คงที่ออก — เดิม 14px ทำให้รูปที่เป็นแบนเนอร์เต็มภาพอยู่แล้ว (ไม่ใช่ภาพตัดขาวพื้นขาว)
             เหลือขอบขาวรอบรูปให้เห็นชัด ส่วนรูปภาพตัดขาวที่มีขอบขาวเยอะ HPAutoFillImg ซูมชดเชยให้อยู่แล้วโดยไม่ต้องพึ่ง padding นี้
@@ -2095,7 +2122,7 @@ function HPProductGallery({ images, title }) {
         <div style={{ display:'flex', gap:'10px', marginTop:'12px' }}>
           {list.map((src, i) => (
             <div key={i} onClick={() => setIdx(i)}
-              style={{ width:'64px', height:'64px', borderRadius:'10px', border: i===idx ? '2px solid #0d9488' : '1px solid #eef0f2', background:'#fff', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', overflow:'hidden', flexShrink:0 }}>
+              style={{ width:'64px', height:'64px', borderRadius:'10px', border: i===idx ? '2px solid #0d9488' : '1px solid #e4eae7', background:'#f4f7f5', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', overflow:'hidden', flexShrink:0 }}>
               <HPAutoFillImg src={src} style={{ maxWidth:'82%', maxHeight:'82%', objectFit:'contain', mixBlendMode:'multiply' }} onError={e => e.target.style.display='none'}/>
             </div>
           ))}

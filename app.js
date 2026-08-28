@@ -6277,6 +6277,32 @@ function hpSafeCoverFit(imgEl, frameEl, maxCropFraction = 0.16) {
     return 'contain';
   }
 }
+
+// จำกัดการซูมไม่ให้เกินความละเอียดที่ไฟล์รูปมีจริง
+//
+// ตัวซูมอัตโนมัติขยายสินค้าให้เต็มกรอบได้ถึง 1.8 เท่า ซึ่งดีกับรูปความละเอียดสูง
+// แต่รูปสินค้าหลายตัวเล็กมาก (บางไฟล์แค่ 250px) พอโดนขยายซ้ำเข้าไปอีก
+// จะได้รูปที่ใหญ่ขึ้นแต่เบลอลง — ยืดพิกเซลเดิมให้กว้างขึ้นเฉยๆ ไม่ได้รายละเอียดเพิ่ม
+//
+// จึงคำนวณว่าถ้าซูมเท่านี้ จะเหลือพิกเซลต้นฉบับกี่พิกเซลต่อพิกเซลหน้าจอ
+// ถ้าต่ำกว่า 1 ต่อ 1 เมื่อไร แปลว่าเริ่มยืดเกินตัวแล้ว ให้หยุดแค่นั้น
+// รูปคมชัดแต่เล็กลงนิดหน่อย ดีกว่าใหญ่เต็มกรอบแต่มัว
+function hpCapScaleToRes(imgEl, scale) {
+  try {
+    if (!(scale > 1)) return scale;
+    const nw = imgEl.naturalWidth,
+      nh = imgEl.naturalHeight;
+    const boxW = imgEl.clientWidth,
+      boxH = imgEl.clientHeight;
+    if (!nw || !nh || !boxW || !boxH) return scale;
+    // objectFit:contain — ด้านที่ชนกรอบก่อนเป็นตัวกำหนดขนาดที่แสดงจริง
+    const shownW = boxW / boxH > nw / nh ? boxH * (nw / nh) : boxW;
+    if (!shownW) return scale;
+    return Math.max(1, Math.min(scale, nw / shownW));
+  } catch {
+    return scale;
+  }
+}
 function HPAutoFillImg({
   src,
   style,
@@ -6293,7 +6319,7 @@ function HPAutoFillImg({
     // (เพราะเป็นรูปที่ไม่มีขอบขาวในตัวเองแบบแบนเนอร์) ไม่ต้อง zoom ซ้อนกับที่ cover ทำอยู่แล้ว
     const f = frameRef && frameRef.current ? hpSafeCoverFit(el, frameRef.current) : 'contain';
     setFit(f);
-    setScale(f === 'cover' ? 1 : hpDetectContentScale(el));
+    setScale(f === 'cover' ? 1 : hpCapScaleToRes(el, hpDetectContentScale(el)));
   };
   useEffect(() => {
     setScale(1);
@@ -6332,8 +6358,8 @@ function HPProductGallery({
     ref: frameRef,
     style: {
       height: '380px',
-      background: '#fff',
-      border: '1px solid #eef0f2',
+      background: 'linear-gradient(160deg,#f7f9f8 0%,#eef2f0 100%)',
+      border: '1px solid #e4eae7',
       borderRadius: '16px',
       display: 'flex',
       alignItems: 'center',
@@ -6440,8 +6466,8 @@ function HPProductGallery({
       width: '64px',
       height: '64px',
       borderRadius: '10px',
-      border: i === idx ? '2px solid #0d9488' : '1px solid #eef0f2',
-      background: '#fff',
+      border: i === idx ? '2px solid #0d9488' : '1px solid #e4eae7',
+      background: '#f4f7f5',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
