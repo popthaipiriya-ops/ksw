@@ -2094,13 +2094,8 @@ function HPProductGallery({ images, title }) {
   const next = () => setIdx(i => (i + 1) % list.length);
   return (
     <div>
-      {/* พื้นกรอบเป็นเทาอ่อนแทนขาวล้วน — สินค้าหลายตัวเป็นพลาสติกสีขาวถ่ายบนพื้นขาว
-          (เช่น ฝาปิดช่องว่าง ต่างจากพื้นแค่ ~19 ระดับจาก 255) วางบนพื้นขาวแล้วแทบมองไม่เห็นขอบ
-          หมายเหตุ: รูปใช้ mixBlendMode:multiply อยู่ พื้นเทาจึงคูณทับตัวสินค้าด้วย
-          ทำให้ทั้งใบเข้มขึ้นพร้อมกัน ไม่ได้เพิ่มคอนทราสต์ในตัวรูป
-          แต่ทำให้ "ขอบเขตของรูป" อ่านออกและสินค้าดูลอยขึ้นมาจากพื้น */}
       <div ref={frameRef}
-        style={{ height:'380px', background:'linear-gradient(160deg,#f7f9f8 0%,#eef2f0 100%)', border:'1px solid #e4eae7', borderRadius:'16px', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', cursor:'zoom-in', position:'relative' }}
+        style={{ height:'380px', background:'#fff', border:'1px solid #eef0f2', borderRadius:'16px', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', cursor:'zoom-in', position:'relative' }}
         onClick={() => setOpen(true)}>
         {/* เอา padding คงที่ออก — เดิม 14px ทำให้รูปที่เป็นแบนเนอร์เต็มภาพอยู่แล้ว (ไม่ใช่ภาพตัดขาวพื้นขาว)
             เหลือขอบขาวรอบรูปให้เห็นชัด ส่วนรูปภาพตัดขาวที่มีขอบขาวเยอะ HPAutoFillImg ซูมชดเชยให้อยู่แล้วโดยไม่ต้องพึ่ง padding นี้
@@ -2122,7 +2117,7 @@ function HPProductGallery({ images, title }) {
         <div style={{ display:'flex', gap:'10px', marginTop:'12px' }}>
           {list.map((src, i) => (
             <div key={i} onClick={() => setIdx(i)}
-              style={{ width:'64px', height:'64px', borderRadius:'10px', border: i===idx ? '2px solid #0d9488' : '1px solid #e4eae7', background:'#f4f7f5', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', overflow:'hidden', flexShrink:0 }}>
+              style={{ width:'64px', height:'64px', borderRadius:'10px', border: i===idx ? '2px solid #0d9488' : '1px solid #eef0f2', background:'#fff', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', overflow:'hidden', flexShrink:0 }}>
               <HPAutoFillImg src={src} style={{ maxWidth:'82%', maxHeight:'82%', objectFit:'contain', mixBlendMode:'multiply' }} onError={e => e.target.style.display='none'}/>
             </div>
           ))}
