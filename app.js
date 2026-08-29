@@ -11994,6 +11994,59 @@ function HPAdminPanel({
     setView('form');
     window.scrollTo(0, 0);
   };
+
+  // ── ดึงข้อมูลสินค้าจากเว็บอื่น (แอดมินหลักเท่านั้น) ──
+  // เบราว์เซอร์ยิงข้ามโดเมนเองไม่ได้ (CORS) จึงให้เซิร์ฟเวอร์เป็นคนไปดึงแล้วส่งกลับมา
+  // ดึงมาแล้วไม่บันทึกทันที — เปิดเป็นฟอร์มให้แอดมินตรวจและแก้ก่อนเสมอ
+  const canImport = hpCan(user, 'importWeb');
+  const [impUrl, setImpUrl] = useState('');
+  const [impBusy, setImpBusy] = useState(false);
+  const [impErr, setImpErr] = useState('');
+  const [impData, setImpData] = useState(null);
+  const openImport = () => {
+    setImpUrl('');
+    setImpErr('');
+    setImpData(null);
+    setView('import');
+    window.scrollTo(0, 0);
+  };
+  const runImport = async () => {
+    const u = impUrl.trim();
+    if (!u) {
+      setImpErr('กรุณาใส่ลิงก์หน้าสินค้า');
+      return;
+    }
+    setImpBusy(true);
+    setImpErr('');
+    setImpData(null);
+    try {
+      const r = await hpApi('/import-fetch', {
+        method: 'POST',
+        body: {
+          url: u
+        }
+      });
+      setImpData(r.data);
+    } catch (e) {
+      setImpErr(e.message || 'ดึงข้อมูลไม่สำเร็จ');
+    }
+    setImpBusy(false);
+  };
+  // เอาข้อมูลที่ดึงมาเปิดเป็นฟอร์มสินค้าใหม่ ให้แอดมินตรวจ/แก้ แล้วค่อยกดบันทึกเอง
+  const useImport = () => {
+    if (!impData) return;
+    setForm({
+      ...emptyForm,
+      name: impData.name || '',
+      brand: impData.brand || '',
+      price: impData.price || '',
+      gtin: impData.gtin || '',
+      description: impData.description || '',
+      images: (impData.images || []).slice(0, 5)
+    });
+    setView('form');
+    window.scrollTo(0, 0);
+  };
   const openEdit = p => {
     setForm({
       ...emptyForm,
@@ -12303,7 +12356,38 @@ function HPAdminPanel({
     d: "M16 17l5-5-5-5"
   }), /*#__PURE__*/React.createElement("path", {
     d: "M21 12H9"
-  })), "\u0E2D\u0E2D\u0E01\u0E08\u0E32\u0E01\u0E23\u0E30\u0E1A\u0E1A"), /*#__PURE__*/React.createElement("button", {
+  })), "\u0E2D\u0E2D\u0E01\u0E08\u0E32\u0E01\u0E23\u0E30\u0E1A\u0E1A"), canImport && /*#__PURE__*/React.createElement("button", {
+    onClick: openImport,
+    style: {
+      background: '#fff',
+      border: '1px solid #0d6b5c',
+      borderRadius: '4px',
+      padding: '9px 16px',
+      fontSize: '13.5px',
+      fontWeight: '700',
+      color: '#0d6b5c',
+      cursor: 'pointer',
+      fontFamily: 'Inter, Noto Sans Thai, sans-serif',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px'
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "14",
+    height: "14",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "2.2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M7 10l5 5 5-5"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M12 15V3"
+  })), "\u0E14\u0E36\u0E07\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E08\u0E32\u0E01\u0E40\u0E27\u0E47\u0E1A"), /*#__PURE__*/React.createElement("button", {
     onClick: openAdd,
     style: {
       background: '#ee4d2d',
@@ -12727,7 +12811,227 @@ function HPAdminPanel({
     onClick: () => setPage(pageCount),
     disabled: curPage === pageCount,
     style: pgBtn(curPage === pageCount)
-  }, "\u0E17\u0E49\u0E32\u0E22\u0E2A\u0E38\u0E14 \xBB")))), view === 'form' && (() => {
+  }, "\u0E17\u0E49\u0E32\u0E22\u0E2A\u0E38\u0E14 \xBB")))), view === 'import' && canImport && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#fff',
+      borderRadius: '6px',
+      boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+      padding: '24px',
+      maxWidth: '880px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: '12px',
+      marginBottom: '6px',
+      flexWrap: 'wrap'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'Inter, Noto Sans Thai, sans-serif',
+      fontSize: '20px',
+      fontWeight: '700',
+      color: '#222'
+    }
+  }, "\u0E14\u0E36\u0E07\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E08\u0E32\u0E01\u0E40\u0E27\u0E47\u0E1A\u0E2D\u0E37\u0E48\u0E19"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setView('list'),
+    style: {
+      background: '#fff',
+      border: '1px solid #ddd',
+      borderRadius: '4px',
+      padding: '8px 18px',
+      fontSize: '13.5px',
+      fontWeight: '600',
+      color: '#555',
+      cursor: 'pointer',
+      fontFamily: 'Inter, Noto Sans Thai, sans-serif'
+    }
+  }, "\u0E01\u0E25\u0E31\u0E1A")), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: '13.5px',
+      color: '#777',
+      lineHeight: '1.7',
+      marginBottom: '18px'
+    }
+  }, "\u0E27\u0E32\u0E07\u0E25\u0E34\u0E07\u0E01\u0E4C ", /*#__PURE__*/React.createElement("b", null, "\u0E2B\u0E19\u0E49\u0E32\u0E23\u0E32\u0E22\u0E25\u0E30\u0E40\u0E2D\u0E35\u0E22\u0E14\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32"), " \u0E02\u0E2D\u0E07\u0E40\u0E27\u0E47\u0E1A\u0E1C\u0E39\u0E49\u0E1C\u0E25\u0E34\u0E15\u0E2B\u0E23\u0E37\u0E2D\u0E0B\u0E31\u0E1E\u0E1E\u0E25\u0E32\u0E22\u0E40\u0E2D\u0E2D\u0E23\u0E4C \u0E23\u0E30\u0E1A\u0E1A\u0E08\u0E30\u0E2D\u0E48\u0E32\u0E19\u0E0A\u0E37\u0E48\u0E2D \u0E41\u0E1A\u0E23\u0E19\u0E14\u0E4C \u0E23\u0E32\u0E04\u0E32 \u0E23\u0E39\u0E1B \u0E41\u0E25\u0E30\u0E04\u0E33\u0E2D\u0E18\u0E34\u0E1A\u0E32\u0E22\u0E21\u0E32\u0E43\u0E2B\u0E49 \u0E41\u0E25\u0E49\u0E27\u0E40\u0E1B\u0E34\u0E14\u0E40\u0E1B\u0E47\u0E19\u0E1F\u0E2D\u0E23\u0E4C\u0E21\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E43\u0E2B\u0E21\u0E48\u0E43\u0E2B\u0E49\u0E15\u0E23\u0E27\u0E08\u0E01\u0E48\u0E2D\u0E19\u0E1A\u0E31\u0E19\u0E17\u0E36\u0E01 ", /*#__PURE__*/React.createElement("b", null, "\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E1A\u0E31\u0E19\u0E17\u0E36\u0E01\u0E25\u0E07\u0E23\u0E30\u0E1A\u0E1A\u0E17\u0E31\u0E19\u0E17\u0E35")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: '10px',
+      flexWrap: 'wrap',
+      marginBottom: '14px'
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    value: impUrl,
+    onChange: e => setImpUrl(e.target.value),
+    onKeyDown: e => {
+      if (e.key === 'Enter') runImport();
+    },
+    placeholder: "https://example.com/product/...",
+    maxLength: 500,
+    style: {
+      flex: '1 1 320px',
+      minWidth: 0,
+      padding: '11px 14px',
+      border: '1px solid #ddd',
+      borderRadius: '5px',
+      fontSize: '14px',
+      fontFamily: 'Inter, Noto Sans Thai, sans-serif'
+    }
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: runImport,
+    disabled: impBusy,
+    style: {
+      background: impBusy ? '#9db8b0' : '#0d6b5c',
+      border: 'none',
+      borderRadius: '5px',
+      padding: '11px 26px',
+      fontSize: '14px',
+      fontWeight: '700',
+      color: '#fff',
+      cursor: impBusy ? 'not-allowed' : 'pointer',
+      fontFamily: 'Inter, Noto Sans Thai, sans-serif'
+    }
+  }, impBusy ? 'กำลังดึง...' : 'ดึงข้อมูล')), impErr && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#fdecea',
+      border: '1px solid #f5c6c0',
+      color: '#b3261e',
+      borderRadius: '5px',
+      padding: '12px 14px',
+      fontSize: '13.5px',
+      marginBottom: '14px'
+    }
+  }, impErr), impData && /*#__PURE__*/React.createElement("div", {
+    style: {
+      border: '1px solid #e6efe9',
+      borderRadius: '8px',
+      overflow: 'hidden'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#f4faf8',
+      padding: '10px 16px',
+      fontSize: '13px',
+      color: '#0d6b5c',
+      fontWeight: '700',
+      borderBottom: '1px solid #e6efe9'
+    }
+  }, "\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E17\u0E35\u0E48\u0E2D\u0E48\u0E32\u0E19\u0E44\u0E14\u0E49", impData.hasJsonLd ? ' (จากข้อมูลสินค้าที่เว็บประกาศไว้)' : ' (จากแท็กหน้าเว็บ — อาจไม่ครบ)'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '16px',
+      display: 'flex',
+      gap: '18px',
+      flexWrap: 'wrap'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: '0 0 auto',
+      display: 'flex',
+      gap: '8px',
+      flexWrap: 'wrap'
+    }
+  }, (impData.images || []).slice(0, 3).map((src, i) => /*#__PURE__*/React.createElement("img", {
+    key: i,
+    src: src,
+    alt: "",
+    style: {
+      width: '92px',
+      height: '92px',
+      objectFit: 'contain',
+      border: '1px solid #eee',
+      borderRadius: '6px',
+      background: '#fff'
+    },
+    onError: e => {
+      e.target.style.opacity = 0.25;
+    }
+  })), !(impData.images || []).length && /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: '92px',
+      height: '92px',
+      border: '1px dashed #ddd',
+      borderRadius: '6px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '11.5px',
+      color: '#aaa',
+      textAlign: 'center'
+    }
+  }, "\u0E44\u0E21\u0E48\u0E1E\u0E1A\u0E23\u0E39\u0E1B")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: '1 1 300px',
+      minWidth: 0,
+      fontSize: '13.5px',
+      color: '#3a4a42',
+      lineHeight: '1.9'
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("b", null, "\u0E0A\u0E37\u0E48\u0E2D:"), " ", impData.name || /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: '#bbb'
+    }
+  }, "\u0E44\u0E21\u0E48\u0E1E\u0E1A")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("b", null, "\u0E41\u0E1A\u0E23\u0E19\u0E14\u0E4C:"), " ", impData.brand || /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: '#bbb'
+    }
+  }, "\u0E44\u0E21\u0E48\u0E1E\u0E1A")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("b", null, "\u0E23\u0E32\u0E04\u0E32\u0E17\u0E35\u0E48\u0E2D\u0E48\u0E32\u0E19\u0E44\u0E14\u0E49:"), " ", impData.price ? impData.price : /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: '#bbb'
+    }
+  }, "\u0E44\u0E21\u0E48\u0E1E\u0E1A")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("b", null, "\u0E23\u0E2B\u0E31\u0E2A\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32:"), " ", impData.gtin || /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: '#bbb'
+    }
+  }, "\u0E44\u0E21\u0E48\u0E1E\u0E1A")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("b", null, "\u0E08\u0E33\u0E19\u0E27\u0E19\u0E23\u0E39\u0E1B:"), " ", (impData.images || []).length))), impData.description && /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '0 16px 14px',
+      fontSize: '13px',
+      color: '#667',
+      lineHeight: '1.75',
+      maxHeight: '120px',
+      overflow: 'auto'
+    }
+  }, impData.description), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '14px 16px',
+      borderTop: '1px solid #eef0f2',
+      display: 'flex',
+      gap: '10px',
+      flexWrap: 'wrap',
+      alignItems: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: useImport,
+    style: {
+      background: '#ee4d2d',
+      border: 'none',
+      borderRadius: '4px',
+      padding: '10px 24px',
+      fontSize: '14px',
+      fontWeight: '700',
+      color: '#fff',
+      cursor: 'pointer',
+      fontFamily: 'Inter, Noto Sans Thai, sans-serif'
+    }
+  }, "\u0E43\u0E2A\u0E48\u0E25\u0E07\u0E1F\u0E2D\u0E23\u0E4C\u0E21\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E43\u0E2B\u0E21\u0E48"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: '12.5px',
+      color: '#999'
+    }
+  }, "\u0E15\u0E23\u0E27\u0E08\u0E41\u0E25\u0E30\u0E41\u0E01\u0E49\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E44\u0E14\u0E49\u0E01\u0E48\u0E2D\u0E19\u0E01\u0E14\u0E1A\u0E31\u0E19\u0E17\u0E36\u0E01"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: '18px',
+      background: '#fffbea',
+      border: '1px solid #f5e3a3',
+      borderRadius: '5px',
+      padding: '12px 14px',
+      fontSize: '12.5px',
+      color: '#8a6d1f',
+      lineHeight: '1.75'
+    }
+  }, "\u0E02\u0E49\u0E2D\u0E04\u0E27\u0E23\u0E23\u0E30\u0E27\u0E31\u0E07: \u0E23\u0E39\u0E1B\u0E41\u0E25\u0E30\u0E04\u0E33\u0E2D\u0E18\u0E34\u0E1A\u0E32\u0E22\u0E08\u0E32\u0E01\u0E40\u0E27\u0E47\u0E1A\u0E2D\u0E37\u0E48\u0E19\u0E21\u0E31\u0E01\u0E21\u0E35\u0E25\u0E34\u0E02\u0E2A\u0E34\u0E17\u0E18\u0E34\u0E4C \u0E04\u0E27\u0E23\u0E43\u0E0A\u0E49\u0E40\u0E09\u0E1E\u0E32\u0E30\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E08\u0E32\u0E01\u0E1C\u0E39\u0E49\u0E1C\u0E25\u0E34\u0E15/\u0E0B\u0E31\u0E1E\u0E1E\u0E25\u0E32\u0E22\u0E40\u0E2D\u0E2D\u0E23\u0E4C\u0E17\u0E35\u0E48\u0E40\u0E23\u0E32\u0E40\u0E1B\u0E47\u0E19\u0E15\u0E31\u0E27\u0E41\u0E17\u0E19\u0E08\u0E33\u0E2B\u0E19\u0E48\u0E32\u0E22 \u0E2B\u0E23\u0E37\u0E2D\u0E44\u0E14\u0E49\u0E23\u0E31\u0E1A\u0E2D\u0E19\u0E38\u0E0D\u0E32\u0E15\u0E41\u0E25\u0E49\u0E27\u0E40\u0E17\u0E48\u0E32\u0E19\u0E31\u0E49\u0E19 \u0E41\u0E25\u0E30\u0E23\u0E39\u0E1B\u0E17\u0E35\u0E48\u0E14\u0E36\u0E07\u0E21\u0E32\u0E40\u0E1B\u0E47\u0E19\u0E25\u0E34\u0E07\u0E01\u0E4C\u0E44\u0E1B\u0E22\u0E31\u0E07\u0E40\u0E27\u0E47\u0E1A\u0E15\u0E49\u0E19\u0E17\u0E32\u0E07 \u0E16\u0E49\u0E32\u0E40\u0E27\u0E47\u0E1A\u0E19\u0E31\u0E49\u0E19\u0E25\u0E1A\u0E23\u0E39\u0E1B \u0E23\u0E39\u0E1B\u0E43\u0E19\u0E40\u0E27\u0E47\u0E1A\u0E40\u0E23\u0E32\u0E08\u0E30\u0E2B\u0E32\u0E22\u0E15\u0E32\u0E21\u0E44\u0E1B\u0E14\u0E49\u0E27\u0E22")), view === 'form' && (() => {
     const hasVar = form.variations.length > 0;
     const card = {
       background: '#fff',

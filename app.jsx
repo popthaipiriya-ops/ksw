@@ -3956,6 +3956,42 @@ function HPAdminPanel({ onLogout, onNavigate, user, embedded }) {
   const delVariation = (i) => setForm(f => ({ ...f, variations: f.variations.filter((_, idx) => idx !== i) }));
 
   const openAdd  = ()  => { setForm(emptyForm); setView('form'); window.scrollTo(0,0); };
+
+  // ── ดึงข้อมูลสินค้าจากเว็บอื่น (แอดมินหลักเท่านั้น) ──
+  // เบราว์เซอร์ยิงข้ามโดเมนเองไม่ได้ (CORS) จึงให้เซิร์ฟเวอร์เป็นคนไปดึงแล้วส่งกลับมา
+  // ดึงมาแล้วไม่บันทึกทันที — เปิดเป็นฟอร์มให้แอดมินตรวจและแก้ก่อนเสมอ
+  const canImport = hpCan(user, 'importWeb');
+  const [impUrl,  setImpUrl]  = useState('');
+  const [impBusy, setImpBusy] = useState(false);
+  const [impErr,  setImpErr]  = useState('');
+  const [impData, setImpData] = useState(null);
+  const openImport = () => { setImpUrl(''); setImpErr(''); setImpData(null); setView('import'); window.scrollTo(0,0); };
+  const runImport = async () => {
+    const u = impUrl.trim();
+    if (!u) { setImpErr('กรุณาใส่ลิงก์หน้าสินค้า'); return; }
+    setImpBusy(true); setImpErr(''); setImpData(null);
+    try {
+      const r = await hpApi('/import-fetch', { method:'POST', body:{ url:u } });
+      setImpData(r.data);
+    } catch (e) {
+      setImpErr(e.message || 'ดึงข้อมูลไม่สำเร็จ');
+    }
+    setImpBusy(false);
+  };
+  // เอาข้อมูลที่ดึงมาเปิดเป็นฟอร์มสินค้าใหม่ ให้แอดมินตรวจ/แก้ แล้วค่อยกดบันทึกเอง
+  const useImport = () => {
+    if (!impData) return;
+    setForm({
+      ...emptyForm,
+      name: impData.name || '',
+      brand: impData.brand || '',
+      price: impData.price || '',
+      gtin: impData.gtin || '',
+      description: impData.description || '',
+      images: (impData.images || []).slice(0, 5),
+    });
+    setView('form'); window.scrollTo(0,0);
+  };
   const openEdit = (p) => {
     setForm({
       ...emptyForm, ...p,
@@ -4084,6 +4120,12 @@ function HPAdminPanel({ onLogout, onNavigate, user, embedded }) {
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
                     ออกจากระบบ
                   </button>}
+                  {canImport && (
+                    <button onClick={openImport} style={{ background:'#fff', border:'1px solid #0d6b5c', borderRadius:'4px', padding:'9px 16px', fontSize:'13.5px', fontWeight:'700', color:'#0d6b5c', cursor:'pointer', fontFamily:'Inter, Noto Sans Thai, sans-serif', display:'flex', alignItems:'center', gap:'6px' }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+                      ดึงสินค้าจากเว็บ
+                    </button>
+                  )}
                   <button onClick={openAdd} style={{ background:'#ee4d2d', border:'none', borderRadius:'4px', padding:'9px 20px', fontSize:'14px', fontWeight:'700', color:'#fff', cursor:'pointer', fontFamily:'Inter, Noto Sans Thai, sans-serif', display:'flex', alignItems:'center', gap:'6px' }}>
                     <span style={{ fontSize:'17px', lineHeight:1 }}>+</span> เพิ่มสินค้าใหม่
                   </button>
@@ -4208,6 +4250,74 @@ function HPAdminPanel({ onLogout, onNavigate, user, embedded }) {
                   <button onClick={() => setPage(pageCount)} disabled={curPage === pageCount} style={pgBtn(curPage === pageCount)}>ท้ายสุด »</button>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {view === 'import' && canImport && (
+          <div style={{ background:'#fff', borderRadius:'6px', boxShadow:'0 1px 4px rgba(0,0,0,0.06)', padding:'24px', maxWidth:'880px' }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'12px', marginBottom:'6px', flexWrap:'wrap' }}>
+              <div style={{ fontFamily:'Inter, Noto Sans Thai, sans-serif', fontSize:'20px', fontWeight:'700', color:'#222' }}>ดึงสินค้าจากเว็บอื่น</div>
+              <button onClick={() => setView('list')} style={{ background:'#fff', border:'1px solid #ddd', borderRadius:'4px', padding:'8px 18px', fontSize:'13.5px', fontWeight:'600', color:'#555', cursor:'pointer', fontFamily:'Inter, Noto Sans Thai, sans-serif' }}>กลับ</button>
+            </div>
+            <p style={{ fontSize:'13.5px', color:'#777', lineHeight:'1.7', marginBottom:'18px' }}>
+              วางลิงก์ <b>หน้ารายละเอียดสินค้า</b> ของเว็บผู้ผลิตหรือซัพพลายเออร์ ระบบจะอ่านชื่อ แบรนด์ ราคา รูป และคำอธิบายมาให้
+              แล้วเปิดเป็นฟอร์มสินค้าใหม่ให้ตรวจก่อนบันทึก <b>ยังไม่บันทึกลงระบบทันที</b>
+            </p>
+
+            <div style={{ display:'flex', gap:'10px', flexWrap:'wrap', marginBottom:'14px' }}>
+              <input value={impUrl} onChange={e => setImpUrl(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') runImport(); }}
+                placeholder="https://example.com/product/..." maxLength={500}
+                style={{ flex:'1 1 320px', minWidth:0, padding:'11px 14px', border:'1px solid #ddd', borderRadius:'5px', fontSize:'14px', fontFamily:'Inter, Noto Sans Thai, sans-serif' }}/>
+              <button onClick={runImport} disabled={impBusy}
+                style={{ background: impBusy ? '#9db8b0' : '#0d6b5c', border:'none', borderRadius:'5px', padding:'11px 26px', fontSize:'14px', fontWeight:'700', color:'#fff', cursor: impBusy ? 'not-allowed' : 'pointer', fontFamily:'Inter, Noto Sans Thai, sans-serif' }}>
+                {impBusy ? 'กำลังดึง...' : 'ดึงข้อมูล'}
+              </button>
+            </div>
+
+            {impErr && (
+              <div style={{ background:'#fdecea', border:'1px solid #f5c6c0', color:'#b3261e', borderRadius:'5px', padding:'12px 14px', fontSize:'13.5px', marginBottom:'14px' }}>{impErr}</div>
+            )}
+
+            {impData && (
+              <div style={{ border:'1px solid #e6efe9', borderRadius:'8px', overflow:'hidden' }}>
+                <div style={{ background:'#f4faf8', padding:'10px 16px', fontSize:'13px', color:'#0d6b5c', fontWeight:'700', borderBottom:'1px solid #e6efe9' }}>
+                  ข้อมูลที่อ่านได้{impData.hasJsonLd ? ' (จากข้อมูลสินค้าที่เว็บประกาศไว้)' : ' (จากแท็กหน้าเว็บ — อาจไม่ครบ)'}
+                </div>
+                <div style={{ padding:'16px', display:'flex', gap:'18px', flexWrap:'wrap' }}>
+                  <div style={{ flex:'0 0 auto', display:'flex', gap:'8px', flexWrap:'wrap' }}>
+                    {(impData.images || []).slice(0, 3).map((src, i) => (
+                      <img key={i} src={src} alt="" style={{ width:'92px', height:'92px', objectFit:'contain', border:'1px solid #eee', borderRadius:'6px', background:'#fff' }}
+                        onError={e => { e.target.style.opacity = 0.25; }}/>
+                    ))}
+                    {!(impData.images || []).length && (
+                      <div style={{ width:'92px', height:'92px', border:'1px dashed #ddd', borderRadius:'6px', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'11.5px', color:'#aaa', textAlign:'center' }}>ไม่พบรูป</div>
+                    )}
+                  </div>
+                  <div style={{ flex:'1 1 300px', minWidth:0, fontSize:'13.5px', color:'#3a4a42', lineHeight:'1.9' }}>
+                    <div><b>ชื่อ:</b> {impData.name || <span style={{ color:'#bbb' }}>ไม่พบ</span>}</div>
+                    <div><b>แบรนด์:</b> {impData.brand || <span style={{ color:'#bbb' }}>ไม่พบ</span>}</div>
+                    <div><b>ราคาที่อ่านได้:</b> {impData.price ? impData.price : <span style={{ color:'#bbb' }}>ไม่พบ</span>}</div>
+                    <div><b>รหัสสินค้า:</b> {impData.gtin || <span style={{ color:'#bbb' }}>ไม่พบ</span>}</div>
+                    <div><b>จำนวนรูป:</b> {(impData.images || []).length}</div>
+                  </div>
+                </div>
+                {impData.description && (
+                  <div style={{ padding:'0 16px 14px', fontSize:'13px', color:'#667', lineHeight:'1.75', maxHeight:'120px', overflow:'auto' }}>{impData.description}</div>
+                )}
+                <div style={{ padding:'14px 16px', borderTop:'1px solid #eef0f2', display:'flex', gap:'10px', flexWrap:'wrap', alignItems:'center' }}>
+                  <button onClick={useImport} style={{ background:'#ee4d2d', border:'none', borderRadius:'4px', padding:'10px 24px', fontSize:'14px', fontWeight:'700', color:'#fff', cursor:'pointer', fontFamily:'Inter, Noto Sans Thai, sans-serif' }}>
+                    ใส่ลงฟอร์มสินค้าใหม่
+                  </button>
+                  <span style={{ fontSize:'12.5px', color:'#999' }}>ตรวจและแก้ข้อมูลได้ก่อนกดบันทึก</span>
+                </div>
+              </div>
+            )}
+
+            <div style={{ marginTop:'18px', background:'#fffbea', border:'1px solid #f5e3a3', borderRadius:'5px', padding:'12px 14px', fontSize:'12.5px', color:'#8a6d1f', lineHeight:'1.75' }}>
+              ข้อควรระวัง: รูปและคำอธิบายจากเว็บอื่นมักมีลิขสิทธิ์ ควรใช้เฉพาะข้อมูลจากผู้ผลิต/ซัพพลายเออร์ที่เราเป็นตัวแทนจำหน่าย
+              หรือได้รับอนุญาตแล้วเท่านั้น และรูปที่ดึงมาเป็นลิงก์ไปยังเว็บต้นทาง ถ้าเว็บนั้นลบรูป รูปในเว็บเราจะหายตามไปด้วย
             </div>
           </div>
         )}

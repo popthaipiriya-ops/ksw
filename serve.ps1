@@ -279,6 +279,78 @@ function Get-ChatUnknownCodesBlock($codes) {
 }
 
 # ══════════════════════════════════════════════════════════════════════════
+#  ดึงข้อมูลสินค้าจากเว็บอื่น (ต้องตรงกับ netlify/functions/api.mjs)
+#
+#  เซิร์ฟเวอร์เป็นคนยิง HTTP ออกไปเอง เพราะเบราว์เซอร์ยิงข้ามโดเมนไม่ได้ (CORS)
+#  แต่พอเซิร์ฟเวอร์ยิงตาม URL ที่ผู้ใช้พิมพ์ ก็เปิดช่อง SSRF ทันที
+#  (พิมพ์ http://127.0.0.1/... หรือ IP วงในของออฟฟิศ แล้วอ่านข้อมูลหลังไฟร์วอลล์ได้)
+#  จึงต้องกันปลายทางที่เป็นเครื่องตัวเองและวง LAN ทุกกรณี
+# ══════════════════════════════════════════════════════════════════════════
+$IMPORT_MAX_BYTES = 3MB      # หน้าใหญ่กว่านี้ไม่อ่านต่อ กัน memory บาน
+$IMPORT_TIMEOUT   = 15       # วินาที
+
+# คืนข้อความบอกเหตุผลถ้า URL ใช้ไม่ได้ ('' = ผ่าน)
+function Get-ImportUrlBlock([string]$url) {
+  $u = $null
+  if (-not [System.Uri]::TryCreate($url, [System.UriKind]::Absolute, [ref]$u)) { return 'ลิงก์ไม่ถูกต้อง' }
+  if ($u.Scheme -ne 'http' -and $u.Scheme -ne 'https') { return 'รองรับเฉพาะลิงก์ http และ https' }
+
+  # แปลงชื่อโดเมนเป็น IP จริงก่อนตัดสิน — กันเคสโดเมนที่ตั้งใจชี้กลับมาวงใน
+  $ips = @()
+  try { $ips = [System.Net.Dns]::GetHostAddresses($u.DnsSafeHost) } catch { return 'หาที่อยู่ของเว็บนี้ไม่เจอ' }
+  if (-not $ips -or $ips.Count -eq 0) { return 'หาที่อยู่ของเว็บนี้ไม่เจอ' }
+
+  foreach ($ip in $ips) {
+    if ([System.Net.IPAddress]::IsLoopback($ip)) { return 'ลิงก์นี้ชี้กลับมาที่เครื่องเซิร์ฟเวอร์เอง ไม่อนุญาต' }
+    $b = $ip.GetAddressBytes()
+    if ($ip.AddressFamily -eq 'InterNetwork') {
+      if ($b[0] -eq 10)                                { return 'ลิงก์นี้ชี้ไปเครือข่ายภายใน ไม่อนุญาต' }
+      if ($b[0] -eq 127)                               { return 'ลิงก์นี้ชี้กลับมาที่เครื่องเซิร์ฟเวอร์เอง ไม่อนุญาต' }
+      if ($b[0] -eq 169 -and $b[1] -eq 254)            { return 'ลิงก์นี้ชี้ไปเครือข่ายภายใน ไม่อนุญาต' }
+      if ($b[0] -eq 172 -and $b[1] -ge 16 -and $b[1] -le 31) { return 'ลิงก์นี้ชี้ไปเครือข่ายภายใน ไม่อนุญาต' }
+      if ($b[0] -eq 192 -and $b[1] -eq 168)            { return 'ลิงก์นี้ชี้ไปเครือข่ายภายใน ไม่อนุญาต' }
+      if ($b[0] -eq 0)                                 { return 'ลิงก์นี้ชี้ไปเครือข่ายภายใน ไม่อนุญาต' }
+    } else {
+      if ($ip.IsIPv6LinkLocal -or $ip.IsIPv6SiteLocal) { return 'ลิงก์นี้ชี้ไปเครือข่ายภายใน ไม่อนุญาต' }
+      if (($b[0] -band 0xFE) -eq 0xFC)                 { return 'ลิงก์นี้ชี้ไปเครือข่ายภายใน ไม่อนุญาต' }   # fc00::/7
+    }
+  }
+  return ''
+}
+
+function Get-ImportMeta([string]$html, [string]$prop) {
+  # รับทั้ง property= และ name= และสลับลำดับ attribute ได้
+  $pat = '<meta[^>]+(?:property|name)\s*=\s*["'']' + [regex]::Escape($prop) + '["''][^>]*>'
+  $m = [regex]::Match($html, $pat, 'IgnoreCase')
+  if (-not $m.Success) { return '' }
+  $c = [regex]::Match($m.Value, 'content\s*=\s*["'']([^"'']*)["'']', 'IgnoreCase')
+  if ($c.Success) { return [System.Net.WebUtility]::HtmlDecode($c.Groups[1].Value).Trim() }
+  return ''
+}
+
+# ดึงค่าจาก JSON-LD ที่เป็น schema.org/Product — แม่นกว่าเดา DOM มาก
+# ร้านค้าออนไลน์ส่วนใหญ่ฝัง JSON-LD ไว้อยู่แล้วเพื่อ SEO
+function Get-ImportJsonLd([string]$html) {
+  foreach ($m in [regex]::Matches($html, '<script[^>]+application/ld\+json[^>]*>([\s\S]*?)</script>', 'IgnoreCase')) {
+    $raw = $m.Groups[1].Value.Trim()
+    if (-not $raw) { continue }
+    $obj = $null
+    try { $obj = $raw | ConvertFrom-Json } catch { continue }
+    # อาจเป็น object เดี่ยว, อาเรย์ หรือห่อใน @graph
+    $stack = New-Object System.Collections.Stack
+    $stack.Push($obj)
+    while ($stack.Count -gt 0) {
+      $cur = $stack.Pop()
+      if ($null -eq $cur) { continue }
+      if ($cur -is [object[]]) { foreach ($x in $cur) { $stack.Push($x) }; continue }
+      if ($cur.PSObject.Properties.Name -contains '@graph') { $stack.Push($cur.'@graph'); continue }
+      $type = [string]$cur.'@type'
+      if ($type -match 'Product') { return $cur }
+    }
+  }
+  return $null
+}
+# ══════════════════════════════════════════════════════════════════════════
 #  ออเดอร์จากหน้าเว็บ → ไลน์ทีมงาน (ต้องตรงกับ netlify/functions/api.mjs)
 #  ทีมงานต้องอ้างอิงออเดอร์กันได้ จึงต้องมีเลขที่และเวลาไทยติดไปด้วย
 # ══════════════════════════════════════════════════════════════════════════
@@ -434,10 +506,12 @@ function Verify-Token([string]$token) {
 }
 
 # ---------- บทบาทและสิทธิ์ (แหล่งความจริงอยู่ที่นี่) ----------
+# importWeb = ดึงข้อมูลสินค้าจากเว็บอื่น — ให้เฉพาะแอดมินหลัก
+# เพราะเป็นการสั่งให้เซิร์ฟเวอร์ยิง HTTP ออกไปข้างนอกตาม URL ที่ผู้ใช้พิมพ์
 $ROLES = @{
-  super = @{ products=$true;  editProduct=$true;  deleteProduct=$true;  resetAll=$true;  users=$true;  sales=$true }
-  admin = @{ products=$true;  editProduct=$true;  deleteProduct=$false; resetAll=$false; users=$false; sales=$true }
-  sales = @{ products=$false; editProduct=$false; deleteProduct=$false; resetAll=$false; users=$false; sales=$true }
+  super = @{ products=$true;  editProduct=$true;  deleteProduct=$true;  resetAll=$true;  users=$true;  sales=$true;  importWeb=$true }
+  admin = @{ products=$true;  editProduct=$true;  deleteProduct=$false; resetAll=$false; users=$false; sales=$true;  importWeb=$false }
+  sales = @{ products=$false; editProduct=$false; deleteProduct=$false; resetAll=$false; users=$false; sales=$true;  importWeb=$false }
 }
 function Can($user, [string]$what) {
   if (-not $user) { return $false }
@@ -917,6 +991,92 @@ while ($listener.IsListening) {
 
         Write-Json $fUsers $users
         Send-Json $res @{ users=@($users | ForEach-Object { Public-User $_ }) } 200; continue
+      }
+
+      # ---------- ดึงข้อมูลสินค้าจากเว็บอื่น (แอดมินหลักเท่านั้น) ----------
+      if ($ep -eq '/import-fetch' -and $method -eq 'POST') {
+        if (-not (Can $me 'importWeb')) { Send-Json $res @{ error='เฉพาะแอดมินหลักเท่านั้นที่ใช้เมนูนี้ได้' } 403; continue }
+        $b = Read-Body $req
+        $url = Trim-Max $b.url 500
+        if (-not $url) { Send-Json $res @{ error='กรุณาใส่ลิงก์สินค้า' } 400; continue }
+
+        $blocked = Get-ImportUrlBlock $url
+        if ($blocked) { Send-Json $res @{ error=$blocked } 400; continue }
+
+        try {
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+          $r = Invoke-WebRequest -Uri $url -Method Get -MaximumRedirection 3 `
+                 -Headers @{ 'User-Agent'='Mozilla/5.0 (compatible; KiRDSaengSawangBot/1.0)'; 'Accept-Language'='th,en' } `
+                 -UseBasicParsing -TimeoutSec $IMPORT_TIMEOUT
+        } catch {
+          Send-Json $res @{ error=("เปิดลิงก์ไม่สำเร็จ: {0}" -f $_.Exception.Message) } 502; continue
+        }
+
+        $bytes = $r.RawContentStream.ToArray()
+        if ($bytes.Length -gt $IMPORT_MAX_BYTES) { $bytes = $bytes[0..($IMPORT_MAX_BYTES-1)] }
+        $html = [System.Text.Encoding]::UTF8.GetString($bytes)
+
+        # 1) JSON-LD ก่อน เพราะเป็นข้อมูลที่เว็บประกาศเองว่าเป็นสินค้าอะไร
+        $ld = Get-ImportJsonLd $html
+        $name = ''; $brand = ''; $desc = ''; $gtin = ''; $price = ''; $imgs = @()
+        if ($ld) {
+          $name = Trim-Max $ld.name 200
+          $desc = Trim-Max $ld.description 3000
+          if ($ld.brand) { $brand = Trim-Max $(if ($ld.brand.name) { $ld.brand.name } else { $ld.brand }) 80 }
+          foreach ($k in @('gtin13','gtin','gtin12','gtin8','sku','mpn')) {
+            if (-not $gtin -and $ld.$k) { $gtin = Trim-Max $ld.$k 60 }
+          }
+          $offer = $ld.offers
+          if ($offer -is [object[]]) { $offer = $offer[0] }
+          if ($offer -and $offer.price) { $price = Trim-Max $offer.price 30 }
+          foreach ($im in @($ld.image)) {
+            $s = ''
+            if ($im -is [string]) { $s = $im } elseif ($im -and $im.url) { $s = [string]$im.url }
+            $s = Trim-Max $s 500
+            if ($s -and $imgs -notcontains $s) { $imgs += $s }
+          }
+        }
+
+        # 2) เติมช่องที่ยังว่างด้วย Open Graph / title — เว็บที่ไม่มี JSON-LD ยังพอได้ข้อมูล
+        if (-not $name)  { $name = Get-ImportMeta $html 'og:title' }
+        if (-not $name)  {
+          $t = [regex]::Match($html, '<title[^>]*>([\s\S]*?)</title>', 'IgnoreCase')
+          if ($t.Success) { $name = Trim-Max ([System.Net.WebUtility]::HtmlDecode($t.Groups[1].Value).Trim()) 200 }
+        }
+        if (-not $desc)  { $desc = Get-ImportMeta $html 'og:description' }
+        if (-not $desc)  { $desc = Get-ImportMeta $html 'description' }
+        if (-not $brand) { $brand = Get-ImportMeta $html 'og:site_name' }
+        if (-not $price) { $price = Get-ImportMeta $html 'product:price:amount' }
+        $ogImg = Get-ImportMeta $html 'og:image'
+        if ($ogImg -and $imgs -notcontains $ogImg) { $imgs += $ogImg }
+
+        # รูปต้องเป็น URL เต็มเสมอ ไม่งั้นหน้าเว็บเราโหลดไม่ขึ้น
+        $baseUri = [System.Uri]$url
+        $absImgs = @()
+        foreach ($s in $imgs | Select-Object -First 8) {
+          $iu = $null
+          if ([System.Uri]::TryCreate($baseUri, $s, [ref]$iu) -and ($iu.Scheme -eq 'http' -or $iu.Scheme -eq 'https')) {
+            if ($absImgs -notcontains $iu.AbsoluteUri) { $absImgs += $iu.AbsoluteUri }
+          }
+        }
+
+        # ราคาเก็บเป็นตัวเลขล้วน ให้ฟอร์มสินค้าเอาไปใช้ต่อได้เลย
+        $priceNum = ''
+        if ($price) {
+          $pClean = ($price -replace '[^\d.]', '')
+          if ($pClean -match '^\d+(\.\d+)?$') { $priceNum = $pClean }
+        }
+
+        if (-not $name) { Send-Json $res @{ error='อ่านข้อมูลสินค้าจากหน้านี้ไม่ได้ ลองใช้ลิงก์หน้ารายละเอียดสินค้าโดยตรง' } 422; continue }
+
+        Send-Json $res @{
+          ok=$true
+          data=@{
+            name=$name; brand=$brand; description=$desc; gtin=$gtin
+            price=$priceNum; images=$absImgs; source=$url
+            hasJsonLd=[bool]$ld
+          }
+        } 200; continue
       }
 
       # ---------- สินค้า ----------

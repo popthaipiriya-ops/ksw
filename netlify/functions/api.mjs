@@ -320,10 +320,12 @@ async function chatImageRateOk(ip) {
 }
 
 // ---------- บทบาทและสิทธิ์ (แหล่งความจริงอยู่ที่เซิร์ฟเวอร์) ----------
+// importWeb = ดึงข้อมูลสินค้าจากเว็บอื่น — ให้เฉพาะแอดมินหลัก
+// เพราะเป็นการสั่งให้เซิร์ฟเวอร์ยิง HTTP ออกไปข้างนอกตาม URL ที่ผู้ใช้พิมพ์
 const ROLES = {
-  super: { products:true,  editProduct:true,  deleteProduct:true,  resetAll:true,  users:true,  sales:true },
-  admin: { products:true,  editProduct:true,  deleteProduct:false, resetAll:false, users:false, sales:true },
-  sales: { products:false, editProduct:false, deleteProduct:false, resetAll:false, users:false, sales:true },
+  super: { products:true,  editProduct:true,  deleteProduct:true,  resetAll:true,  users:true,  sales:true,  importWeb:true },
+  admin: { products:true,  editProduct:true,  deleteProduct:false, resetAll:false, users:false, sales:true,  importWeb:false },
+  sales: { products:false, editProduct:false, deleteProduct:false, resetAll:false, users:false, sales:true,  importWeb:false },
 };
 const can = (user, what) => !!(user && ROLES[user.role] && ROLES[user.role][what]);
 
@@ -335,6 +337,127 @@ const b64uToBytes = (s) => {
   const bin = atob(p + '='.repeat((4 - p.length % 4) % 4));
   return Uint8Array.from(bin, c => c.charCodeAt(0));
 };
+// ══════════════════════════════════════════════════════════════════════════════
+//  ดึงข้อมูลสินค้าจากเว็บอื่น (ต้องตรงกับ serve.ps1)
+//  เซิร์ฟเวอร์เป็นคนยิง HTTP ออกไปเอง เพราะเบราว์เซอร์ยิงข้ามโดเมนไม่ได้ (CORS)
+//  แต่พอยิงตาม URL ที่ผู้ใช้พิมพ์ ก็เปิดช่อง SSRF ทันที จึงต้องกันปลายทางวงในทุกกรณี
+// ══════════════════════════════════════════════════════════════════════════════
+const IMPORT_MAX_BYTES  = 3 * 1024 * 1024;
+const IMPORT_TIMEOUT_MS = 15000;
+
+// คืนข้อความบอกเหตุผลถ้า URL ใช้ไม่ได้ ('' = ผ่าน)
+// หมายเหตุ: บนเวอร์ชันนี้กันจากรูปแบบ host ได้เท่านั้น (แพลตฟอร์มไม่เปิด DNS API ให้)
+// จึงบล็อกทั้ง IP วงในที่พิมพ์ตรงๆ และชื่อโฮสต์ที่ไม่มีจุด (เช่น localhost, intranet)
+function importUrlBlock(raw) {
+  let u;
+  try { u = new URL(raw); } catch { return 'ลิงก์ไม่ถูกต้อง'; }
+  if (u.protocol !== 'http:' && u.protocol !== 'https:') return 'รองรับเฉพาะลิงก์ http และ https';
+
+  const host = u.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  if (host === 'localhost' || host.endsWith('.localhost')) return 'ลิงก์นี้ชี้กลับมาที่เครื่องเซิร์ฟเวอร์เอง ไม่อนุญาต';
+  if (!host.includes(':') && !host.includes('.')) return 'ลิงก์นี้ชี้ไปเครือข่ายภายใน ไม่อนุญาต';
+
+  const v4 = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (v4) {
+    const [a, b] = [ +v4[1], +v4[2] ];
+    if (a === 127) return 'ลิงก์นี้ชี้กลับมาที่เครื่องเซิร์ฟเวอร์เอง ไม่อนุญาต';
+    if (a === 10 || a === 0) return 'ลิงก์นี้ชี้ไปเครือข่ายภายใน ไม่อนุญาต';
+    if (a === 169 && b === 254) return 'ลิงก์นี้ชี้ไปเครือข่ายภายใน ไม่อนุญาต';
+    if (a === 172 && b >= 16 && b <= 31) return 'ลิงก์นี้ชี้ไปเครือข่ายภายใน ไม่อนุญาต';
+    if (a === 192 && b === 168) return 'ลิงก์นี้ชี้ไปเครือข่ายภายใน ไม่อนุญาต';
+  }
+  if (host.includes(':')) {   // IPv6 ที่พิมพ์ตรงๆ
+    if (host === '::1' || host === '::') return 'ลิงก์นี้ชี้กลับมาที่เครื่องเซิร์ฟเวอร์เอง ไม่อนุญาต';
+    if (/^f[cd]/.test(host) || /^fe[89ab]/.test(host)) return 'ลิงก์นี้ชี้ไปเครือข่ายภายใน ไม่อนุญาต';
+  }
+  return '';
+}
+
+const importDecode = (s) => String(s == null ? '' : s)
+  .replace(/&quot;/g, '"').replace(/&#0?39;|&apos;/g, "'")
+  .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ')
+  .replace(/&amp;/g, '&').trim();
+
+function importMeta(html, prop) {
+  const re = new RegExp('<meta[^>]+(?:property|name)\\s*=\\s*["\']' + prop.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '["\'][^>]*>', 'i');
+  const tag = html.match(re);
+  if (!tag) return '';
+  const c = tag[0].match(/content\s*=\s*["']([^"']*)["']/i);
+  return c ? importDecode(c[1]) : '';
+}
+
+// ดึงจาก JSON-LD schema.org/Product — แม่นกว่าเดา DOM มาก
+function importJsonLd(html) {
+  const blocks = html.match(/<script[^>]+application\/ld\+json[^>]*>[\s\S]*?<\/script>/gi) || [];
+  for (const b of blocks) {
+    const inner = b.replace(/^[\s\S]*?>/, '').replace(/<\/script>$/i, '').trim();
+    if (!inner) continue;
+    let obj;
+    try { obj = JSON.parse(inner); } catch { continue; }
+    const stack = [obj];
+    while (stack.length) {
+      const cur = stack.pop();
+      if (!cur || typeof cur !== 'object') continue;
+      if (Array.isArray(cur)) { stack.push(...cur); continue; }
+      if (cur['@graph']) { stack.push(cur['@graph']); continue; }
+      const t = cur['@type'];
+      const types = Array.isArray(t) ? t.join(' ') : String(t || '');
+      if (/Product/i.test(types)) return cur;
+    }
+  }
+  return null;
+}
+
+function importExtract(html, srcUrl) {
+  const cut = (v, max) => String(v == null ? '' : v).trim().slice(0, max);
+  const ld = importJsonLd(html);
+  let name = '', brand = '', desc = '', gtin = '', price = '';
+  const imgs = [];
+
+  if (ld) {
+    name = cut(ld.name, 200);
+    desc = cut(ld.description, 3000);
+    if (ld.brand) brand = cut(typeof ld.brand === 'object' ? ld.brand.name : ld.brand, 80);
+    for (const k of ['gtin13','gtin','gtin12','gtin8','sku','mpn']) {
+      if (!gtin && ld[k]) gtin = cut(ld[k], 60);
+    }
+    let offer = ld.offers;
+    if (Array.isArray(offer)) offer = offer[0];
+    if (offer && offer.price != null) price = cut(offer.price, 30);
+    for (const im of [].concat(ld.image || [])) {
+      const s = cut(typeof im === 'object' ? im.url : im, 500);
+      if (s && !imgs.includes(s)) imgs.push(s);
+    }
+  }
+
+  if (!name) name = importMeta(html, 'og:title');
+  if (!name) {
+    const t = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+    if (t) name = cut(importDecode(t[1]), 200);
+  }
+  if (!desc)  desc  = importMeta(html, 'og:description') || importMeta(html, 'description');
+  if (!brand) brand = importMeta(html, 'og:site_name');
+  if (!price) price = importMeta(html, 'product:price:amount');
+  const ogImg = importMeta(html, 'og:image');
+  if (ogImg && !imgs.includes(ogImg)) imgs.push(ogImg);
+
+  // รูปต้องเป็น URL เต็มเสมอ ไม่งั้นหน้าเว็บเราโหลดไม่ขึ้น
+  const abs = [];
+  for (const s of imgs.slice(0, 8)) {
+    try {
+      const iu = new URL(s, srcUrl);
+      if ((iu.protocol === 'http:' || iu.protocol === 'https:') && !abs.includes(iu.href)) abs.push(iu.href);
+    } catch { /* ข้ามรูปที่ประกอบ URL ไม่ได้ */ }
+  }
+
+  const pClean = price.replace(/[^\d.]/g, '');
+  return {
+    name, brand, description: desc, gtin,
+    price: /^\d+(\.\d+)?$/.test(pClean) ? pClean : '',
+    images: abs, source: srcUrl, hasJsonLd: !!ld,
+  };
+}
+
 const json = (obj, status = 200, headers = {}) =>
   new Response(JSON.stringify(obj), { status, headers: { 'content-type':'application/json; charset=utf-8', 'cache-control':'no-store', ...headers } });
 
@@ -729,6 +852,37 @@ export default async (req) => {
         await writeJson('users', users);
         return json({ users: users.map(publicUser) });
       }
+    }
+
+    // ---------- ดึงข้อมูลสินค้าจากเว็บอื่น (แอดมินหลักเท่านั้น) ----------
+    if (path === '/import-fetch' && method === 'POST') {
+      if (!can(me, 'importWeb')) return json({ error:'เฉพาะแอดมินหลักเท่านั้นที่ใช้เมนูนี้ได้' }, 403);
+      const body = await req.json().catch(() => ({}));
+      const url = String(body.url == null ? '' : body.url).trim().slice(0, 500);
+      if (!url) return json({ error:'กรุณาใส่ลิงก์สินค้า' }, 400);
+
+      const blocked = importUrlBlock(url);
+      if (blocked) return json({ error: blocked }, 400);
+
+      let html = '';
+      try {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), IMPORT_TIMEOUT_MS);
+        const r = await fetch(url, {
+          redirect: 'follow',
+          signal: ctrl.signal,
+          headers: { 'User-Agent':'Mozilla/5.0 (compatible; KiRDSaengSawangBot/1.0)', 'Accept-Language':'th,en' },
+        });
+        clearTimeout(timer);
+        const buf = await r.arrayBuffer();
+        html = new TextDecoder('utf-8').decode(buf.slice(0, IMPORT_MAX_BYTES));
+      } catch (e) {
+        return json({ error:'เปิดลิงก์ไม่สำเร็จ: ' + (e.message || 'ไม่ทราบสาเหตุ') }, 502);
+      }
+
+      const data = importExtract(html, url);
+      if (!data.name) return json({ error:'อ่านข้อมูลสินค้าจากหน้านี้ไม่ได้ ลองใช้ลิงก์หน้ารายละเอียดสินค้าโดยตรง' }, 422);
+      return json({ ok:true, data });
     }
 
     // ---------- สินค้า (override) ----------
