@@ -1127,39 +1127,73 @@ function HPPromoGrid({ onNavigate }) {
 }
 
 function HPProductGuide() {
+  // เนื้อหาแยกเป็นประโยคนำสั้นๆ + ข้อเท็จจริงเด่น 3 ข้อต่อหัวข้อ อ่านง่ายกว่าพารากราฟยาวเดิม
   const items = [
-    { cat:'bulb', num:1, title:'หลอดไฟ LED', img:'assets/cat-bulb.png',
-      intro:'หลอดไฟ LED เป็นอุปกรณ์ให้แสงสว่างที่ได้รับความนิยมสูงสุดในปัจจุบัน เนื่องจากใช้พลังงานน้อยกว่าหลอดไส้หรือหลอดฟลูออเรสเซนต์แบบเดิมมาก แต่ให้ความสว่างเทียบเท่าหรือมากกว่า อีกทั้งยังไม่มีสารปรอทเจือปนและมีอายุการใช้งานยาวนานกว่า 15,000–25,000 ชั่วโมง' },
-    { cat:'breaker', num:2, title:'เบรกเกอร์', img:'assets/cat-breaker-icon.png',
-      intro:'เบรกเกอร์ทำหน้าที่เหมือนหัวใจของระบบไฟฟ้าในบ้าน เป็นอุปกรณ์ที่ตัดกระแสไฟฟ้าโดยอัตโนมัติเมื่อเกิดกระแสไฟเกินหรือไฟฟ้าลัดวงจร ช่วยป้องกันอัคคีภัยและความเสียหายต่อเครื่องใช้ไฟฟ้า การเลือกขนาดเบรกเกอร์ (แอมป์) ให้เหมาะสมกับโหลดการใช้งานจึงเป็นเรื่องสำคัญมาก' },
-    { cat:'wire', num:3, title:'สายไฟ', img:'assets/cat-wire-coil.jpg',
-      intro:'สายไฟเป็นตัวนำกระแสไฟฟ้าจากแหล่งจ่ายไปยังจุดใช้งานต่างๆ ทำจากทองแดงแท้หุ้มด้วยฉนวน PVC การเลือกขนาดสายไฟ (ตารางมิลลิเมตร) ให้เหมาะสมกับปริมาณกระแสไฟที่ใช้งานเป็นสิ่งสำคัญ เพราะหากใช้สายไฟขนาดเล็กเกินไปอาจทำให้สายร้อนจัดจนเกิดอัคคีภัยได้' },
-    { cat:'panel', num:4, title:'ตู้ไฟ', img:'assets/cat-consumer-unit.png',
-      intro:'ตู้ไฟหรือตู้คอนซูมเมอร์ยูนิต ทำหน้าที่เป็นศูนย์กลางควบคุมวงจรไฟฟ้าทั้งหมดภายในบ้าน ภายในติดตั้งเบรกเกอร์ย่อยแยกตามวงจรการใช้งาน ช่วยให้สามารถตัดไฟเฉพาะจุดได้สะดวกเวลาเกิดปัญหาหรือซ่อมบำรุง' },
-    { cat:'conduit', num:5, title:'ท่อร้อยสายไฟ', img:'assets/cat-conduit-tube.jpg',
-      intro:'ท่อร้อยสายไฟใช้สำหรับป้องกันสายไฟจากความเสียหายทางกายภาพ ความชื้น และสัตว์กัดแทะ อีกทั้งยังช่วยให้เดินสายไฟเป็นระเบียบและซ่อมบำรุงในภายหลังได้ง่ายขึ้น มีทั้งแบบท่อ PVC สำหรับงานทั่วไป และแบบโลหะสำหรับงานที่ต้องการความแข็งแรงเป็นพิเศษ' },
-    { cat:'switch', num:6, title:'สวิตช์และปลั๊ก', img:'assets/cat-switch-socket.png',
-      intro:'สวิตช์และปลั๊กเป็นจุดเชื่อมต่อระหว่างระบบไฟฟ้ากับการใช้งานจริงในชีวิตประจำวัน ควรเลือกใช้ผลิตภัณฑ์ที่ได้มาตรฐาน มอก. มีวัสดุทนความร้อนและรับกระแสไฟได้เพียงพอกับเครื่องใช้ไฟฟ้าที่เชื่อมต่อ เพื่อความปลอดภัยในระยะยาว' },
+    { cat:'bulb', num:1, title:'หลอดไฟ LED', img:'assets/cat-bulb.png', accent:'#ca8a04',
+      lead:'หลอดไฟ LED ให้แสงสว่างเทียบเท่าหรือมากกว่าหลอดไส้และหลอดฟลูออเรสเซนต์แบบเดิม แต่กินไฟน้อยกว่ามาก จึงเป็นหลอดไฟที่ได้รับความนิยมสูงสุดในปัจจุบัน',
+      facts:['ประหยัดพลังงานกว่าหลอดไส้ได้มาก ที่ความสว่างเท่ากัน','อายุการใช้งานยาวนานราว 15,000–25,000 ชั่วโมง','ไม่มีสารปรอทเจือปนเหมือนหลอดฟลูออเรสเซนต์'] },
+    { cat:'breaker', num:2, title:'เบรกเกอร์', img:'assets/cat-breaker-icon.png', accent:'#0d9488',
+      lead:'เบรกเกอร์ทำหน้าที่เหมือนหัวใจของระบบไฟฟ้าในบ้าน ตัดกระแสไฟฟ้าโดยอัตโนมัติทันทีที่เกิดกระแสไฟเกินหรือไฟฟ้าลัดวงจร',
+      facts:['ป้องกันอัคคีภัยและความเสียหายต่อเครื่องใช้ไฟฟ้า','ต้องเลือกขนาดกระแส (แอมป์) ให้เหมาะกับโหลดที่ใช้งาน','มีทั้งแบบ 1 เฟสและ 3 เฟส เลือกตามระบบไฟที่ติดตั้ง'] },
+    { cat:'wire', num:3, title:'สายไฟ', img:'assets/cat-wire-coil.jpg', accent:'#115e59',
+      lead:'สายไฟเป็นตัวนำกระแสไฟฟ้าจากแหล่งจ่ายไปยังจุดใช้งานต่างๆ ทำจากทองแดงแท้หุ้มด้วยฉนวน PVC',
+      facts:['เลือกขนาดสาย (ตารางมิลลิเมตร) ให้เหมาะกับกระแสไฟที่ใช้','สายเล็กเกินไปเสี่ยงร้อนจัดจนเกิดอัคคีภัย','ทองแดงแท้ 100% นำไฟฟ้าได้ดีและทนทานกว่า'] },
+    { cat:'panel', num:4, title:'ตู้ไฟ', img:'assets/cat-consumer-unit.png', accent:'#f05a20',
+      lead:'ตู้ไฟหรือตู้คอนซูมเมอร์ยูนิต เป็นศูนย์กลางควบคุมวงจรไฟฟ้าทั้งหมดภายในบ้าน',
+      facts:['แยกเบรกเกอร์ย่อยตามวงจรการใช้งานแต่ละจุด','ตัดไฟเฉพาะจุดได้สะดวกเวลาซ่อมบำรุง','เลือกขนาดจำนวนช่องให้พอกับวงจรที่ใช้งานจริง'] },
+    { cat:'conduit', num:5, title:'ท่อร้อยสายไฟ', img:'assets/cat-conduit-tube.jpg', accent:'#0369a1',
+      lead:'ท่อร้อยสายไฟใช้ป้องกันสายไฟจากความเสียหายทางกายภาพ ความชื้น และสัตว์กัดแทะ',
+      facts:['ท่อ PVC น้ำหนักเบา เหมาะกับงานทั่วไป','ท่อโลหะให้ความแข็งแรงสูงกว่า สำหรับงานหนัก','ช่วยให้เดินสายเป็นระเบียบ ซ่อมบำรุงภายหลังง่าย'] },
+    { cat:'switch', num:6, title:'สวิตช์และปลั๊ก', img:'assets/cat-switch-socket.png', accent:'#334155',
+      lead:'สวิตช์และปลั๊กเป็นจุดเชื่อมต่อระหว่างระบบไฟฟ้ากับการใช้งานจริงในชีวิตประจำวัน',
+      facts:['เลือกผลิตภัณฑ์ที่ได้มาตรฐาน มอก. เท่านั้น','วัสดุต้องทนความร้อนและรับกระแสไฟได้เพียงพอ','ติดตั้งในจุดที่ใช้งานสะดวกและปลอดภัย'] },
   ];
   return (
-    <section style={{ background:'#fff', padding:'52px 0' }}>
-      <div style={{ maxWidth:'860px', margin:'0 auto', padding:'0 20px' }}>
-        <h2 style={{ fontSize:'26px', fontWeight:'800', color:'#06352e', marginBottom:'8px', textAlign:'center' }}>อุปกรณ์ไฟฟ้า ที่แนะนำ</h2>
-        <div style={{ width:'46px', height:'4px', background:'#f5a623', borderRadius:'3px', margin:'0 auto 36px' }}/>
+    <section style={{ background:'linear-gradient(180deg, #fff 0%, #fafcfb 100%)', padding:'56px 0' }}>
+      <div style={{ maxWidth:'1040px', margin:'0 auto', padding:'0 20px' }}>
+        <div style={{ textAlign:'center', marginBottom:'44px' }}>
+          <span style={{ display:'inline-flex', alignItems:'center', gap:'7px', background:'#e8f8f1', border:'1px solid #bfe8da', color:'#0d9488', fontSize:'12px', fontWeight:'700', padding:'6px 16px', borderRadius:'999px', marginBottom:'16px' }}>
+            <span style={{ width:'6px', height:'6px', borderRadius:'50%', background:'#0d9488' }}/> คู่มือฉบับย่อ
+          </span>
+          <h2 style={{ fontFamily:'Inter, Noto Sans Thai, sans-serif', fontSize:'28px', fontWeight:'800', color:'#06352e', letterSpacing:'-0.3px' }}>อุปกรณ์ไฟฟ้า ที่แนะนำ</h2>
+        </div>
 
-        {items.map((it, idx) => (
-          <div key={it.cat} style={{ marginBottom: idx < items.length - 1 ? '44px' : 0, paddingBottom: idx < items.length - 1 ? '44px' : 0, borderBottom: idx < items.length - 1 ? '1px solid #eef0f2' : 'none' }}>
-            <h3 style={{ fontSize:'19px', fontWeight:'800', color:'#0d5c50', marginBottom:'12px' }}>{it.num}. {it.title}</h3>
-            <p style={{ fontSize:'14px', color:'#3a4a42', lineHeight:'1.85', textAlign:'justify', marginBottom:'18px' }}>{it.intro}</p>
+        <div style={{ display:'flex', flexDirection:'column', gap:'20px' }}>
+          {items.map((it, idx) => (
+            <div key={it.cat} style={{
+              display:'flex', flexWrap:'wrap', alignItems:'center', gap:'28px',
+              flexDirection: idx % 2 === 1 ? 'row-reverse' : 'row',
+              background:'#fff', border:'1px solid #eef0f2', borderRadius:'20px', padding:'28px',
+              boxShadow:'0 4px 18px rgba(15,77,42,0.05)',
+            }}>
+              <div style={{ flex:'1 1 320px', minWidth:'260px' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:'14px', marginBottom:'14px' }}>
+                  <span style={{ flexShrink:0, width:'40px', height:'40px', borderRadius:'12px', background:`linear-gradient(135deg, ${it.accent}, ${it.accent}cc)`, boxShadow:`0 6px 16px ${it.accent}40`, color:'#fff', fontFamily:'Inter, sans-serif', fontSize:'17px', fontWeight:'800', display:'flex', alignItems:'center', justifyContent:'center' }}>{it.num}</span>
+                  <h3 style={{ fontFamily:'Inter, Noto Sans Thai, sans-serif', fontSize:'21px', fontWeight:'800', color:'#12241d' }}>{it.title}</h3>
+                </div>
+                <p style={{ fontSize:'14.5px', color:'#546b60', lineHeight:'1.75', marginBottom:'16px' }}>{it.lead}</p>
+                <div style={{ display:'flex', flexDirection:'column', gap:'9px' }}>
+                  {it.facts.map((f, fi) => (
+                    <div key={fi} style={{ display:'flex', alignItems:'flex-start', gap:'9px' }}>
+                      <span style={{ flexShrink:0, width:'18px', height:'18px', borderRadius:'50%', background:`${it.accent}18`, display:'flex', alignItems:'center', justifyContent:'center', marginTop:'2px' }}>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={it.accent} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l4 4L19 7"/></svg>
+                      </span>
+                      <span style={{ fontSize:'13.5px', color:'#3a4a42', lineHeight:'1.6' }}>{f}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-            <div style={{ display:'flex', justifyContent:'center' }}>
-              <div style={{ width:'100%', maxWidth:'340px', height:'220px', background:'#f9fafb', border:'1px solid #eef0f2', borderRadius:'12px', display:'flex', alignItems:'center', justifyContent:'center', padding:'16px' }}>
-                <img loading="lazy" decoding="async" src={it.img} style={{ maxWidth:'100%', maxHeight:'100%', objectFit:'contain', mixBlendMode:'multiply' }} onError={e => e.target.style.display='none'}/>
+              <div style={{ flex:'0 0 auto', width:'220px', margin:'0 auto' }}>
+                <div style={{ position:'relative', width:'220px', height:'190px', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                  <div style={{ position:'absolute', width:'160px', height:'160px', borderRadius:'50%', background:`radial-gradient(circle, ${it.accent}1c 0%, transparent 72%)` }}/>
+                  <img loading="lazy" decoding="async" src={it.img} style={{ position:'relative', maxWidth:'82%', maxHeight:'150px', objectFit:'contain', mixBlendMode:'multiply' }} onError={e => e.target.style.display='none'}/>
+                </div>
+                <div style={{ textAlign:'center', fontSize:'11.5px', color:'#aab4ae', fontStyle:'italic', marginTop:'4px' }}>รูปภาพนี้เป็นเพียงตัวอย่างประกอบคำอธิบาย</div>
               </div>
             </div>
-            <div style={{ textAlign:'center', fontSize:'12px', color:'#aab4ae', fontStyle:'italic' }}>รูปภาพนี้เป็นเพียงตัวอย่างประกอบคำอธิบาย</div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </section>
   );
