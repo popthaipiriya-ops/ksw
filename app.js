@@ -3409,12 +3409,15 @@ function HPPromoGrid({
 }
 function HPProductGuide() {
   // เนื้อหาแยกเป็นประโยคนำสั้นๆ + ข้อเท็จจริงเด่น 3 ข้อต่อหัวข้อ อ่านง่ายกว่าพารากราฟยาวเดิม
+  // แต่ละหัวข้อมี bg เป็นพื้นผิว/โทนบรรยากาศเฉพาะตัว (คอนกรีต หินอ่อน ลายไม้ ฯลฯ) จำลองด้วย CSS gradient
+  // แทนภาพถ่ายจริง เพื่อให้การ์ดแต่ละใบมีเอกลักษณ์ ไม่ใช่พื้นสีเรียบเหมือนกันหมด
   const items = [{
     cat: 'bulb',
     num: 1,
     title: 'หลอดไฟ LED',
     img: 'assets/cat-bulb.png',
     accent: '#ca8a04',
+    bg: 'radial-gradient(circle at 32% 28%, rgba(255,208,120,0.55) 0%, rgba(255,208,120,0) 38%), linear-gradient(150deg, #302821 0%, #4a3a24 55%, #6b4f26 100%)',
     lead: 'หลอดไฟ LED ให้แสงสว่างเทียบเท่าหรือมากกว่าหลอดไส้และหลอดฟลูออเรสเซนต์แบบเดิม แต่กินไฟน้อยกว่ามาก จึงเป็นหลอดไฟที่ได้รับความนิยมสูงสุดในปัจจุบัน',
     facts: ['ประหยัดพลังงานกว่าหลอดไส้ได้มาก ที่ความสว่างเท่ากัน', 'อายุการใช้งานยาวนานราว 15,000–25,000 ชั่วโมง', 'ไม่มีสารปรอทเจือปนเหมือนหลอดฟลูออเรสเซนต์']
   }, {
@@ -3423,6 +3426,7 @@ function HPProductGuide() {
     title: 'เบรกเกอร์',
     img: 'assets/cat-breaker-icon.png',
     accent: '#0d9488',
+    bg: 'repeating-linear-gradient(115deg, rgba(255,255,255,0.06) 0px, rgba(255,255,255,0.06) 2px, transparent 2px, transparent 7px), linear-gradient(150deg, #7b828d 0%, #565f6b 55%, #3a4250 100%)',
     lead: 'เบรกเกอร์ทำหน้าที่เหมือนหัวใจของระบบไฟฟ้าในบ้าน ตัดกระแสไฟฟ้าโดยอัตโนมัติทันทีที่เกิดกระแสไฟเกินหรือไฟฟ้าลัดวงจร',
     facts: ['ป้องกันอัคคีภัยและความเสียหายต่อเครื่องใช้ไฟฟ้า', 'ต้องเลือกขนาดกระแส (แอมป์) ให้เหมาะกับโหลดที่ใช้งาน', 'มีทั้งแบบ 1 เฟสและ 3 เฟส เลือกตามระบบไฟที่ติดตั้ง']
   }, {
@@ -3431,6 +3435,7 @@ function HPProductGuide() {
     title: 'สายไฟ',
     img: 'assets/cat-wire-coil.jpg',
     accent: '#115e59',
+    bg: 'linear-gradient(120deg, transparent 42%, rgba(255,255,255,0.09) 50%, transparent 58%), linear-gradient(160deg, #292f31 0%, #16191b 60%, #050708 100%)',
     lead: 'สายไฟเป็นตัวนำกระแสไฟฟ้าจากแหล่งจ่ายไปยังจุดใช้งานต่างๆ ทำจากทองแดงแท้หุ้มด้วยฉนวน PVC',
     facts: ['เลือกขนาดสาย (ตารางมิลลิเมตร) ให้เหมาะกับกระแสไฟที่ใช้', 'สายเล็กเกินไปเสี่ยงร้อนจัดจนเกิดอัคคีภัย', 'ทองแดงแท้ 100% นำไฟฟ้าได้ดีและทนทานกว่า']
   }, {
@@ -3439,6 +3444,7 @@ function HPProductGuide() {
     title: 'ตู้ไฟ',
     img: 'assets/cat-consumer-unit.png',
     accent: '#f05a20',
+    bg: 'radial-gradient(ellipse at 30% 25%, rgba(255,255,255,0.4) 0%, transparent 55%), linear-gradient(135deg, #dde3d3 0%, #b9c3ab 50%, #8b9880 100%)',
     lead: 'ตู้ไฟหรือตู้คอนซูมเมอร์ยูนิต เป็นศูนย์กลางควบคุมวงจรไฟฟ้าทั้งหมดภายในบ้าน',
     facts: ['แยกเบรกเกอร์ย่อยตามวงจรการใช้งานแต่ละจุด', 'ตัดไฟเฉพาะจุดได้สะดวกเวลาซ่อมบำรุง', 'เลือกขนาดจำนวนช่องให้พอกับวงจรที่ใช้งานจริง']
   }, {
@@ -3446,7 +3452,8 @@ function HPProductGuide() {
     num: 5,
     title: 'ท่อร้อยสายไฟ',
     img: 'assets/cat-conduit-tube.jpg',
-    accent: '#0369a1',
+    accent: '#a3672f',
+    bg: 'linear-gradient(100deg, rgba(255,255,255,0.12) 0%, transparent 45%), repeating-linear-gradient(98deg, #8a6239 0px, #8a6239 10px, #96703f 10px, #96703f 20px, #7c5730 20px, #7c5730 30px)',
     lead: 'ท่อร้อยสายไฟใช้ป้องกันสายไฟจากความเสียหายทางกายภาพ ความชื้น และสัตว์กัดแทะ',
     facts: ['ท่อ PVC น้ำหนักเบา เหมาะกับงานทั่วไป', 'ท่อโลหะให้ความแข็งแรงสูงกว่า สำหรับงานหนัก', 'ช่วยให้เดินสายเป็นระเบียบ ซ่อมบำรุงภายหลังง่าย']
   }, {
@@ -3455,16 +3462,43 @@ function HPProductGuide() {
     title: 'สวิตช์และปลั๊ก',
     img: 'assets/cat-switch-socket.png',
     accent: '#334155',
+    bg: 'linear-gradient(125deg, rgba(140,140,140,0.22) 0%, transparent 35%), linear-gradient(135deg, #f4f2ec 0%, #e6e2d8 50%, #d7d2c5 100%)',
     lead: 'สวิตช์และปลั๊กเป็นจุดเชื่อมต่อระหว่างระบบไฟฟ้ากับการใช้งานจริงในชีวิตประจำวัน',
     facts: ['เลือกผลิตภัณฑ์ที่ได้มาตรฐาน มอก. เท่านั้น', 'วัสดุต้องทนความร้อนและรับกระแสไฟได้เพียงพอ', 'ติดตั้งในจุดที่ใช้งานสะดวกและปลอดภัย']
   }];
   return /*#__PURE__*/React.createElement("section", {
     style: {
-      background: 'linear-gradient(180deg, #fff 0%, #fafcfb 100%)',
-      padding: '56px 0'
+      position: 'relative',
+      background: '#fff',
+      padding: '60px 0',
+      overflow: 'hidden'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
+      position: 'absolute',
+      top: '-8%',
+      left: '-10%',
+      width: '420px',
+      height: '420px',
+      borderRadius: '50%',
+      background: 'radial-gradient(circle, rgba(15,30,26,0.10) 0%, transparent 70%)',
+      pointerEvents: 'none'
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      bottom: '-14%',
+      right: '-8%',
+      width: '460px',
+      height: '460px',
+      borderRadius: '50%',
+      background: 'radial-gradient(circle, rgba(240,166,35,0.14) 0%, transparent 70%)',
+      pointerEvents: 'none'
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'relative',
+      zIndex: 1,
       maxWidth: '1180px',
       margin: '0 auto',
       padding: '0 20px'
@@ -3507,7 +3541,7 @@ function HPProductGuide() {
     style: {
       display: 'grid',
       gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-      gap: '22px'
+      gap: '24px'
     }
   }, items.map(it => /*#__PURE__*/React.createElement("div", {
     key: it.cat,
@@ -3516,59 +3550,61 @@ function HPProductGuide() {
       flexDirection: 'column',
       background: '#fff',
       border: '1px solid #eef0f2',
-      borderRadius: '18px',
+      borderRadius: '20px',
       overflow: 'hidden',
-      boxShadow: '0 4px 16px rgba(15,77,42,0.05)',
+      boxShadow: '0 6px 20px rgba(15,40,32,0.08)',
       transition: 'transform 0.2s ease, box-shadow 0.2s ease'
     },
     onMouseEnter: e => {
-      e.currentTarget.style.transform = 'translateY(-4px)';
-      e.currentTarget.style.boxShadow = '0 14px 30px rgba(15,77,42,0.13)';
+      e.currentTarget.style.transform = 'translateY(-5px)';
+      e.currentTarget.style.boxShadow = '0 18px 36px rgba(15,40,32,0.16)';
     },
     onMouseLeave: e => {
       e.currentTarget.style.transform = 'translateY(0)';
-      e.currentTarget.style.boxShadow = '0 4px 16px rgba(15,77,42,0.05)';
+      e.currentTarget.style.boxShadow = '0 6px 20px rgba(15,40,32,0.08)';
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'relative',
-      height: '160px',
-      background: `${it.accent}09`,
+      height: '190px',
+      background: it.bg,
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center',
-      borderBottom: '1px solid #f2f4f3'
+      justifyContent: 'center'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      position: 'absolute',
-      width: '150px',
-      height: '150px',
-      borderRadius: '50%',
-      background: `radial-gradient(circle, ${it.accent}22 0%, transparent 72%)`
+      position: 'relative',
+      width: '118px',
+      height: '118px',
+      borderRadius: '18px',
+      background: 'linear-gradient(155deg, #fdfefe 0%, #eef2f1 100%)',
+      boxShadow: '0 14px 28px rgba(0,0,0,0.28)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
     }
-  }), /*#__PURE__*/React.createElement("img", {
+  }, /*#__PURE__*/React.createElement("img", {
     loading: "lazy",
     decoding: "async",
     src: it.img,
     style: {
-      position: 'relative',
-      maxWidth: '70%',
-      maxHeight: '118px',
+      maxWidth: '78%',
+      maxHeight: '78%',
       objectFit: 'contain',
       mixBlendMode: 'multiply'
     },
     onError: e => e.target.style.display = 'none'
-  }), /*#__PURE__*/React.createElement("span", {
+  })), /*#__PURE__*/React.createElement("span", {
     style: {
       position: 'absolute',
-      top: '12px',
-      left: '12px',
+      top: '14px',
+      left: '14px',
       width: '32px',
       height: '32px',
       borderRadius: '10px',
       background: `linear-gradient(135deg, ${it.accent}, ${it.accent}cc)`,
-      boxShadow: `0 6px 14px ${it.accent}45`,
+      boxShadow: `0 4px 14px ${it.accent}70, 0 0 0 3px rgba(255,255,255,0.25)`,
       color: '#fff',
       fontFamily: 'Inter, sans-serif',
       fontSize: '14px',
@@ -3579,7 +3615,7 @@ function HPProductGuide() {
     }
   }, it.num)), /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '20px 22px 22px',
+      padding: '20px 22px 24px',
       display: 'flex',
       flexDirection: 'column',
       flex: 1
@@ -3648,7 +3684,7 @@ function HPProductGuide() {
       fontSize: '11.5px',
       color: '#aab4ae',
       fontStyle: 'italic',
-      marginTop: '20px'
+      marginTop: '22px'
     }
   }, "\u0E20\u0E32\u0E1E\u0E1B\u0E23\u0E30\u0E01\u0E2D\u0E1A\u0E17\u0E38\u0E01\u0E23\u0E32\u0E22\u0E01\u0E32\u0E23\u0E40\u0E1B\u0E47\u0E19\u0E40\u0E1E\u0E35\u0E22\u0E07\u0E15\u0E31\u0E27\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E1B\u0E23\u0E30\u0E01\u0E2D\u0E1A\u0E04\u0E33\u0E2D\u0E18\u0E34\u0E1A\u0E32\u0E22 \u0E44\u0E21\u0E48\u0E43\u0E0A\u0E48\u0E20\u0E32\u0E1E\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E08\u0E23\u0E34\u0E07\u0E40\u0E2A\u0E21\u0E2D\u0E44\u0E1B")));
 }
