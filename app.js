@@ -3458,47 +3458,13 @@ function HPProductGuide() {
     lead: 'สวิตช์และปลั๊กเป็นจุดเชื่อมต่อระหว่างระบบไฟฟ้ากับการใช้งานจริงในชีวิตประจำวัน',
     facts: ['เลือกผลิตภัณฑ์ที่ได้มาตรฐาน มอก. เท่านั้น', 'วัสดุต้องทนความร้อนและรับกระแสไฟได้เพียงพอ', 'ติดตั้งในจุดที่ใช้งานสะดวกและปลอดภัย']
   }];
-  // ── โทนพรีเมียมเข้ม ยืมภาษาดีไซน์จากฮีโร่ "EPIC ELECTRIC" ที่มีอยู่แล้วในเว็บ (aurora glow, กระจกฝ้า)
-  //    เพื่อให้ดูหรูขึ้นจริง แต่ยังเข้าชุดกับส่วนอื่น ไม่ใช่สไตล์ที่ผุดขึ้นมาลอยๆ
   return /*#__PURE__*/React.createElement("section", {
     style: {
-      position: 'relative',
-      background: 'linear-gradient(165deg, #07211c 0%, #0a1a17 55%, #061410 100%)',
-      padding: '64px 0',
-      overflow: 'hidden'
+      background: 'linear-gradient(180deg, #fff 0%, #fafcfb 100%)',
+      padding: '56px 0'
     }
   }, /*#__PURE__*/React.createElement("div", {
-    className: "hs-aurora",
     style: {
-      position: 'absolute',
-      top: '-25%',
-      left: '4%',
-      width: '380px',
-      height: '380px',
-      borderRadius: '50%',
-      background: 'radial-gradient(circle, rgba(34,211,180,0.30) 0%, transparent 68%)',
-      zIndex: 0,
-      pointerEvents: 'none',
-      filter: 'blur(8px)'
-    }
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "hs-aurora2",
-    style: {
-      position: 'absolute',
-      bottom: '-30%',
-      right: '6%',
-      width: '360px',
-      height: '360px',
-      borderRadius: '50%',
-      background: 'radial-gradient(circle, rgba(240,166,35,0.18) 0%, transparent 68%)',
-      zIndex: 0,
-      pointerEvents: 'none',
-      filter: 'blur(8px)'
-    }
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: 'relative',
-      zIndex: 1,
       maxWidth: '1180px',
       margin: '0 auto',
       padding: '0 20px'
@@ -3506,37 +3472,35 @@ function HPProductGuide() {
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: 'center',
-      marginBottom: '44px'
+      marginBottom: '40px'
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
       display: 'inline-flex',
       alignItems: 'center',
       gap: '7px',
-      background: 'rgba(255,255,255,0.08)',
-      backdropFilter: 'blur(8px)',
-      border: '1px solid rgba(110,255,225,0.35)',
-      color: '#9df7e4',
+      background: '#e8f8f1',
+      border: '1px solid #bfe8da',
+      color: '#0d9488',
       fontSize: '12px',
       fontWeight: '700',
       padding: '6px 16px',
       borderRadius: '999px',
-      marginBottom: '18px',
-      letterSpacing: '0.03em'
+      marginBottom: '16px'
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
       width: '6px',
       height: '6px',
       borderRadius: '50%',
-      background: '#22d3b4'
+      background: '#0d9488'
     }
   }), " \u0E04\u0E39\u0E48\u0E21\u0E37\u0E2D\u0E09\u0E1A\u0E31\u0E1A\u0E22\u0E48\u0E2D"), /*#__PURE__*/React.createElement("h2", {
-    className: "hs-sheen",
     style: {
       fontFamily: 'Inter, Noto Sans Thai, sans-serif',
-      fontSize: '30px',
+      fontSize: '28px',
       fontWeight: '800',
+      color: '#06352e',
       letterSpacing: '-0.3px'
     }
   }, "\u0E2D\u0E38\u0E1B\u0E01\u0E23\u0E13\u0E4C\u0E44\u0E1F\u0E1F\u0E49\u0E32 \u0E17\u0E35\u0E48\u0E41\u0E19\u0E30\u0E19\u0E33")), /*#__PURE__*/React.createElement("div", {
@@ -3550,77 +3514,64 @@ function HPProductGuide() {
     style: {
       display: 'flex',
       flexDirection: 'column',
-      background: 'rgba(255,255,255,0.045)',
-      backdropFilter: 'blur(10px)',
-      border: '1px solid rgba(255,255,255,0.09)',
-      borderRadius: '20px',
+      background: '#fff',
+      border: '1px solid #eef0f2',
+      borderRadius: '18px',
       overflow: 'hidden',
-      boxShadow: '0 8px 26px rgba(0,0,0,0.28)',
-      transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease'
+      boxShadow: '0 4px 16px rgba(15,77,42,0.05)',
+      transition: 'transform 0.2s ease, box-shadow 0.2s ease'
     },
     onMouseEnter: e => {
       e.currentTarget.style.transform = 'translateY(-4px)';
-      e.currentTarget.style.boxShadow = `0 18px 40px rgba(0,0,0,0.4), 0 0 0 1px ${it.accent}55`;
-      e.currentTarget.style.borderColor = `${it.accent}55`;
+      e.currentTarget.style.boxShadow = '0 14px 30px rgba(15,77,42,0.13)';
     },
     onMouseLeave: e => {
       e.currentTarget.style.transform = 'translateY(0)';
-      e.currentTarget.style.boxShadow = '0 8px 26px rgba(0,0,0,0.28)';
-      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)';
+      e.currentTarget.style.boxShadow = '0 4px 16px rgba(15,77,42,0.05)';
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'relative',
-      height: '156px',
+      height: '160px',
+      background: `${it.accent}09`,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '18px'
+      borderBottom: '1px solid #f2f4f3'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'absolute',
-      width: '170px',
-      height: '170px',
+      width: '150px',
+      height: '150px',
       borderRadius: '50%',
-      background: `radial-gradient(circle, ${it.accent}3a 0%, transparent 70%)`
+      background: `radial-gradient(circle, ${it.accent}22 0%, transparent 72%)`
     }
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: 'relative',
-      width: '112px',
-      height: '112px',
-      borderRadius: '16px',
-      background: 'linear-gradient(155deg, #fdfefe 0%, #eef2f1 100%)',
-      boxShadow: '0 10px 24px rgba(0,0,0,0.35)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }
-  }, /*#__PURE__*/React.createElement("img", {
+  }), /*#__PURE__*/React.createElement("img", {
     loading: "lazy",
     decoding: "async",
     src: it.img,
     style: {
-      maxWidth: '80%',
-      maxHeight: '80%',
+      position: 'relative',
+      maxWidth: '70%',
+      maxHeight: '118px',
       objectFit: 'contain',
       mixBlendMode: 'multiply'
     },
     onError: e => e.target.style.display = 'none'
-  })), /*#__PURE__*/React.createElement("span", {
+  }), /*#__PURE__*/React.createElement("span", {
     style: {
       position: 'absolute',
       top: '12px',
       left: '12px',
-      width: '30px',
-      height: '30px',
-      borderRadius: '9px',
+      width: '32px',
+      height: '32px',
+      borderRadius: '10px',
       background: `linear-gradient(135deg, ${it.accent}, ${it.accent}cc)`,
-      boxShadow: `0 4px 14px ${it.accent}70`,
+      boxShadow: `0 6px 14px ${it.accent}45`,
       color: '#fff',
       fontFamily: 'Inter, sans-serif',
-      fontSize: '13px',
+      fontSize: '14px',
       fontWeight: '800',
       display: 'flex',
       alignItems: 'center',
@@ -3628,7 +3579,7 @@ function HPProductGuide() {
     }
   }, it.num)), /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '6px 22px 24px',
+      padding: '20px 22px 22px',
       display: 'flex',
       flexDirection: 'column',
       flex: 1
@@ -3638,13 +3589,13 @@ function HPProductGuide() {
       fontFamily: 'Inter, Noto Sans Thai, sans-serif',
       fontSize: '18px',
       fontWeight: '800',
-      color: '#fff',
+      color: '#12241d',
       marginBottom: '8px'
     }
   }, it.title), /*#__PURE__*/React.createElement("p", {
     style: {
       fontSize: '13.5px',
-      color: 'rgba(255,255,255,0.62)',
+      color: '#546b60',
       lineHeight: '1.7',
       marginBottom: '14px'
     }
@@ -3668,7 +3619,7 @@ function HPProductGuide() {
       width: '16px',
       height: '16px',
       borderRadius: '50%',
-      background: `${it.accent}30`,
+      background: `${it.accent}18`,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -3688,16 +3639,16 @@ function HPProductGuide() {
   }))), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: '12.5px',
-      color: 'rgba(255,255,255,0.82)',
+      color: '#3a4a42',
       lineHeight: '1.55'
     }
   }, f)))))))), /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: 'center',
       fontSize: '11.5px',
-      color: 'rgba(255,255,255,0.35)',
+      color: '#aab4ae',
       fontStyle: 'italic',
-      marginTop: '24px'
+      marginTop: '20px'
     }
   }, "\u0E20\u0E32\u0E1E\u0E1B\u0E23\u0E30\u0E01\u0E2D\u0E1A\u0E17\u0E38\u0E01\u0E23\u0E32\u0E22\u0E01\u0E32\u0E23\u0E40\u0E1B\u0E47\u0E19\u0E40\u0E1E\u0E35\u0E22\u0E07\u0E15\u0E31\u0E27\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E1B\u0E23\u0E30\u0E01\u0E2D\u0E1A\u0E04\u0E33\u0E2D\u0E18\u0E34\u0E1A\u0E32\u0E22 \u0E44\u0E21\u0E48\u0E43\u0E0A\u0E48\u0E20\u0E32\u0E1E\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E08\u0E23\u0E34\u0E07\u0E40\u0E2A\u0E21\u0E2D\u0E44\u0E1B")));
 }
