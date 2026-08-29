@@ -2661,7 +2661,7 @@ function HPCategoryShowcase({
     title: 'เบรกเกอร์',
     desc: 'ตัดไฟอัตโนมัติ ปลอดภัยได้มาตรฐาน',
     price: 185,
-    img: 'assets/cat-breaker.jpg',
+    img: 'assets/cat-breaker-icon.png',
     accent: '#0d9488'
   }, {
     cat: 'loadcenter',
@@ -2685,7 +2685,7 @@ function HPCategoryShowcase({
     title: 'สายไฟ',
     desc: 'ทองแดงแท้ 100% ทุกขนาด',
     price: 890,
-    img: 'assets/cat-wire.jpg',
+    img: 'assets/cat-wire-coil.jpg',
     accent: '#115e59'
   }, {
     cat: 'bulb',
@@ -2701,7 +2701,7 @@ function HPCategoryShowcase({
     title: 'สวิตช์ ปลั๊ก',
     desc: 'ลุคเรียบหรู ใช้งานได้ทุกพื้นที่',
     price: 95,
-    img: 'assets/cat-switch.jpg',
+    img: 'assets/cat-switch-socket.png',
     accent: '#334155'
   }];
   return /*#__PURE__*/React.createElement("section", {

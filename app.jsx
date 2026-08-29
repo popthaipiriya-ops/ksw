@@ -945,12 +945,12 @@ function HPCategoryShowcase({ onCategoryChange }) {
   const scrollRef = React.useRef(null);
   const scrollBy = (dx) => scrollRef.current && scrollRef.current.scrollBy({ left: dx, behavior: 'smooth' });
   const cards = [
-    { cat:'breaker',    tag:'ยอดนิยม',       title:'เบรกเกอร์',       desc:'ตัดไฟอัตโนมัติ ปลอดภัยได้มาตรฐาน',   price:185,  img:'assets/cat-breaker.jpg',         accent:'#0d9488' },
+    { cat:'breaker',    tag:'ยอดนิยม',       title:'เบรกเกอร์',       desc:'ตัดไฟอัตโนมัติ ปลอดภัยได้มาตรฐาน',   price:185,  img:'assets/cat-breaker-icon.png',    accent:'#0d9488' },
     { cat:'loadcenter', tag:'งานระบบไฟ',     title:'ตู้โหลดเซนเตอร์', desc:'จัดระเบียบวงจรไฟฟ้าทั้งบ้าน',       price:1890, img:'assets/cat-loadcenter.png',     accent:'#475569' },
     { cat:'consumer',   tag:'ราคาส่ง',       title:'ตู้คอนซูมเมอร์',  desc:'ครบ จบทุกไซซ์ ราคาโรงงาน',           price:1890, img:'assets/cat-consumer-unit.png', accent:'#f05a20' },
-    { cat:'wire',       tag:'คุณภาพมาตรฐาน', title:'สายไฟ',           desc:'ทองแดงแท้ 100% ทุกขนาด',             price:890,  img:'assets/cat-wire.jpg',            accent:'#115e59' },
+    { cat:'wire',       tag:'คุณภาพมาตรฐาน', title:'สายไฟ',           desc:'ทองแดงแท้ 100% ทุกขนาด',             price:890,  img:'assets/cat-wire-coil.jpg',       accent:'#115e59' },
     { cat:'bulb',       tag:'ประหยัดไฟ',     title:'หลอดไฟ',          desc:'แสงสว่างคมชัด อายุการใช้งานยาวนาน',  price:65,   img:'assets/cat-bulb.png',            accent:'#ca8a04' },
-    { cat:'switch',     tag:'ดีไซน์ทันสมัย', title:'สวิตช์ ปลั๊ก',    desc:'ลุคเรียบหรู ใช้งานได้ทุกพื้นที่',     price:95,   img:'assets/cat-switch.jpg',          accent:'#334155' },
+    { cat:'switch',     tag:'ดีไซน์ทันสมัย', title:'สวิตช์ ปลั๊ก',    desc:'ลุคเรียบหรู ใช้งานได้ทุกพื้นที่',     price:95,   img:'assets/cat-switch-socket.png',   accent:'#334155' },
   ];
   return (
     <section style={{ background:'#fff', padding:'44px 0 52px' }}>
