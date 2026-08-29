@@ -3465,14 +3465,14 @@ function HPProductGuide() {
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      maxWidth: '1040px',
+      maxWidth: '1180px',
       margin: '0 auto',
       padding: '0 20px'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: 'center',
-      marginBottom: '44px'
+      marginBottom: '40px'
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
@@ -3505,84 +3505,119 @@ function HPProductGuide() {
     }
   }, "\u0E2D\u0E38\u0E1B\u0E01\u0E23\u0E13\u0E4C\u0E44\u0E1F\u0E1F\u0E49\u0E32 \u0E17\u0E35\u0E48\u0E41\u0E19\u0E30\u0E19\u0E33")), /*#__PURE__*/React.createElement("div", {
     style: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '20px'
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+      gap: '22px'
     }
-  }, items.map((it, idx) => /*#__PURE__*/React.createElement("div", {
+  }, items.map(it => /*#__PURE__*/React.createElement("div", {
     key: it.cat,
     style: {
       display: 'flex',
-      flexWrap: 'wrap',
-      alignItems: 'center',
-      gap: '28px',
-      flexDirection: idx % 2 === 1 ? 'row-reverse' : 'row',
+      flexDirection: 'column',
       background: '#fff',
       border: '1px solid #eef0f2',
-      borderRadius: '20px',
-      padding: '28px',
-      boxShadow: '0 4px 18px rgba(15,77,42,0.05)'
+      borderRadius: '18px',
+      overflow: 'hidden',
+      boxShadow: '0 4px 16px rgba(15,77,42,0.05)',
+      transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+    },
+    onMouseEnter: e => {
+      e.currentTarget.style.transform = 'translateY(-4px)';
+      e.currentTarget.style.boxShadow = '0 14px 30px rgba(15,77,42,0.13)';
+    },
+    onMouseLeave: e => {
+      e.currentTarget.style.transform = 'translateY(0)';
+      e.currentTarget.style.boxShadow = '0 4px 16px rgba(15,77,42,0.05)';
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      flex: '1 1 320px',
-      minWidth: '260px'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
+      position: 'relative',
+      height: '160px',
+      background: `${it.accent}09`,
       display: 'flex',
       alignItems: 'center',
-      gap: '14px',
-      marginBottom: '14px'
+      justifyContent: 'center',
+      borderBottom: '1px solid #f2f4f3'
     }
-  }, /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
-      flexShrink: 0,
-      width: '40px',
-      height: '40px',
-      borderRadius: '12px',
+      position: 'absolute',
+      width: '150px',
+      height: '150px',
+      borderRadius: '50%',
+      background: `radial-gradient(circle, ${it.accent}22 0%, transparent 72%)`
+    }
+  }), /*#__PURE__*/React.createElement("img", {
+    loading: "lazy",
+    decoding: "async",
+    src: it.img,
+    style: {
+      position: 'relative',
+      maxWidth: '70%',
+      maxHeight: '118px',
+      objectFit: 'contain',
+      mixBlendMode: 'multiply'
+    },
+    onError: e => e.target.style.display = 'none'
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: 'absolute',
+      top: '12px',
+      left: '12px',
+      width: '32px',
+      height: '32px',
+      borderRadius: '10px',
       background: `linear-gradient(135deg, ${it.accent}, ${it.accent}cc)`,
-      boxShadow: `0 6px 16px ${it.accent}40`,
+      boxShadow: `0 6px 14px ${it.accent}45`,
       color: '#fff',
       fontFamily: 'Inter, sans-serif',
-      fontSize: '17px',
+      fontSize: '14px',
       fontWeight: '800',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center'
     }
-  }, it.num), /*#__PURE__*/React.createElement("h3", {
+  }, it.num)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '20px 22px 22px',
+      display: 'flex',
+      flexDirection: 'column',
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("h3", {
     style: {
       fontFamily: 'Inter, Noto Sans Thai, sans-serif',
-      fontSize: '21px',
+      fontSize: '18px',
       fontWeight: '800',
-      color: '#12241d'
+      color: '#12241d',
+      marginBottom: '8px'
     }
-  }, it.title)), /*#__PURE__*/React.createElement("p", {
+  }, it.title), /*#__PURE__*/React.createElement("p", {
     style: {
-      fontSize: '14.5px',
+      fontSize: '13.5px',
       color: '#546b60',
-      lineHeight: '1.75',
-      marginBottom: '16px'
+      lineHeight: '1.7',
+      marginBottom: '14px'
     }
   }, it.lead), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       flexDirection: 'column',
-      gap: '9px'
+      gap: '8px',
+      marginTop: 'auto'
     }
   }, it.facts.map((f, fi) => /*#__PURE__*/React.createElement("div", {
     key: fi,
     style: {
       display: 'flex',
       alignItems: 'flex-start',
-      gap: '9px'
+      gap: '8px'
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
       flexShrink: 0,
-      width: '18px',
-      height: '18px',
+      width: '16px',
+      height: '16px',
       borderRadius: '50%',
       background: `${it.accent}18`,
       display: 'flex',
@@ -3591,8 +3626,8 @@ function HPProductGuide() {
       marginTop: '2px'
     }
   }, /*#__PURE__*/React.createElement("svg", {
-    width: "10",
-    height: "10",
+    width: "9",
+    height: "9",
     viewBox: "0 0 24 24",
     fill: "none",
     stroke: it.accent,
@@ -3603,54 +3638,19 @@ function HPProductGuide() {
     d: "M5 12l4 4L19 7"
   }))), /*#__PURE__*/React.createElement("span", {
     style: {
-      fontSize: '13.5px',
+      fontSize: '12.5px',
       color: '#3a4a42',
-      lineHeight: '1.6'
+      lineHeight: '1.55'
     }
-  }, f))))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: '0 0 auto',
-      width: '220px',
-      margin: '0 auto'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: 'relative',
-      width: '220px',
-      height: '190px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: 'absolute',
-      width: '160px',
-      height: '160px',
-      borderRadius: '50%',
-      background: `radial-gradient(circle, ${it.accent}1c 0%, transparent 72%)`
-    }
-  }), /*#__PURE__*/React.createElement("img", {
-    loading: "lazy",
-    decoding: "async",
-    src: it.img,
-    style: {
-      position: 'relative',
-      maxWidth: '82%',
-      maxHeight: '150px',
-      objectFit: 'contain',
-      mixBlendMode: 'multiply'
-    },
-    onError: e => e.target.style.display = 'none'
-  })), /*#__PURE__*/React.createElement("div", {
+  }, f)))))))), /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: 'center',
       fontSize: '11.5px',
       color: '#aab4ae',
       fontStyle: 'italic',
-      marginTop: '4px'
+      marginTop: '20px'
     }
-  }, "\u0E23\u0E39\u0E1B\u0E20\u0E32\u0E1E\u0E19\u0E35\u0E49\u0E40\u0E1B\u0E47\u0E19\u0E40\u0E1E\u0E35\u0E22\u0E07\u0E15\u0E31\u0E27\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E1B\u0E23\u0E30\u0E01\u0E2D\u0E1A\u0E04\u0E33\u0E2D\u0E18\u0E34\u0E1A\u0E32\u0E22")))))));
+  }, "\u0E20\u0E32\u0E1E\u0E1B\u0E23\u0E30\u0E01\u0E2D\u0E1A\u0E17\u0E38\u0E01\u0E23\u0E32\u0E22\u0E01\u0E32\u0E23\u0E40\u0E1B\u0E47\u0E19\u0E40\u0E1E\u0E35\u0E22\u0E07\u0E15\u0E31\u0E27\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E1B\u0E23\u0E30\u0E01\u0E2D\u0E1A\u0E04\u0E33\u0E2D\u0E18\u0E34\u0E1A\u0E32\u0E22 \u0E44\u0E21\u0E48\u0E43\u0E0A\u0E48\u0E20\u0E32\u0E1E\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32\u0E08\u0E23\u0E34\u0E07\u0E40\u0E2A\u0E21\u0E2D\u0E44\u0E1B")));
 }
 function HPBrandStrip() {
   const brands = [{

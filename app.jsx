@@ -1150,50 +1150,45 @@ function HPProductGuide() {
   ];
   return (
     <section style={{ background:'linear-gradient(180deg, #fff 0%, #fafcfb 100%)', padding:'56px 0' }}>
-      <div style={{ maxWidth:'1040px', margin:'0 auto', padding:'0 20px' }}>
-        <div style={{ textAlign:'center', marginBottom:'44px' }}>
+      <div style={{ maxWidth:'1180px', margin:'0 auto', padding:'0 20px' }}>
+        <div style={{ textAlign:'center', marginBottom:'40px' }}>
           <span style={{ display:'inline-flex', alignItems:'center', gap:'7px', background:'#e8f8f1', border:'1px solid #bfe8da', color:'#0d9488', fontSize:'12px', fontWeight:'700', padding:'6px 16px', borderRadius:'999px', marginBottom:'16px' }}>
             <span style={{ width:'6px', height:'6px', borderRadius:'50%', background:'#0d9488' }}/> คู่มือฉบับย่อ
           </span>
           <h2 style={{ fontFamily:'Inter, Noto Sans Thai, sans-serif', fontSize:'28px', fontWeight:'800', color:'#06352e', letterSpacing:'-0.3px' }}>อุปกรณ์ไฟฟ้า ที่แนะนำ</h2>
         </div>
 
-        <div style={{ display:'flex', flexDirection:'column', gap:'20px' }}>
-          {items.map((it, idx) => (
-            <div key={it.cat} style={{
-              display:'flex', flexWrap:'wrap', alignItems:'center', gap:'28px',
-              flexDirection: idx % 2 === 1 ? 'row-reverse' : 'row',
-              background:'#fff', border:'1px solid #eef0f2', borderRadius:'20px', padding:'28px',
-              boxShadow:'0 4px 18px rgba(15,77,42,0.05)',
-            }}>
-              <div style={{ flex:'1 1 320px', minWidth:'260px' }}>
-                <div style={{ display:'flex', alignItems:'center', gap:'14px', marginBottom:'14px' }}>
-                  <span style={{ flexShrink:0, width:'40px', height:'40px', borderRadius:'12px', background:`linear-gradient(135deg, ${it.accent}, ${it.accent}cc)`, boxShadow:`0 6px 16px ${it.accent}40`, color:'#fff', fontFamily:'Inter, sans-serif', fontSize:'17px', fontWeight:'800', display:'flex', alignItems:'center', justifyContent:'center' }}>{it.num}</span>
-                  <h3 style={{ fontFamily:'Inter, Noto Sans Thai, sans-serif', fontSize:'21px', fontWeight:'800', color:'#12241d' }}>{it.title}</h3>
-                </div>
-                <p style={{ fontSize:'14.5px', color:'#546b60', lineHeight:'1.75', marginBottom:'16px' }}>{it.lead}</p>
-                <div style={{ display:'flex', flexDirection:'column', gap:'9px' }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(280px, 1fr))', gap:'22px' }}>
+          {items.map((it) => (
+            <div key={it.cat}
+              style={{ display:'flex', flexDirection:'column', background:'#fff', border:'1px solid #eef0f2', borderRadius:'18px', overflow:'hidden', boxShadow:'0 4px 16px rgba(15,77,42,0.05)', transition:'transform 0.2s ease, box-shadow 0.2s ease' }}
+              onMouseEnter={e => { e.currentTarget.style.transform='translateY(-4px)'; e.currentTarget.style.boxShadow='0 14px 30px rgba(15,77,42,0.13)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.boxShadow='0 4px 16px rgba(15,77,42,0.05)'; }}>
+
+              <div style={{ position:'relative', height:'160px', background:`${it.accent}09`, display:'flex', alignItems:'center', justifyContent:'center', borderBottom:'1px solid #f2f4f3' }}>
+                <div style={{ position:'absolute', width:'150px', height:'150px', borderRadius:'50%', background:`radial-gradient(circle, ${it.accent}22 0%, transparent 72%)` }}/>
+                <img loading="lazy" decoding="async" src={it.img} style={{ position:'relative', maxWidth:'70%', maxHeight:'118px', objectFit:'contain', mixBlendMode:'multiply' }} onError={e => e.target.style.display='none'}/>
+                <span style={{ position:'absolute', top:'12px', left:'12px', width:'32px', height:'32px', borderRadius:'10px', background:`linear-gradient(135deg, ${it.accent}, ${it.accent}cc)`, boxShadow:`0 6px 14px ${it.accent}45`, color:'#fff', fontFamily:'Inter, sans-serif', fontSize:'14px', fontWeight:'800', display:'flex', alignItems:'center', justifyContent:'center' }}>{it.num}</span>
+              </div>
+
+              <div style={{ padding:'20px 22px 22px', display:'flex', flexDirection:'column', flex:1 }}>
+                <h3 style={{ fontFamily:'Inter, Noto Sans Thai, sans-serif', fontSize:'18px', fontWeight:'800', color:'#12241d', marginBottom:'8px' }}>{it.title}</h3>
+                <p style={{ fontSize:'13.5px', color:'#546b60', lineHeight:'1.7', marginBottom:'14px' }}>{it.lead}</p>
+                <div style={{ display:'flex', flexDirection:'column', gap:'8px', marginTop:'auto' }}>
                   {it.facts.map((f, fi) => (
-                    <div key={fi} style={{ display:'flex', alignItems:'flex-start', gap:'9px' }}>
-                      <span style={{ flexShrink:0, width:'18px', height:'18px', borderRadius:'50%', background:`${it.accent}18`, display:'flex', alignItems:'center', justifyContent:'center', marginTop:'2px' }}>
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={it.accent} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l4 4L19 7"/></svg>
+                    <div key={fi} style={{ display:'flex', alignItems:'flex-start', gap:'8px' }}>
+                      <span style={{ flexShrink:0, width:'16px', height:'16px', borderRadius:'50%', background:`${it.accent}18`, display:'flex', alignItems:'center', justifyContent:'center', marginTop:'2px' }}>
+                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke={it.accent} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l4 4L19 7"/></svg>
                       </span>
-                      <span style={{ fontSize:'13.5px', color:'#3a4a42', lineHeight:'1.6' }}>{f}</span>
+                      <span style={{ fontSize:'12.5px', color:'#3a4a42', lineHeight:'1.55' }}>{f}</span>
                     </div>
                   ))}
                 </div>
               </div>
-
-              <div style={{ flex:'0 0 auto', width:'220px', margin:'0 auto' }}>
-                <div style={{ position:'relative', width:'220px', height:'190px', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                  <div style={{ position:'absolute', width:'160px', height:'160px', borderRadius:'50%', background:`radial-gradient(circle, ${it.accent}1c 0%, transparent 72%)` }}/>
-                  <img loading="lazy" decoding="async" src={it.img} style={{ position:'relative', maxWidth:'82%', maxHeight:'150px', objectFit:'contain', mixBlendMode:'multiply' }} onError={e => e.target.style.display='none'}/>
-                </div>
-                <div style={{ textAlign:'center', fontSize:'11.5px', color:'#aab4ae', fontStyle:'italic', marginTop:'4px' }}>รูปภาพนี้เป็นเพียงตัวอย่างประกอบคำอธิบาย</div>
-              </div>
             </div>
           ))}
         </div>
+        <div style={{ textAlign:'center', fontSize:'11.5px', color:'#aab4ae', fontStyle:'italic', marginTop:'20px' }}>ภาพประกอบทุกรายการเป็นเพียงตัวอย่างประกอบคำอธิบาย ไม่ใช่ภาพสินค้าจริงเสมอไป</div>
       </div>
     </section>
   );
