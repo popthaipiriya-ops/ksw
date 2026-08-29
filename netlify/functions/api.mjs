@@ -136,7 +136,7 @@ function chatReplyViolation(reply) {
 
 // แปลงผลค้นสินค้าจากหน้าเว็บเป็นบล็อกข้อเท็จจริงให้ผู้ช่วยอ้างอิง
 // ข้อมูลนี้มาจากเบราว์เซอร์ จึงต้องล้างให้สะอาดก่อน กันการยัดคำสั่งปลอมเข้าพรอมป์ต์
-function chatCatalogBlock(catalog) {
+function chatCatalogBlock(catalog, total, brands) {
   if (!Array.isArray(catalog)) return null;   // ไม่ได้ค้นมา
   const clean = (v, max) => String(v == null ? '' : v)
     .replace(/[\u0000-\u001f]+/g, ' ')   // ยุบอักขระควบคุม/ขึ้นบรรทัดใหม่ (ไม่แตะ '-' ที่รหัสรุ่นใช้)
@@ -158,9 +158,28 @@ function chatCatalogBlock(catalog) {
     + 'คุณจึงไม่มีข้อมูลสินค้าที่ลูกค้าถามถึง ห้ามยืนยันว่ามีของ ห้ามเดารหัสรุ่นหรือสเปก\n'
     + 'ให้บอกตรงๆ ว่าขอให้ทีมงานตรวจสอบให้ แล้วเก็บรายละเอียดเพื่อสรุปส่งต่อไลน์';
 
-  return 'ผลค้นจากฐานข้อมูลสินค้าจริง (อ้างอิงได้เฉพาะรายการนี้เท่านั้น):\n'
+  // ยอดจริงกับรายชื่อแบรนด์ — สำคัญมาก เพราะรายการข้างบนถูกตัดเหลือ 12 ตัวอย่าง
+  // ถ้าไม่บอก ผู้ช่วยจะนับจากรายการที่เห็นแล้วตอบลูกค้าว่าร้านมีแค่ 12 รุ่น ทั้งที่มีหลายร้อย
+  const totalNum = Number.isFinite(+total) ? Math.trunc(+total) : 0;
+  const brandList = [...new Set(
+    (Array.isArray(brands) ? brands : []).slice(0, 15).map(b => clean(b, 60)).filter(Boolean)
+  )];
+
+  let out = 'ผลค้นจากฐานข้อมูลสินค้าจริง (อ้างอิงรุ่น/รหัสได้เฉพาะรายการนี้เท่านั้น):\n'
     + lines.join('\n')
     + '\nรายการข้างบนยืนยันแค่ว่า "มีรุ่นนี้ในแคตตาล็อก" ไม่ได้บอกราคาและไม่ได้บอกสต็อกคงเหลือ';
+  if (totalNum > lines.length) {
+    out += `\nคำค้นนี้ตรงกับสินค้าในระบบทั้งหมด ${totalNum} รายการ `
+      + `ข้างบนเป็นเพียงตัวอย่าง ${lines.length} รายการแรกเท่านั้น\n`
+      + `ถ้าจะบอกจำนวนให้ลูกค้า ต้องใช้ตัวเลข ${totalNum} ห้ามนับจากรายการตัวอย่างข้างบน`;
+  }
+  if (brandList.length) {
+    out += '\nแบรนด์ที่ตรงกับคำค้นนี้มีเฉพาะ: ' + brandList.join(' · ') + '\n'
+      + 'ถ้าลูกค้าถามหาแบรนด์ที่ไม่อยู่ในรายชื่อนี้ แปลว่าคำค้นไม่ได้ตรงกับแบรนด์นั้น '
+      + 'ห้ามตอบว่าร้านมีแบรนด์นั้น และห้ามเสนอสินค้าข้างบนเสมือนเป็นแบรนด์ที่ลูกค้าถาม '
+      + 'ให้บอกว่าขอให้ทีมงานตรวจสอบให้';
+  }
+  return out;
 }
 
 // รหัสที่ลูกค้าเอ่ยถึงแต่ค้นแล้วไม่มีในระบบ — ต้องบอกผู้ช่วยตรงๆ
@@ -491,7 +510,7 @@ export default async (req) => {
 
       // ผลค้นจากแคตตาล็อกจริง — หัวใจของความแม่นยำ
       // ต้องแนบเสมอแม้ค้นไม่เจอ เพราะ "ไม่เจอ" ก็เป็นข้อเท็จจริงที่กันการเดาได้
-      const catalogBlock = chatCatalogBlock(body.catalog);
+      const catalogBlock = chatCatalogBlock(body.catalog, body.catalogTotal, body.catalogBrands);
       if (catalogBlock) system.push({ type:'text', text: catalogBlock });
       const unknownBlock = chatUnknownCodesBlock(body.unknownCodes);
       if (unknownBlock) system.push({ type:'text', text: unknownBlock });

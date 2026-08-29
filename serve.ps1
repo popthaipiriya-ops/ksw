@@ -209,7 +209,7 @@ function Get-ChatViolation([string]$reply) {
 # แปลงผลค้นสินค้าจากหน้าเว็บเป็นบล็อกข้อเท็จจริงให้ผู้ช่วยอ้างอิง
 # เรียกเฉพาะตอนหน้าเว็บส่ง catalog มาจริงเท่านั้น (ผู้เรียกเป็นคนเช็ค)
 # ว่างหรือ $null ที่ส่งเข้ามา = ค้นแล้วไม่เจอ ซึ่งต้องบอกผู้ช่วยให้รู้ ไม่ใช่เงียบ
-function Get-ChatCatalogBlock($catalog) {
+function Get-ChatCatalogBlock($catalog, $total, $brands) {
   $clean = {
     param($v, $max)
     $s = ([string]$v) -replace '[\u0000-\u001f]+', ' '
@@ -234,9 +234,31 @@ function Get-ChatCatalogBlock($catalog) {
            "คุณจึงไม่มีข้อมูลสินค้าที่ลูกค้าถามถึง ห้ามยืนยันว่ามีของ ห้ามเดารหัสรุ่นหรือสเปก`r`n" +
            "ให้บอกตรงๆ ว่าขอให้ทีมงานตรวจสอบให้ แล้วเก็บรายละเอียดเพื่อสรุปส่งต่อไลน์"
   }
-  return "ผลค้นจากฐานข้อมูลสินค้าจริง (อ้างอิงได้เฉพาะรายการนี้เท่านั้น):`r`n" +
+  # ยอดจริงกับรายชื่อแบรนด์ — สำคัญมาก เพราะรายการข้างบนถูกตัดเหลือ 12 ตัวอย่าง
+  # ถ้าไม่บอก ผู้ช่วยจะนับจากรายการที่เห็นแล้วตอบลูกค้าว่าร้านมีแค่ 12 รุ่น ทั้งที่มีหลายร้อย
+  $totalNum = 0
+  if ($null -ne $total) { [void][int]::TryParse([string]$total, [ref]$totalNum) }
+  $brandList = @()
+  foreach ($bn in @($brands) | Select-Object -First 15) {
+    $s = & $clean $bn 60
+    if ($s -and $brandList -notcontains $s) { $brandList += $s }
+  }
+
+  $out = "ผลค้นจากฐานข้อมูลสินค้าจริง (อ้างอิงรุ่น/รหัสได้เฉพาะรายการนี้เท่านั้น):`r`n" +
          ($lines -join "`r`n") +
          "`r`nรายการข้างบนยืนยันแค่ว่า ""มีรุ่นนี้ในแคตตาล็อก"" ไม่ได้บอกราคาและไม่ได้บอกสต็อกคงเหลือ"
+  if ($totalNum -gt $lines.Count) {
+    $out += "`r`nคำค้นนี้ตรงกับสินค้าในระบบทั้งหมด $totalNum รายการ " +
+            "ข้างบนเป็นเพียงตัวอย่าง $($lines.Count) รายการแรกเท่านั้น`r`n" +
+            "ถ้าจะบอกจำนวนให้ลูกค้า ต้องใช้ตัวเลข $totalNum ห้ามนับจากรายการตัวอย่างข้างบน"
+  }
+  if ($brandList.Count -gt 0) {
+    $out += "`r`nแบรนด์ที่ตรงกับคำค้นนี้มีเฉพาะ: " + ($brandList -join ' · ') + "`r`n" +
+            "ถ้าลูกค้าถามหาแบรนด์ที่ไม่อยู่ในรายชื่อนี้ แปลว่าคำค้นไม่ได้ตรงกับแบรนด์นั้น " +
+            "ห้ามตอบว่าร้านมีแบรนด์นั้น และห้ามเสนอสินค้าข้างบนเสมือนเป็นแบรนด์ที่ลูกค้าถาม " +
+            "ให้บอกว่าขอให้ทีมงานตรวจสอบให้"
+  }
+  return $out
 }
 
 # รหัสที่ลูกค้าเอ่ยถึงแต่ค้นแล้วไม่มีในระบบ — ต้องบอกผู้ช่วยตรงๆ
@@ -696,7 +718,7 @@ while ($listener.IsListening) {
         # (PowerShell แปลง JSON array ว่างเป็น @() ไม่ใช่ $null จึงแยกสองกรณีนี้ได้)
         if ($b.PSObject.Properties.Name -contains 'catalog') {
           $catItems = @($b.catalog)   # อาจว่าง = ค้นแล้วไม่เจอ ซึ่งก็เป็นข้อเท็จจริงที่ต้องบอก
-          $catBlock = Get-ChatCatalogBlock $catItems
+          $catBlock = Get-ChatCatalogBlock $catItems $b.catalogTotal $b.catalogBrands
           if ($catBlock) { $sysBlocks += @{ type='text'; text=$catBlock } }
         }
         if ($b.unknownCodes) {

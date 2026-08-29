@@ -4940,6 +4940,11 @@ function HPChatWidget({ onSelectProduct }) {
           product: product ? hpChatFactOf(product) : undefined,
           // ส่งเสมอแม้เป็นอาร์เรย์ว่าง — "ค้นแล้วไม่เจอ" ก็เป็นข้อเท็จจริงที่กัน AI เดารุ่น
           catalog: hits.map(hpChatFactOf),
+          // .map() คืนอาร์เรย์ใหม่ ทำให้ total/brands ที่ hpChatFindProducts แนบไว้หลุดหายไป
+          // ต้องส่งแยกเป็นฟิลด์ของตัวเอง ไม่งั้น AI เห็นแค่ 12 รายการที่ยกตัวอย่าง
+          // แล้วเผลอบอกลูกค้าว่าร้านมีแค่ 12 รุ่น ทั้งที่จริงมีหลายร้อย
+          catalogTotal: hits.total,
+          catalogBrands: hits.brands,
           unknownCodes: hpChatUnknownCodes(q),
         }),
       });
