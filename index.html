@@ -237,6 +237,47 @@
 <body>
   <div id="root"></div>
 
+  <!-- ══ ค่าสำรองสำหรับเปิดไฟล์ตรงๆ ด้วย file:// ══
+       ปกติหน้าเว็บดึงข้อมูลสดจาก /api/* ของ serve.ps1 (ลิงก์ปุ่มแคตตาล็อก, แบรนด์ที่สั่งซ่อน ฯลฯ)
+       ถ้าดับเบิลคลิกเปิดไฟล์ตรงๆ พาธ /api/... จะกลายเป็น file:///api/... แล้วพัง
+       หน้าแคตตาล็อกเลยไม่มีลิงก์ปุ่มและโชว์แบรนด์ที่ซ่อนไว้ออกมาด้วย
+       สคริปต์นี้ดัก fetch แล้วตอบด้วยค่าที่ฝังไว้แทน
+
+       ทำงานเฉพาะตอน protocol เป็น file: เท่านั้น — เปิดผ่าน localhost ยังใช้ของจริงเหมือนเดิมทุกอย่าง
+
+       [ค่าแช่แข็ง] คัดลอกจาก .data/settings.json เมื่อ 2026-08-29
+       แก้ค่าจากระบบหลังบ้านแล้ว ตรงนี้ไม่ตามให้อัตโนมัติ ต้องมาคัดลอกทับใหม่เอง -->
+  <script>
+  (function () {
+    if (location.protocol !== 'file:') return;
+
+    var SETTINGS = {"catalog":{"Nano LED":{"url":"https://canva.link/p61xw6ni4ond3r6"},"Thongthai Bakelite":{"url":"https://canva.link/5gp5q09em574wnu"},"Sonic":{"url":"https://canva.link/klolaor2wxnnixh"},"ท่อน้ำไทย":{"url":"https://canva.link/jpwzprh2t1gt05x"},"Reckon":{"url":"https://canva.link/zoso3sx0x5o0f7n"},"SOKAWA":{"url":"https://canva.link/39bt4se8mhb8vsl"},"Panasonic":{"url":"https://canva.link/m0h6zrw19af3g8n"},"GL":{"hidden":true},"Sentoshi":{"url":"https://canva.link/lxw3jsfawy31fdd"},"SAFE-T-CUT":{"url":"https://canva.link/vxgm5d25kid6i0w"},"Zeberg":{"hidden":true},"Nano":{"url":"https://canva.link/vg8vxol3jg1ezmn"},"Vena":{"url":"https://canva.link/eqpjqjxtq9jqijx"},"KJL":{"url":"https://canva.link/zs7ddlayhza92fy"},"CHANG":{"url":"https://canva.link/un1pdft5kewjk9y"},"Lucky Misu":{"url":"https://canva.link/dotqru6q1l73knu"},"เกิดแสงสว่าง":{"url":"https://canva.link/jvbi2m1fulrhuhk"},"สายไฟ":{"url":"https://canva.link/d0gn7ippjkknexb"},"AP":{"url":"https://canva.link/qk5a5nuwstrqcrv"},"iwachi":{"url":"https://canva.link/990m56b7cd8sftq"}},"contact":{"lineUrl":"","lineId":"","hours":"","phone":"","address":""},"catalogFooter":"","catalogUrls":{"Nano LED":"https://canva.link/p61xw6ni4ond3r6","Thongthai Bakelite":"https://canva.link/5gp5q09em574wnu","Sonic":"https://canva.link/klolaor2wxnnixh","ท่อน้ำไทย":"https://canva.link/jpwzprh2t1gt05x","Reckon":"https://canva.link/zoso3sx0x5o0f7n","SOKAWA":"https://canva.link/39bt4se8mhb8vsl","Panasonic":"https://canva.link/m0h6zrw19af3g8n","Sentoshi":"https://canva.link/lxw3jsfawy31fdd","SAFE-T-CUT":"https://canva.link/vxgm5d25kid6i0w","Nano":"https://canva.link/vg8vxol3jg1ezmn","Vena":"https://canva.link/eqpjqjxtq9jqijx","KJL":"https://canva.link/zs7ddlayhza92fy","CHANG":"https://canva.link/un1pdft5kewjk9y","Lucky Misu":"https://canva.link/dotqru6q1l73knu","เกิดแสงสว่าง":"https://canva.link/jvbi2m1fulrhuhk","สายไฟ":"https://canva.link/d0gn7ippjkknexb","AP":"https://canva.link/qk5a5nuwstrqcrv","iwachi":"https://canva.link/990m56b7cd8sftq"},"images":{}};
+    var PRODUCTS = [];   // .data/products.json ไม่มีไฟล์ = ยังไม่มีสินค้าที่แอดมินตั้งทับ
+
+    function reply(body, status) {
+      return Promise.resolve(new Response(JSON.stringify(body), {
+        status: status || 200,
+        headers: { 'Content-Type': 'application/json' }
+      }));
+    }
+
+    var realFetch = window.fetch.bind(window);
+    window.fetch = function (input, init) {
+      var url = typeof input === 'string' ? input : (input && input.url) || '';
+      if (url.indexOf('/api/') !== 0) return realFetch(input, init);
+
+      var ep     = url.slice(4).split('?')[0];
+      var method = ((init && init.method) || 'GET').toUpperCase();
+
+      if (ep === '/settings' && method === 'GET') return reply({ settings: SETTINGS });
+      if (ep === '/products' && method === 'GET') return reply({ products: PRODUCTS });
+      if (ep === '/auth/me')                      return reply({ error: 'ยังไม่ได้เข้าสู่ระบบ' }, 401);
+
+      // แชท / ส่งลีดเข้าไลน์ / อัปโหลดรูป / บันทึกค่า — ต้องมีเซิร์ฟเวอร์จริง ทำงานไม่ได้ในโหมดนี้
+      return reply({ error: 'โหมดเปิดไฟล์ตรงๆ ดูข้อมูลได้อย่างเดียว — ส่วนนี้ต้องเปิดผ่าน serve.ps1' }, 503);
+    };
+  })();
+  </script>
 <script src="app.js"></script>
 </body>
 </html>
