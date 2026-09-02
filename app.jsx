@@ -3842,6 +3842,13 @@ function HPSystemTools() {
           {st.exposeData !== undefined && (
             <Row label="เปิดโฟลเดอร์ .data ผ่าน URL" ok={!st.exposeData} okText="ปิดอยู่ (ปลอดภัย)" noText="เปิดอยู่"/>
           )}
+          {/* บั๊กที่เกิดบ่อยสุดของโปรเจกต์นี้: แก้ app.jsx แล้วลืมคอมไพล์
+              หน้าเว็บโหลด app.js ถ้าไม่คอมไพล์ก็ยังเป็นโค้ดเก่า และถ้า commit ไปเว็บจริงก็เก่าตาม */}
+          {st.build && (
+            <Row label="โค้ดหน้าเว็บ (app.jsx → app.js)" ok={!st.build.stale}
+                 okText="คอมไพล์ล่าสุดแล้ว" noText="ยังไม่ได้คอมไพล์"
+                 note={st.build.stale ? 'เปิด build.html แล้วกดคอมไพล์' : ''}/>
+          )}
         </div>
 
         <div style={card}>

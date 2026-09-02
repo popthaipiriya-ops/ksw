@@ -4,6 +4,11 @@
 #  ข้อมูลเก็บในโฟลเดอร์ .data (ไม่ถูกอัปขึ้นเว็บจริง)
 # ============================================================================
 $ErrorActionPreference = 'Stop'
+
+# คอนโซล PowerShell ใช้โค้ดเพจเดิมของ Windows ซึ่งพิมพ์ภาษาไทยออกมาเป็นขยะ
+# ข้อความเตือนทั้งหมดในไฟล์นี้เป็นภาษาไทย ถ้าไม่ตั้งตรงนี้จะอ่านไม่ออกและเตือนไปก็เปล่าประโยชน์
+# (โดยเฉพาะตอนแจ้งรหัสผ่านแอดมินครั้งแรก ซึ่งพลาดแล้วเข้าระบบไม่ได้เลย)
+try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
 $port = if ($env:PORT) { $env:PORT } else { "4321" }
 $url  = "http://localhost:$port/"
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -599,6 +604,25 @@ $listener = New-Object System.Net.HttpListener
 $listener.Prefixes.Add($url)
 $listener.Start()
 Write-Host ("Serving {0} on {1}" -f $root, $url) -ForegroundColor Green
+
+# ── กันบั๊กคลาสสิกของโปรเจกต์นี้: แก้ app.jsx แล้วลืมคอมไพล์ ──
+# หน้าเว็บโหลด app.js ไม่ใช่ app.jsx ถ้าลืมกดคอมไพล์ จะนั่งงงว่าทำไมแก้แล้วไม่เปลี่ยน
+# แล้วถ้า commit ไปทั้งอย่างนั้น เว็บจริงก็รันโค้ดเก่าตามไปด้วย
+function Get-BuildStale {
+  $jsx = Join-Path $root 'app.jsx'
+  $js  = Join-Path $root 'app.js'
+  if (-not (Test-Path $jsx) -or -not (Test-Path $js)) { return $null }
+  $a = (Get-Item $jsx).LastWriteTimeUtc
+  $b = (Get-Item $js).LastWriteTimeUtc
+  return @{ stale = ($a -gt $b); jsxAt = $a.ToString('o'); jsAt = $b.ToString('o') }
+}
+$bs = Get-BuildStale
+if ($bs -and $bs.stale) {
+  Write-Host ""
+  Write-Host " *** app.jsx ใหม่กว่า app.js — ยังไม่ได้คอมไพล์ ***" -ForegroundColor Red
+  Write-Host ("     เปิด {0}build.html แล้วกดคอมไพล์ก่อน ไม่งั้นหน้าเว็บยังเป็นโค้ดเก่า" -f $url) -ForegroundColor Yellow
+  Write-Host ""
+}
 # เตือนให้เห็นชัดตอนสตาร์ต จะได้ไม่มีทางเปิดค้างไว้โดยไม่รู้ตัว
 if ($EXPOSE_DATA) {
   Write-Host ""
@@ -947,6 +971,7 @@ while ($listener.IsListening) {
           }
           limits  = @{ chatPerHour = $CHAT_RATE_MAX; leadPerHour = $LEAD_RATE_MAX; chatImagePerHour = $CHATIMG_RATE_MAX }
           exposeData = [bool]$EXPOSE_DATA
+          build      = (Get-BuildStale)   # แก้ app.jsx แล้วลืมคอมไพล์หรือเปล่า
         } 200
         continue
       }

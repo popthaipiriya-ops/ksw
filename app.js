@@ -11636,6 +11636,12 @@ function HPSystemTools() {
     ok: !st.exposeData,
     okText: "\u0E1B\u0E34\u0E14\u0E2D\u0E22\u0E39\u0E48 (\u0E1B\u0E25\u0E2D\u0E14\u0E20\u0E31\u0E22)",
     noText: "\u0E40\u0E1B\u0E34\u0E14\u0E2D\u0E22\u0E39\u0E48"
+  }), st.build && /*#__PURE__*/React.createElement(Row, {
+    label: "\u0E42\u0E04\u0E49\u0E14\u0E2B\u0E19\u0E49\u0E32\u0E40\u0E27\u0E47\u0E1A (app.jsx \u2192 app.js)",
+    ok: !st.build.stale,
+    okText: "\u0E04\u0E2D\u0E21\u0E44\u0E1E\u0E25\u0E4C\u0E25\u0E48\u0E32\u0E2A\u0E38\u0E14\u0E41\u0E25\u0E49\u0E27",
+    noText: "\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E04\u0E2D\u0E21\u0E44\u0E1E\u0E25\u0E4C",
+    note: st.build.stale ? 'เปิด build.html แล้วกดคอมไพล์' : ''
   })), /*#__PURE__*/React.createElement("div", {
     style: card
   }, /*#__PURE__*/React.createElement("div", {
