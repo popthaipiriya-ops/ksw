@@ -920,6 +920,37 @@ while ($listener.IsListening) {
 
       $me = Current-User $req
 
+      # ---------- สถานะระบบ (สำหรับหน้าเครื่องมือในหลังบ้าน) ----------
+      # บอกแค่ว่า "ตั้งค่าไว้แล้วหรือยัง" ไม่ส่งค่าคีย์ออกไปเด็ดขาด
+      if ($ep -eq '/status' -and $method -eq 'GET') {
+        if (-not (Can $me 'editProduct')) { Send-Json $res @{ error='ไม่มีสิทธิ์เข้าถึงส่วนนี้' } 403; continue }
+        $stSet = To-Hashtable (Read-Json $fSetting @{})
+        # ห้ามครอบ @() รอบ hashtable — จะได้อาร์เรย์ที่มีสมาชิกเดียว (ตัว hashtable เอง) นับได้ 1 เสมอ
+        $imgN = 0; if ($null -ne $stSet['images'])   { $imgN = (To-Hashtable $stSet['images']).Count }
+        $txtN = 0; if ($null -ne $stSet['texts'])    { $txtN = (To-Hashtable $stSet['texts']).Count }
+        $catN = 0; if ($null -ne $stSet['catalog'])  { $catN = (To-Hashtable $stSet['catalog']).Count }
+        $artN = 0; if ($null -ne $stSet['articles']) { $artN = @($stSet['articles']).Count }
+        Send-Json $res @{
+          env     = 'local'
+          ai      = @{ configured = [bool](Get-AnthropicKey); model = $CHAT_MODEL }
+          line    = @{ configured = [bool](Get-LinePush) }
+          session = @{ secretConfigured = [bool]($env:SESSION_SECRET -and $env:SESSION_SECRET.Length -ge 24) }
+          counts  = @{
+            users    = @(Load-Users).Count
+            products = @(Read-Json $fProds @()).Count
+            quotes   = @(Read-Json $fQuotes @()).Count
+            leads    = @(Read-Json $fLeads @()).Count
+            articles = $artN
+            images   = $imgN
+            texts    = $txtN
+            catalog  = $catN
+          }
+          limits  = @{ chatPerHour = $CHAT_RATE_MAX; leadPerHour = $LEAD_RATE_MAX; chatImagePerHour = $CHATIMG_RATE_MAX }
+          exposeData = [bool]$EXPOSE_DATA
+        } 200
+        continue
+      }
+
       if ($ep -eq '/auth/me') {
         if ($me) { Send-Json $res @{ user=(Public-User $me); can=$ROLES[$me.role] } 200 }
         else     { Send-Json $res @{ error='ยังไม่ได้เข้าสู่ระบบ' } 401 }

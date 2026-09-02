@@ -11333,7 +11333,7 @@ function HPAdminPage({
     }).catch(() => {}).then(() => setUser(null));
   };
   const role = HP_ROLES[user.role] || HP_ROLES.sales;
-  const tabs = [hpCan(user, 'products') && ['products', 'จัดการสินค้า'], hpCan(user, 'sales') && ['sales', 'ระบบเซลล์'], hpCan(user, 'editProduct') && ['articles', 'บทความ'], hpCan(user, 'editProduct') && ['settings', 'ตั้งค่าเว็บไซต์'], hpCan(user, 'users') && ['users', 'จัดการผู้ใช้']].filter(Boolean);
+  const tabs = [hpCan(user, 'products') && ['products', 'จัดการสินค้า'], hpCan(user, 'sales') && ['sales', 'ระบบเซลล์'], hpCan(user, 'editProduct') && ['articles', 'บทความ'], hpCan(user, 'editProduct') && ['settings', 'ตั้งค่าเว็บไซต์'], hpCan(user, 'users') && ['users', 'จัดการผู้ใช้'], hpCan(user, 'editProduct') && ['system', 'ระบบ']].filter(Boolean);
   return /*#__PURE__*/React.createElement("section", {
     style: {
       background: '#f6f6f6',
@@ -11436,7 +11436,288 @@ function HPAdminPage({
     me: user
   }), tab === 'articles' && hpCan(user, 'editProduct') && /*#__PURE__*/React.createElement(HPArticlesManager, null), tab === 'settings' && hpCan(user, 'editProduct') && /*#__PURE__*/React.createElement(HPSiteSettings, null), tab === 'users' && hpCan(user, 'users') && /*#__PURE__*/React.createElement(HPUsersManager, {
     me: user
-  })));
+  }), tab === 'system' && hpCan(user, 'editProduct') && /*#__PURE__*/React.createElement(HPSystemTools, null)));
+}
+
+// เครื่องมือสายเทคนิค — ดูสถานะระบบ สำรองและกู้คืนการตั้งค่า
+function HPSystemTools() {
+  const [st, setSt] = useState(null);
+  const [err, setErr] = useState('');
+  const [msg, setMsg] = useState('');
+  const [busy, setBusy] = useState(false);
+  const fileRef = useRef(null);
+  const load = () => hpApi('/status').then(setSt).catch(e => setErr('อ่านสถานะไม่สำเร็จ: ' + e.message));
+  useEffect(() => {
+    load();
+  }, []);
+  const card = {
+    background: '#fff',
+    borderRadius: '10px',
+    border: '1px solid #eee',
+    padding: '22px 24px',
+    marginBottom: '16px'
+  };
+  const btn = (bg, color) => ({
+    background: bg,
+    color,
+    border: color === '#b3261e' ? '1px solid #f0c8c4' : 'none',
+    borderRadius: '8px',
+    padding: '10px 18px',
+    fontSize: '13.5px',
+    fontWeight: '700',
+    cursor: busy ? 'default' : 'pointer',
+    opacity: busy ? 0.6 : 1,
+    fontFamily: 'Inter, Noto Sans Thai, sans-serif'
+  });
+
+  // สำรอง: ดึงการตั้งค่าปัจจุบันแล้วให้ดาวน์โหลดเป็นไฟล์ JSON
+  const backup = async () => {
+    setErr('');
+    setMsg('');
+    setBusy(true);
+    try {
+      const r = await hpApi('/settings');
+      const blob = new Blob([JSON.stringify(r.settings || {}, null, 2)], {
+        type: 'application/json'
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'kss-settings-' + new Date().toISOString().slice(0, 10) + '.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      setMsg('✔ ดาวน์โหลดไฟล์สำรองแล้ว');
+      setTimeout(() => setMsg(''), 4000);
+    } catch (e) {
+      setErr('สำรองข้อมูลไม่สำเร็จ: ' + e.message);
+    }
+    setBusy(false);
+  };
+
+  // กู้คืน: เขียนทับการตั้งค่าทั้งหมดด้วยไฟล์ที่เลือก
+  const restore = async (file, inputEl) => {
+    if (inputEl) inputEl.value = '';
+    if (!file) return;
+    setErr('');
+    setMsg('');
+    let data;
+    try {
+      data = JSON.parse(await file.text());
+    } catch (e) {
+      setErr('ไฟล์นี้ไม่ใช่ JSON ที่อ่านได้');
+      return;
+    }
+    if (!data || typeof data !== 'object') {
+      setErr('ไฟล์สำรองไม่ถูกต้อง');
+      return;
+    }
+    if (!window.confirm('กู้คืนการตั้งค่าจากไฟล์นี้?\nการตั้งค่าปัจจุบันทั้งหมดจะถูกเขียนทับ')) return;
+    setBusy(true);
+    try {
+      const r = await hpApi('/settings', {
+        method: 'POST',
+        body: {
+          settings: {
+            catalog: data.catalog || {},
+            catalogFooter: data.catalogFooter || '',
+            contact: data.contact || {},
+            images: data.images || {},
+            texts: data.texts || {},
+            articles: data.articles || []
+          }
+        }
+      });
+      const s = r.settings || {};
+      hpImgSetMap(s.images || {});
+      hpTxtSetMap(s.texts || {});
+      hpArtSetList(s.articles || []);
+      setMsg('✔ กู้คืนการตั้งค่าเรียบร้อยแล้ว');
+      load();
+    } catch (e) {
+      setErr('กู้คืนไม่สำเร็จ: ' + e.message);
+    }
+    setBusy(false);
+  };
+  const Row = ({
+    label,
+    ok,
+    okText,
+    noText,
+    note
+  }) => /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+      padding: '11px 0',
+      borderBottom: '1px solid #f2f5f3'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      flex: 1,
+      fontSize: '14px',
+      color: '#3a4a42'
+    }
+  }, label), note && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: '12px',
+      color: '#9aa8a0'
+    }
+  }, note), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: '12.5px',
+      fontWeight: '700',
+      padding: '3px 11px',
+      borderRadius: '999px',
+      whiteSpace: 'nowrap',
+      background: ok ? '#e7f5f1' : '#fff1e8',
+      color: ok ? '#0d6b5c' : '#c2410c'
+    }
+  }, ok ? okText || 'ตั้งค่าแล้ว' : noText || 'ยังไม่ได้ตั้ง'));
+  if (!st && !err) return /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '40px',
+      textAlign: 'center',
+      color: '#888'
+    }
+  }, "\u0E01\u0E33\u0E25\u0E31\u0E07\u0E2D\u0E48\u0E32\u0E19\u0E2A\u0E16\u0E32\u0E19\u0E30\u0E23\u0E30\u0E1A\u0E1A\u2026");
+  return /*#__PURE__*/React.createElement("div", null, err && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#fdecea',
+      border: '1px solid #f5c6cb',
+      color: '#b3261e',
+      borderRadius: '8px',
+      padding: '12px 16px',
+      marginBottom: '14px',
+      fontSize: '14px'
+    }
+  }, err), msg && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#e8f7ee',
+      border: '1px solid #b7e4c7',
+      color: '#0d6b3f',
+      borderRadius: '8px',
+      padding: '12px 16px',
+      marginBottom: '14px',
+      fontSize: '14px'
+    }
+  }, msg), st && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    style: card
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '18px',
+      fontWeight: '800',
+      color: '#222',
+      marginBottom: '4px'
+    }
+  }, "\u0E2A\u0E16\u0E32\u0E19\u0E30\u0E23\u0E30\u0E1A\u0E1A"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: '13px',
+      color: '#9aa8a0',
+      marginBottom: '10px'
+    }
+  }, "\u0E01\u0E33\u0E25\u0E31\u0E07\u0E23\u0E31\u0E19\u0E1A\u0E19 ", st.env === 'netlify' ? 'เว็บจริง (Netlify)' : 'เครื่องในออฟฟิศ (serve.ps1)'), /*#__PURE__*/React.createElement(Row, {
+    label: "\u0E1C\u0E39\u0E49\u0E0A\u0E48\u0E27\u0E22 AI \u0E15\u0E2D\u0E1A\u0E25\u0E39\u0E01\u0E04\u0E49\u0E32",
+    ok: st.ai && st.ai.configured,
+    note: st.ai && st.ai.model,
+    noText: "\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E43\u0E2A\u0E48\u0E04\u0E35\u0E22\u0E4C"
+  }), /*#__PURE__*/React.createElement(Row, {
+    label: "\u0E2A\u0E48\u0E07\u0E25\u0E34\u0E2A\u0E15\u0E4C\u0E25\u0E39\u0E01\u0E04\u0E49\u0E32\u0E40\u0E02\u0E49\u0E32\u0E44\u0E25\u0E19\u0E4C",
+    ok: st.line && st.line.configured
+  }), /*#__PURE__*/React.createElement(Row, {
+    label: "\u0E04\u0E35\u0E22\u0E4C\u0E40\u0E0B\u0E47\u0E19\u0E40\u0E0B\u0E2A\u0E0A\u0E31\u0E19 (SESSION_SECRET)",
+    ok: st.session && st.session.secretConfigured,
+    noText: "\u0E2A\u0E38\u0E48\u0E21\u0E43\u0E2B\u0E49\u0E0A\u0E31\u0E48\u0E27\u0E04\u0E23\u0E32\u0E27",
+    note: st.session && st.session.secretConfigured ? '' : 'เซสชันจะหลุดเมื่อ deploy ใหม่'
+  }), st.exposeData !== undefined && /*#__PURE__*/React.createElement(Row, {
+    label: "\u0E40\u0E1B\u0E34\u0E14\u0E42\u0E1F\u0E25\u0E40\u0E14\u0E2D\u0E23\u0E4C .data \u0E1C\u0E48\u0E32\u0E19 URL",
+    ok: !st.exposeData,
+    okText: "\u0E1B\u0E34\u0E14\u0E2D\u0E22\u0E39\u0E48 (\u0E1B\u0E25\u0E2D\u0E14\u0E20\u0E31\u0E22)",
+    noText: "\u0E40\u0E1B\u0E34\u0E14\u0E2D\u0E22\u0E39\u0E48"
+  })), /*#__PURE__*/React.createElement("div", {
+    style: card
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '16px',
+      fontWeight: '800',
+      color: '#222',
+      marginBottom: '12px'
+    }
+  }, "\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E43\u0E19\u0E23\u0E30\u0E1A\u0E1A"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(4, 1fr)',
+      gap: '12px'
+    }
+  }, [['ผู้ใช้', st.counts.users], ['สินค้าที่เพิ่มเอง', st.counts.products], ['ใบเสนอราคา', st.counts.quotes], ['ลิสต์ลูกค้า', st.counts.leads], ['บทความ', st.counts.articles], ['รูปที่เปลี่ยน', st.counts.images], ['ข้อความที่แก้', st.counts.texts], ['แบรนด์ในแคตตาล็อก', st.counts.catalog]].map(([l, v], i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      background: '#f7faf9',
+      border: '1px solid #eef3f0',
+      borderRadius: '9px',
+      padding: '12px 14px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '21px',
+      fontWeight: '800',
+      color: '#0d6b5c',
+      fontVariantNumeric: 'tabular-nums'
+    }
+  }, v), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '11.5px',
+      color: '#7d918a',
+      marginTop: '2px'
+    }
+  }, l)))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: '14px',
+      fontSize: '12.5px',
+      color: '#9aa8a0',
+      lineHeight: '1.8'
+    }
+  }, "\u0E25\u0E34\u0E21\u0E34\u0E15\u0E15\u0E48\u0E2D IP \u0E15\u0E48\u0E2D\u0E0A\u0E31\u0E48\u0E27\u0E42\u0E21\u0E07 \u2014 \u0E41\u0E0A\u0E17 ", st.limits.chatPerHour, " \xB7 \u0E2A\u0E48\u0E07\u0E25\u0E34\u0E2A\u0E15\u0E4C ", st.limits.leadPerHour, " \xB7 \u0E41\u0E19\u0E1A\u0E23\u0E39\u0E1B ", st.limits.chatImagePerHour)), /*#__PURE__*/React.createElement("div", {
+    style: card
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '16px',
+      fontWeight: '800',
+      color: '#222',
+      marginBottom: '6px'
+    }
+  }, "\u0E2A\u0E33\u0E23\u0E2D\u0E07\u0E41\u0E25\u0E30\u0E01\u0E39\u0E49\u0E04\u0E37\u0E19\u0E01\u0E32\u0E23\u0E15\u0E31\u0E49\u0E07\u0E04\u0E48\u0E32"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: '13.5px',
+      color: '#777',
+      lineHeight: '1.8',
+      marginBottom: '14px'
+    }
+  }, "\u0E04\u0E23\u0E2D\u0E1A\u0E04\u0E25\u0E38\u0E21\u0E25\u0E34\u0E07\u0E01\u0E4C\u0E41\u0E04\u0E15\u0E15\u0E32\u0E25\u0E47\u0E2D\u0E01 \u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E15\u0E34\u0E14\u0E15\u0E48\u0E2D \u0E23\u0E39\u0E1B\u0E17\u0E35\u0E48\u0E40\u0E1B\u0E25\u0E35\u0E48\u0E22\u0E19 \u0E02\u0E49\u0E2D\u0E04\u0E27\u0E32\u0E21\u0E17\u0E35\u0E48\u0E41\u0E01\u0E49 \u0E41\u0E25\u0E30\u0E1A\u0E17\u0E04\u0E27\u0E32\u0E21", /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("b", null, "\u0E44\u0E21\u0E48\u0E23\u0E27\u0E21"), "\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 \u0E1C\u0E39\u0E49\u0E43\u0E0A\u0E49 \u0E43\u0E1A\u0E40\u0E2A\u0E19\u0E2D\u0E23\u0E32\u0E04\u0E32 \u0E41\u0E25\u0E30\u0E44\u0E1F\u0E25\u0E4C\u0E23\u0E39\u0E1B\u0E17\u0E35\u0E48\u0E2D\u0E31\u0E1B\u0E42\u0E2B\u0E25\u0E14 \u2014 \u0E2A\u0E2D\u0E07\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E2B\u0E25\u0E31\u0E07\u0E22\u0E31\u0E07\u0E2D\u0E22\u0E39\u0E48\u0E43\u0E19\u0E23\u0E30\u0E1A\u0E1A\u0E15\u0E32\u0E21\u0E40\u0E14\u0E34\u0E21"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: '10px',
+      flexWrap: 'wrap'
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    disabled: busy,
+    onClick: backup,
+    style: btn('#0d6b5c', '#fff')
+  }, "\u0E14\u0E32\u0E27\u0E19\u0E4C\u0E42\u0E2B\u0E25\u0E14\u0E44\u0E1F\u0E25\u0E4C\u0E2A\u0E33\u0E23\u0E2D\u0E07"), /*#__PURE__*/React.createElement("button", {
+    disabled: busy,
+    onClick: () => fileRef.current && fileRef.current.click(),
+    style: btn('#fff', '#b3261e')
+  }, "\u0E01\u0E39\u0E49\u0E04\u0E37\u0E19\u0E08\u0E32\u0E01\u0E44\u0E1F\u0E25\u0E4C\u2026"), /*#__PURE__*/React.createElement("input", {
+    ref: fileRef,
+    type: "file",
+    accept: "application/json,.json",
+    style: {
+      display: 'none'
+    },
+    onChange: e => restore(e.target.files && e.target.files[0], e.target)
+  })))));
 }
 
 // จัดการบทความเกร็ดความรู้ — เขียน/แก้/ลบเองจากหลังบ้าน โดยไม่ต้องแก้โค้ด

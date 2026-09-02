@@ -788,6 +788,33 @@ export default async (req) => {
 
     if (!me) return json({ error:'ยังไม่ได้เข้าสู่ระบบ' }, 401);
 
+    // ---------- สถานะระบบ (สำหรับหน้าเครื่องมือในหลังบ้าน) ----------
+    // บอกแค่ว่า "ตั้งค่าไว้แล้วหรือยัง" ไม่ส่งค่าคีย์ออกไปเด็ดขาด
+    if (path === '/status' && method === 'GET') {
+      if (!can(me, 'editProduct')) return json({ error:'ไม่มีสิทธิ์เข้าถึงส่วนนี้' }, 403);
+      const [users, products, quotes, leads, st] = await Promise.all([
+        loadUsers(), readJson('products', []), readJson('quotes', []),
+        readJson('leads', []), readJson('settings', {}),
+      ]);
+      return json({
+        env: 'netlify',
+        ai:   { configured: !!process.env.ANTHROPIC_API_KEY, model: CHAT_MODEL },
+        line: { configured: !!(process.env.LINE_CHANNEL_ACCESS_TOKEN && process.env.LINE_TO) },
+        session: { secretConfigured: !!(process.env.SESSION_SECRET && process.env.SESSION_SECRET.length >= 24) },
+        counts: {
+          users:    Array.isArray(users) ? users.length : 0,
+          products: Array.isArray(products) ? products.length : 0,
+          quotes:   Array.isArray(quotes) ? quotes.length : 0,
+          leads:    Array.isArray(leads) ? leads.length : 0,
+          articles: Array.isArray(st.articles) ? st.articles.length : 0,
+          images:   Object.keys(st.images || {}).length,
+          texts:    Object.keys(st.texts  || {}).length,
+          catalog:  Object.keys(st.catalog || {}).length,
+        },
+        limits: { chatPerHour: CHAT_RATE_MAX, leadPerHour: LEAD_RATE_MAX, chatImagePerHour: CHATIMG_RATE_MAX },
+      });
+    }
+
     // ---------- จัดการผู้ใช้ (แอดมินหลักเท่านั้น) ----------
     if (path === '/users') {
       if (!can(me, 'users')) return json({ error:'ไม่มีสิทธิ์เข้าถึงส่วนนี้' }, 403);
