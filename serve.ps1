@@ -362,6 +362,14 @@ function Get-ImportJsonLd([string]$html) {
 $fOrderSeq = Join-Path $data "orderseq.json"
 
 function Get-ThaiNow { [DateTime]::UtcNow.AddHours(7) }
+# คีย์วันแบบเวลาไทย ใช้ทั้งตอนนับผู้เข้าชมและตอนสรุปแดชบอร์ด ต้องตรงกัน
+# ไม่งั้นยอดของวันจะเหลื่อมกัน 7 ชั่วโมง
+function Get-ThaiDayKey($utc) {
+  # ห้ามใช้ .Value กับ [Nullable[DateTime]] — PowerShell คลายค่าให้เป็น DateTime อยู่แล้ว
+  # .Value จึงคืน null แล้วเรียกเมธอดต่อไม่ได้
+  $d = if ($null -eq $utc) { Get-ThaiNow } else { ([DateTime]$utc).AddHours(7) }
+  return $d.ToString('yyyy-MM-dd')
+}
 function Get-ThaiTimeText { (Get-ThaiNow).ToString('dd/MM/yyyy HH:mm') + ' น.' }
 
 # เลขที่ออเดอร์ WEB-YYMMDD-NNN — เริ่มนับใหม่ทุกวัน
@@ -397,11 +405,45 @@ $fQuotes  = Join-Path $data "quotes.json"
 $fProds   = Join-Path $data "products.json"
 $fSetting = Join-Path $data "settings.json"
 $fLeads   = Join-Path $data "leads.json"
+$fStats   = Join-Path $data "stats.json"      # ยอดผู้เข้าชมรายวัน
+$fAudit   = Join-Path $data "audit.json"      # ประวัติการกระทำของแอดมิน
 $dImg     = Join-Path $data "catalogimg"
 if (-not (Test-Path $dImg)) { New-Item -ItemType Directory -Force $dImg | Out-Null }
 $dChatImg = Join-Path $data "chatimg"
 if (-not (Test-Path $dChatImg)) { New-Item -ItemType Directory -Force $dChatImg | Out-Null }
 $fSecret  = Join-Path $data "secret.key"
+
+# ══════════════════════════════════════════════════════════════════════════
+#  บันทึกประวัติการกระทำของแอดมิน (audit log)
+#  ────────────────────────────────────────────────────────────────────────
+#  เก็บว่า "ใคร ทำอะไร กับอะไร เมื่อไร จากไอพีไหน" เพื่อตรวจย้อนหลังได้
+#  เก็บเฉพาะการกระทำที่เปลี่ยนแปลงข้อมูล ไม่เก็บการอ่าน เพราะจะรกเปล่าๆ
+#  ห้ามเก็บรหัสผ่านหรือค่าคีย์ลงใน log เด็ดขาด — เก็บแค่ว่าทำอะไรกับรายการไหน
+# ══════════════════════════════════════════════════════════════════════════
+$AUDIT_MAX = 1000   # เก็บย้อนหลังกี่รายการ เกินแล้วตัดของเก่าทิ้ง
+
+function Write-Audit($user, [string]$action, [string]$detail, $req) {
+  try {
+    $ip = ''
+    if ($req) { $ip = [string]$req.RemoteEndPoint.Address }
+    $rec = @{
+      at     = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+      user   = if ($user) { [string]$user.username } else { '-' }
+      name   = if ($user) { [string]$user.name } else { '-' }
+      role   = if ($user) { [string]$user.role } else { '-' }
+      action = $action
+      detail = Trim-Max $detail 300
+      ip     = $ip
+    }
+    $log = @(Read-Json $fAudit @())
+    $log += $rec
+    if ($log.Count -gt $AUDIT_MAX) { $log = $log[($log.Count - $AUDIT_MAX)..($log.Count - 1)] }
+    Write-Json $fAudit $log
+  } catch {
+    # บันทึก log ไม่สำเร็จ ต้องไม่ทำให้คำสั่งหลักของแอดมินพัง
+    Write-Host ("audit log error: {0}" -f $_.Exception.Message) -ForegroundColor Yellow
+  }
+}
 
 function Read-Json([string]$path, $fallback) {
   if (-not (Test-Path $path)) { return $fallback }
@@ -673,9 +715,13 @@ while ($listener.IsListening) {
           # ไม่บอกว่าผิดที่ชื่อผู้ใช้หรือรหัสผ่าน เพื่อไม่ให้เดาว่ามีบัญชีนี้อยู่จริงไหม
           $emsg = if ($left -gt 0) { "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง (เหลืออีก $left ครั้งก่อนถูกล็อกชั่วคราว)" }
                   else { 'ใส่รหัสผิดหลายครั้งเกินไป บัญชีนี้ถูกล็อกชั่วคราว กรุณารอสักครู่' }
+          # บันทึกการล็อกอินที่ล้มเหลวด้วย เพื่อดูย้อนหลังได้ว่ามีคนพยายามเดารหัสไหม
+          # เก็บแค่ชื่อผู้ใช้ที่กรอกมา ไม่เก็บรหัสผ่านเด็ดขาด
+          Write-Audit $null 'login.failed' ('กรอกชื่อผู้ใช้: ' + $un + ' · เหลืออีก ' + $left + ' ครั้ง') $req
           Send-Json $res @{ error=$emsg } 401; continue
         }
         $LoginFail.Remove($lip) | Out-Null   # ล็อกอินสำเร็จแล้วล้างตัวนับทิ้ง
+        Write-Audit $u 'login' 'เข้าสู่ระบบสำเร็จ' $req
         $now = [int][double]::Parse((Get-Date -UFormat %s))
         $tok = Sign-Token @{ sub=$u.id; role=$u.role; exp=($now + $TTLSEC) }
         Send-Json $res @{ user=(Public-User $u) } 200 (Make-Cookie $tok $TTLSEC); continue
@@ -693,6 +739,20 @@ while ($listener.IsListening) {
       }
 
       # อ่านการตั้งค่าเว็บเปิดสาธารณะ (หน้าแคตตาล็อกต้องใช้แสดงลิงก์แบรนด์)
+      # ---------- นับผู้เข้าชม (เปิดสาธารณะ หน้าเว็บยิงมาครั้งเดียวต่อการเข้าชม) ----------
+      # เก็บแค่ตัวเลขรวมรายวัน ไม่เก็บ IP ไม่เก็บว่าใครเข้าหน้าไหน
+      if ($ep -eq '/hit' -and $method -eq 'POST') {
+        try {
+          $day = Get-ThaiDayKey $null
+          $stats = To-Hashtable (Read-Json $fStats @{})
+          $stats[$day] = [int]$stats[$day] + 1
+          $keep = @($stats.Keys | Sort-Object | Select-Object -Last 60)
+          $trim = @{}; foreach ($k in $keep) { $trim[$k] = $stats[$k] }
+          Write-JsonObj $fStats $trim
+        } catch { }   # นับพลาดไม่ใช่เรื่องคอขาดบาดตาย ห้ามทำให้หน้าเว็บพัง
+        Send-Json $res @{ ok=$true } 200; continue
+      }
+
       if ($ep -eq '/settings' -and $method -eq 'GET') {
         Send-Json $res @{ settings=(Read-Json $fSetting @{}) } 200; continue
       }
@@ -944,6 +1004,78 @@ while ($listener.IsListening) {
 
       $me = Current-User $req
 
+      # ---------- ประวัติการกระทำของแอดมิน (แอดมินหลักเท่านั้น) ----------
+      # จำกัดเฉพาะ super เพราะ log บอกได้ว่าใครทำอะไร ซึ่งเป็นข้อมูลอ่อนไหว
+      if ($ep -eq '/audit' -and $method -eq 'GET') {
+        if (-not (Can $me 'users')) { Send-Json $res @{ error='เฉพาะแอดมินหลักเท่านั้นที่ดูประวัติได้' } 403; continue }
+        $log = @(Read-Json $fAudit @())
+        # ใหม่สุดขึ้นก่อน และส่งไม่เกิน 200 รายการ ไม่ให้หน้าเว็บอืด
+        [array]::Reverse($log)
+        Send-Json $res @{ entries=@($log | Select-Object -First 200); total=$log.Count } 200; continue
+      }
+
+      # ---------- แดชบอร์ดสรุปภาพรวม ----------
+      # ตัวเลขทุกตัวคำนวณจากข้อมูลจริงในระบบ ไม่มีการประมาณหรือสุ่ม
+      if ($ep -eq '/dashboard' -and $method -eq 'GET') {
+        if (-not (Can $me 'sales')) { Send-Json $res @{ error='ไม่มีสิทธิ์เข้าถึงส่วนนี้' } 403; continue }
+        # ห้ามตั้งชื่อ $DAYS คู่กับ $days — PowerShell ไม่แยกตัวพิมพ์เล็กใหญ่
+        # จะกลายเป็นตัวแปรเดียวกัน แล้วเลข 14 ถูกอาร์เรย์ทับจนคำนวณพัง
+        $dayCount = 14
+        $quotes = @(Read-Json $fQuotes @())
+        $leads  = @(Read-Json $fLeads @())
+        $stats  = To-Hashtable (Read-Json $fStats @{})
+
+        $dayKeys = @()
+        for ($i = $dayCount - 1; $i -ge 0; $i--) { $dayKeys += (Get-ThaiDayKey ([DateTime]::UtcNow.AddDays(-$i))) }
+        $byDay = @{}
+        foreach ($d in $dayKeys) { $byDay[$d] = @{ visits=0; leads=0; quotes=0; sales=0.0 } }
+        foreach ($d in $dayKeys) { $byDay[$d].visits = [int]$stats[$d] }
+
+        foreach ($l in $leads) {
+          if (-not $l -or -not $l.at) { continue }
+          $t = [DateTime]::MinValue
+          if ([DateTime]::TryParse([string]$l.at, [ref]$t)) {
+            $k = Get-ThaiDayKey $t.ToUniversalTime()
+            if ($byDay.ContainsKey($k)) { $byDay[$k].leads += 1 }
+          }
+        }
+        foreach ($q in $quotes) {
+          if (-not $q -or -not $q.at) { continue }
+          $k = Get-ThaiDayKey ([DateTimeOffset]::FromUnixTimeMilliseconds([int64]$q.at).UtcDateTime)
+          if ($byDay.ContainsKey($k)) { $byDay[$k].quotes += 1; $byDay[$k].sales += [double]$q.total }
+        }
+
+        $series = @($dayKeys | ForEach-Object { @{ day=$_; visits=$byDay[$_].visits; leads=$byDay[$_].leads; quotes=$byDay[$_].quotes; sales=$byDay[$_].sales } })
+        $tally = @{}
+        foreach ($l in $leads) {
+          $p = ([string]$l.product) -replace '^สินค้าที่ลูกค้าเปิดดู:\s*', ''
+          $p = $p.Trim()
+          if ($p) { $tally[$p] = [int]$tally[$p] + 1 }
+        }
+        $top = @($tally.GetEnumerator() | Sort-Object Value -Descending | Select-Object -First 5 |
+                 ForEach-Object { @{ name=$_.Key; n=$_.Value } })
+        $recent = @($leads | Select-Object -Last 8)
+        [array]::Reverse($recent)
+
+        Send-Json $res @{
+          days   = $dayCount
+          today  = $series[$series.Count - 1]
+          # รวมยอดด้วยลูปเอง — Measure-Object อ่าน "คีย์ของ hashtable" ไม่ได้
+          # มันอ่านได้เฉพาะ property ของ object จริงๆ เท่านั้น
+          totals = @{
+            visits = ($dayKeys | ForEach-Object { $byDay[$_].visits } | Measure-Object -Sum).Sum
+            leads  = ($dayKeys | ForEach-Object { $byDay[$_].leads  } | Measure-Object -Sum).Sum
+            quotes = ($dayKeys | ForEach-Object { $byDay[$_].quotes } | Measure-Object -Sum).Sum
+            sales  = ($dayKeys | ForEach-Object { $byDay[$_].sales  } | Measure-Object -Sum).Sum
+          }
+          series      = $series
+          topProducts = $top
+          recentLeads = @($recent | ForEach-Object { @{ orderNo=[string]$_.orderNo; at=[string]$_.at; product=[string]$_.product } })
+          members     = @{ available = $false }   # ยังไม่มีระบบสมาชิกฝั่งเซิร์ฟเวอร์
+        } 200
+        continue
+      }
+
       # ---------- สถานะระบบ (สำหรับหน้าเครื่องมือในหลังบ้าน) ----------
       # บอกแค่ว่า "ตั้งค่าไว้แล้วหรือยัง" ไม่ส่งค่าคีย์ออกไปเด็ดขาด
       if ($ep -eq '/status' -and $method -eq 'GET') {
@@ -1046,6 +1178,12 @@ while ($listener.IsListening) {
         else { Send-Json $res @{ error='คำสั่งไม่ถูกต้อง' } 400; continue }
 
         Write-Json $fUsers $users
+        # เรื่องบัญชีผู้ใช้เป็นจุดอ่อนไหวที่สุด ต้องรู้เสมอว่าใครไปยุ่งกับบัญชีไหน
+        # (ไม่เก็บรหัสผ่านลง log แม้แต่ตอนรีเซ็ต — เก็บแค่ว่าทำกับบัญชีชื่ออะไร)
+        # อ่านชื่อบัญชีจาก $b ตรงๆ ไม่พึ่ง $target เพราะสาขา create ยังไม่มี $target
+        # และตัวแปรใน PowerShell ค้างข้ามรอบ request ได้ ถ้าพึ่งของเก่าจะบันทึกผิดคน
+        $auditWho = if ($target) { [string]$target.username } else { ([string]$b.username).Trim().ToLower() }
+        Write-Audit $me ('user.' + $act) ('บัญชี: ' + $auditWho) $req
         Send-Json $res @{ users=@($users | ForEach-Object { Public-User $_ }) } 200; continue
       }
 
@@ -1141,6 +1279,7 @@ while ($listener.IsListening) {
         $b = Read-Body $req
         if ($null -eq $b -or $null -eq $b.products) { Send-Json $res @{ error='รูปแบบข้อมูลไม่ถูกต้อง' } 400; continue }
         Write-Json $fProds @($b.products)
+        Write-Audit $me 'products.save' ('บันทึกสินค้า {0} รายการ' -f @($b.products).Count) $req
         Send-Json $res @{ ok=$true; count=@($b.products).Count } 200; continue
       }
 
@@ -1157,6 +1296,7 @@ while ($listener.IsListening) {
         if ($b64.Length -gt 4MB) { Send-Json $res @{ error='ไฟล์ใหญ่เกินไป (จำกัด 3MB)' } 400; continue }
         Write-JsonObj (Join-Path $dImg "$key.json") @{ type=$m.Groups[1].Value; data=$b64; at=[DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() }
         $stamp = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        Write-Audit $me 'image.upload' ('อัปโหลดรูป {0}' -f $key) $req
         Send-Json $res @{ ok=$true; url=("/api/catalog-image/{0}?v={1}" -f $key, $stamp) } 200; continue
       }
 
@@ -1304,6 +1444,7 @@ while ($listener.IsListening) {
           catalogUrls   = $urlMap   # เก็บรูปแบบเดิมไว้ เผื่อหน้าเว็บเวอร์ชันเก่ายังอ่านอยู่
         }
         Write-JsonObj $fSetting $out
+        Write-Audit $me 'settings.save' ('บันทึกตั้งค่า: ' + ((@($sk) | Sort-Object) -join ', ')) $req
         Send-Json $res @{ ok=$true; settings=$out } 200; continue
       }
 
@@ -1324,11 +1465,13 @@ while ($listener.IsListening) {
                     cust=$q.cust; items=@($q.items); total=[double]$q.total }
           $next = @(@($rec) + $quotes)
           Write-Json $fQuotes $next
+          Write-Audit $me 'quote.create' ('เลขที่ ' + $no + ' · ลูกค้า ' + [string]$q.cust.name) $req
           Send-Json $res @{ quotes=$next; created=$no } 200; continue
         }
         if ([string]$b.action -eq 'delete') {
           $next = @($quotes | Where-Object { $_.no -ne [string]$b.no })
           Write-Json $fQuotes $next
+          Write-Audit $me 'quote.delete' ('เลขที่ ' + [string]$b.no) $req
           Send-Json $res @{ quotes=$next } 200; continue
         }
         Send-Json $res @{ error='คำสั่งไม่ถูกต้อง' } 400; continue

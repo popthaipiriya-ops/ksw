@@ -204,6 +204,13 @@ function chatUnknownCodesBlock(codes) {
 //  ใช้เวลาไทย (UTC+7) เสมอ ไม่ว่าเซิร์ฟเวอร์จะตั้งโซนเวลาอะไรไว้
 // ══════════════════════════════════════════════════════════════════════════════
 const thaiNow = () => new Date(Date.now() + 7 * 60 * 60 * 1000);
+// คีย์วันแบบเวลาไทย ใช้ทั้งตอนนับผู้เข้าชมและตอนสรุปแดชบอร์ด ต้องตรงกัน
+// ไม่งั้นยอดของวันจะเหลื่อมกัน 7 ชั่วโมง
+const thaiDayKey = (ms) => {
+  const d = ms == null ? thaiNow() : new Date(ms + 7 * 60 * 60 * 1000);
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())}`;
+};
 
 // 22/08/2026 13:45 น.
 function thaiTimeText() {
@@ -317,6 +324,32 @@ async function chatImageRateOk(ip) {
   rec.count += 1;
   await writeJson(key, rec);
   return true;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  บันทึกประวัติการกระทำของแอดมิน (audit log)
+//  เก็บว่า "ใคร ทำอะไร กับอะไร เมื่อไร จากไอพีไหน" เพื่อตรวจย้อนหลังได้
+//  เก็บเฉพาะการกระทำที่เปลี่ยนแปลงข้อมูล ไม่เก็บการอ่าน เพราะจะรกเปล่าๆ
+//  ห้ามเก็บรหัสผ่านหรือค่าคีย์ลงใน log เด็ดขาด
+// ══════════════════════════════════════════════════════════════════════════
+const AUDIT_MAX = 1000;
+async function writeAudit(user, action, detail, req) {
+  try {
+    const log = await readJson('audit', []);
+    log.push({
+      at: Date.now(),
+      user: user ? String(user.username || '-') : '-',
+      name: user ? String(user.name || '-') : '-',
+      role: user ? String(user.role || '-') : '-',
+      action: String(action).slice(0, 40),
+      detail: String(detail == null ? '' : detail).slice(0, 300),
+      ip: clientIp(req),
+    });
+    await writeJson('audit', log.slice(-AUDIT_MAX));
+  } catch (e) {
+    // บันทึก log ไม่สำเร็จ ต้องไม่ทำให้คำสั่งหลักของแอดมินพัง
+    console.error('audit log error:', e);
+  }
 }
 
 // ---------- บทบาทและสิทธิ์ (แหล่งความจริงอยู่ที่เซิร์ฟเวอร์) ----------
@@ -574,12 +607,17 @@ export default async (req) => {
       const probe = await hashPassword(String(password), u ? u.salt : b64u(new Uint8Array(16)));
       if (!u || !safeEqual(probe.hash, u.hash) || u.active === false) {
         const left = await loginFail(ip);
+        // บันทึกการล็อกอินที่ล้มเหลว เพื่อดูย้อนหลังได้ว่ามีคนพยายามเดารหัสไหม
+        // เก็บแค่ชื่อผู้ใช้ที่กรอกมา ไม่เก็บรหัสผ่านเด็ดขาด
+        await writeAudit(null, 'login.failed',
+          `กรอกชื่อผู้ใช้: ${String(username).trim().toLowerCase()} · เหลืออีก ${left} ครั้ง`, req);
         // ไม่บอกว่าผิดที่ชื่อผู้ใช้หรือรหัสผ่าน เพื่อไม่ให้เดาว่ามีบัญชีนี้อยู่จริงไหม
         return json({ error: left > 0
           ? `ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง (เหลืออีก ${left} ครั้งก่อนถูกล็อกชั่วคราว)`
           : 'ใส่รหัสผิดหลายครั้งเกินไป บัญชีนี้ถูกล็อกชั่วคราว กรุณารอสักครู่' }, 401);
       }
       await loginReset(ip);
+      await writeAudit(u, 'login', 'เข้าสู่ระบบสำเร็จ', req);
       const token = await signToken({ sub:u.id, role:u.role, exp: Math.floor(Date.now()/1000) + TTL_SEC });
       return json({ user: publicUser(u) }, 200, { 'set-cookie': setCookie(token, TTL_SEC) });
     }
@@ -592,6 +630,20 @@ export default async (req) => {
       return json({ products: await readJson('products', []) });
 
     // อ่านการตั้งค่าเว็บเปิดสาธารณะ (หน้าแคตตาล็อกต้องใช้แสดงลิงก์แบรนด์)
+    // ---------- นับผู้เข้าชม (เปิดสาธารณะ หน้าเว็บยิงมาครั้งเดียวต่อการเข้าชม) ----------
+    // เก็บแค่ตัวเลขรวมรายวัน ไม่เก็บ IP ไม่เก็บว่าใครเข้าหน้าไหน
+    if (path === '/hit' && method === 'POST') {
+      try {
+        const day = thaiDayKey();
+        const stats = await readJson('stats', {});
+        stats[day] = (Number(stats[day]) || 0) + 1;
+        // เก็บย้อนหลังพอใช้ทำกราฟ ไม่ให้ไฟล์โตไปเรื่อยๆ
+        const keep = Object.keys(stats).sort().slice(-60);
+        await writeJson('stats', Object.fromEntries(keep.map(k => [k, stats[k]])));
+      } catch (e) { /* นับพลาดไม่ใช่เรื่องคอขาดบาดตาย ห้ามทำให้หน้าเว็บพัง */ }
+      return json({ ok:true });
+    }
+
     if (path === '/settings' && method === 'GET')
       return json({ settings: await readJson('settings', {}) });
 
@@ -788,6 +840,70 @@ export default async (req) => {
 
     if (!me) return json({ error:'ยังไม่ได้เข้าสู่ระบบ' }, 401);
 
+    // ---------- ประวัติการกระทำของแอดมิน (แอดมินหลักเท่านั้น) ----------
+    // จำกัดเฉพาะ super เพราะ log บอกได้ว่าใครทำอะไร ซึ่งเป็นข้อมูลอ่อนไหว
+    if (path === '/audit' && method === 'GET') {
+      if (!can(me, 'users')) return json({ error:'เฉพาะแอดมินหลักเท่านั้นที่ดูประวัติได้' }, 403);
+      const log = await readJson('audit', []);
+      // ใหม่สุดขึ้นก่อน และส่งไม่เกิน 200 รายการ ไม่ให้หน้าเว็บอืด
+      return json({ entries: (Array.isArray(log) ? log : []).slice(-200).reverse(), total: log.length });
+    }
+
+    // ---------- แดชบอร์ดสรุปภาพรวม ----------
+    // ตัวเลขทุกตัวคำนวณจากข้อมูลจริงในระบบ ไม่มีการประมาณหรือสุ่ม
+    if (path === '/dashboard' && method === 'GET') {
+      if (!can(me, 'sales')) return json({ error:'ไม่มีสิทธิ์เข้าถึงส่วนนี้' }, 403);
+      const DAYS = 14;
+      const [quotes, leads, stats] = await Promise.all([
+        readJson('quotes', []), readJson('leads', []), readJson('stats', {}),
+      ]);
+
+      // ไล่วันย้อนหลังตามเวลาไทย เพื่อให้ตรงกับตอนนับผู้เข้าชม
+      const days = [];
+      for (let i = DAYS - 1; i >= 0; i--) days.push(thaiDayKey(Date.now() - i * 86400000));
+      const blank = () => ({ visits:0, leads:0, quotes:0, sales:0 });
+      const byDay = Object.fromEntries(days.map(d => [d, blank()]));
+
+      for (const d of days) byDay[d].visits = Number(stats[d]) || 0;
+      for (const l of (Array.isArray(leads) ? leads : [])) {
+        const t = Date.parse(l && l.at);
+        if (!t) continue;
+        const k = thaiDayKey(t);
+        if (byDay[k]) byDay[k].leads += 1;
+      }
+      for (const q of (Array.isArray(quotes) ? quotes : [])) {
+        const t = Number(q && q.at);
+        if (!t) continue;
+        const k = thaiDayKey(t);
+        if (byDay[k]) { byDay[k].quotes += 1; byDay[k].sales += Number(q.total) || 0; }
+      }
+
+      const series = days.map(d => ({ day: d, ...byDay[d] }));
+      const sum = (f) => series.reduce((a, r) => a + r[f], 0);
+      const today = series[series.length - 1] || blank();
+
+      // สินค้าที่ลูกค้าถามถึงบ่อยสุด — ดึงจากบรรทัด "สินค้าที่ลูกค้าเปิดดู" ในลีด
+      const tally = {};
+      for (const l of (Array.isArray(leads) ? leads : [])) {
+        const p = String((l && l.product) || '').replace(/^สินค้าที่ลูกค้าเปิดดู:\s*/, '').trim();
+        if (p) tally[p] = (tally[p] || 0) + 1;
+      }
+      const topProducts = Object.entries(tally).sort((a, b) => b[1] - a[1]).slice(0, 5)
+        .map(([name, n]) => ({ name, n }));
+
+      return json({
+        days: DAYS,
+        today,
+        totals: { visits: sum('visits'), leads: sum('leads'), quotes: sum('quotes'), sales: sum('sales') },
+        series,
+        topProducts,
+        recentLeads: (Array.isArray(leads) ? leads : []).slice(-8).reverse()
+          .map(l => ({ orderNo: l.orderNo || '', at: l.at || '', product: l.product || '' })),
+        // ยังไม่มีระบบสมาชิกฝั่งเซิร์ฟเวอร์ บอกให้หน้าเว็บรู้ว่าอย่าโชว์ตัวเลขนี้
+        members: { available: false },
+      });
+    }
+
     // ---------- สถานะระบบ (สำหรับหน้าเครื่องมือในหลังบ้าน) ----------
     // บอกแค่ว่า "ตั้งค่าไว้แล้วหรือยัง" ไม่ส่งค่าคีย์ออกไปเด็ดขาด
     if (path === '/status' && method === 'GET') {
@@ -839,6 +955,7 @@ export default async (req) => {
           const { salt, hash } = await hashPassword(pw);
           users.push({ id:'u' + Date.now(), username:un, name:nm, role:body.role, salt, hash, active:true, createdAt:Date.now() });
           await writeJson('users', users);
+          await writeAudit(me, 'user.create', `บัญชี: ${un} · บทบาท ${body.role}`, req);
           return json({ users: users.map(publicUser) });
         }
 
@@ -871,12 +988,16 @@ export default async (req) => {
           const left = users.filter(x => x.id !== target.id);
           if (!activeSupers(left)) return json({ error:'ต้องมีแอดมินหลักที่ใช้งานอยู่อย่างน้อย 1 คน' }, 400);
           await writeJson('users', left);
+          await writeAudit(me, 'user.delete', 'บัญชี: ' + target.username, req);
           return json({ users: left.map(publicUser) });
         } else {
           return json({ error:'คำสั่งไม่ถูกต้อง' }, 400);
         }
 
         await writeJson('users', users);
+        // เรื่องบัญชีผู้ใช้เป็นจุดอ่อนไหวที่สุด ต้องรู้เสมอว่าใครไปยุ่งกับบัญชีไหน
+        // (ไม่เก็บรหัสผ่านลง log แม้แต่ตอนรีเซ็ต)
+        await writeAudit(me, 'user.' + act, 'บัญชี: ' + (target ? target.username : ''), req);
         return json({ users: users.map(publicUser) });
       }
     }
@@ -920,6 +1041,7 @@ export default async (req) => {
         const body = await req.json().catch(() => ({}));
         if (!Array.isArray(body.products)) return json({ error:'รูปแบบข้อมูลไม่ถูกต้อง' }, 400);
         await writeJson('products', body.products);
+        await writeAudit(me, 'products.save', `บันทึกสินค้า ${body.products.length} รายการ`, req);
         return json({ ok:true, count: body.products.length });
       }
     }
@@ -941,6 +1063,7 @@ export default async (req) => {
       if (b64.length > 4 * 1024 * 1024) return json({ error:'ไฟล์ใหญ่เกินไป (จำกัด 3MB)' }, 400);
 
       await writeJson('catalogimg/' + key, { type, data: b64, at: Date.now() });
+      await writeAudit(me, 'image.upload', 'อัปโหลดรูป ' + key, req);
       return json({ ok:true, url: `/api/catalog-image/${key}?v=${Date.now()}` });
     }
 
@@ -1071,6 +1194,7 @@ export default async (req) => {
         catalogUrls: Object.fromEntries(Object.entries(catalog).filter(([, v]) => v.url).map(([k, v]) => [k, v.url])),
       };
       await writeJson('settings', out);
+      await writeAudit(me, 'settings.save', 'บันทึกตั้งค่า: ' + Object.keys(s).sort().join(', '), req);
       return json({ ok:true, settings: out });
     }
 
@@ -1090,11 +1214,13 @@ export default async (req) => {
           const rec = { no, at:Date.now(), by:me.name, byUser:me.username, cust:q.cust, items:q.items, total:Number(q.total) || 0 };
           const next = [rec, ...quotes];
           await writeJson('quotes', next);
+          await writeAudit(me, 'quote.create', `เลขที่ ${no} · ลูกค้า ${q.cust.name}`, req);
           return json({ quotes: next, created: no });
         }
         if (body.action === 'delete') {
           const next = quotes.filter(x => x.no !== body.no);
           await writeJson('quotes', next);
+          await writeAudit(me, 'quote.delete', 'เลขที่ ' + String(body.no || ''), req);
           return json({ quotes: next });
         }
         return json({ error:'คำสั่งไม่ถูกต้อง' }, 400);
