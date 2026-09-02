@@ -352,6 +352,24 @@ async function writeAudit(user, action, detail, req) {
   }
 }
 
+// ---------- จำกัดจำนวนคำสั่งเขียนของแอดมิน ----------
+// เดิมจำกัดเฉพาะ endpoint สาธารณะ ส่วนฝั่งแอดมินยิงได้ไม่จำกัด
+// ถ้าบัญชีแอดมินถูกยึด คนร้ายจะไล่ลบ/เขียนทับข้อมูลรัวๆ ได้ทันที
+// ด่านนี้ไม่ได้กันคนร้ายถาวร แต่ทำให้ช้าลงมากพอที่จะเห็นร่องรอยใน log และตัดสิทธิ์ทัน
+const ADMIN_WRITE_MAX = 200;                 // คำสั่งเขียนต่อคนต่อชั่วโมง
+const ADMIN_WRITE_WIN = 60 * 60 * 1000;
+async function adminWriteOk(user) {
+  if (!user) return true;
+  const key = 'ratelimit/adminwrite/' + String(user.id || user.username).replace(/[^A-Za-z0-9._-]/g, '_');
+  const now = Date.now();
+  let rec = await readJson(key, null);
+  if (!rec || typeof rec.start !== 'number' || now - rec.start > ADMIN_WRITE_WIN) rec = { start: now, count: 0 };
+  if (rec.count >= ADMIN_WRITE_MAX) return false;
+  rec.count += 1;
+  await writeJson(key, rec);
+  return true;
+}
+
 // ---------- บทบาทและสิทธิ์ (แหล่งความจริงอยู่ที่เซิร์ฟเวอร์) ----------
 // importWeb = ดึงข้อมูลสินค้าจากเว็บอื่น — ให้เฉพาะแอดมินหลัก
 // เพราะเป็นการสั่งให้เซิร์ฟเวอร์ยิง HTTP ออกไปข้างนอกตาม URL ที่ผู้ใช้พิมพ์
@@ -839,6 +857,55 @@ export default async (req) => {
       return me ? json({ user: publicUser(me), can: ROLES[me.role] }) : json({ error:'ยังไม่ได้เข้าสู่ระบบ' }, 401);
 
     if (!me) return json({ error:'ยังไม่ได้เข้าสู่ระบบ' }, 401);
+
+    // ทุกคำสั่งเขียนของแอดมินผ่านด่านนี้ก่อน — อ่านไม่จำกัด เขียนมีเพดาน
+    if (method !== 'GET' && !(await adminWriteOk(me))) {
+      await writeAudit(me, 'ratelimit', 'ยิงคำสั่งเขียนเกินเพดานต่อชั่วโมง: ' + path, req);
+      return json({ error:'ทำรายการถี่เกินไป กรุณารอสักครู่แล้วลองใหม่' }, 429);
+    }
+
+    // ---------- สำรองข้อมูลทั้งระบบ (แอดมินหลักเท่านั้น) ----------
+    //
+    // สิ่งที่ "ไม่" ใส่ในไฟล์สำรอง และเหตุผล
+    //   users  — มี salt กับ hash รหัสผ่านอยู่ ถ้าไฟล์หลุดจะถูกเอาไปไล่เดารหัสแบบออฟไลน์ได้
+    //            จึงใส่มาแค่รายชื่อบัญชีไว้ดูอ้างอิง ไม่มีข้อมูลลับ
+    //            (กู้บัญชีคืนใช้ BOOTSTRAP_ADMIN_USER/PASS ตอนไม่มีผู้ใช้ในระบบเลย)
+    //   audit  — เป็นหลักฐานว่าใครทำอะไร ถ้ากู้คืนทับได้ก็เท่ากับลบร่องรอยตัวเองได้
+    //   รูปที่อัปโหลด — เป็นไฟล์ไบนารี ก้อนใหญ่เกินกว่าจะยัดลง JSON
+    if (path === '/backup' && method === 'GET') {
+      if (!can(me, 'users')) return json({ error:'เฉพาะแอดมินหลักเท่านั้นที่สำรองข้อมูลได้' }, 403);
+      const [settings, products, quotes, leads, users] = await Promise.all([
+        readJson('settings', {}), readJson('products', []),
+        readJson('quotes', []), readJson('leads', []), loadUsers(),
+      ]);
+      await writeAudit(me, 'backup.download', 'ดาวน์โหลดไฟล์สำรองข้อมูล', req);
+      return json({
+        kind: 'kss-backup', version: 1, at: new Date().toISOString(), by: me.username,
+        settings, products, quotes, leads,
+        // รายชื่อบัญชีไว้ดูอ้างอิงเท่านั้น ไม่มี salt/hash และกู้คืนไม่ได้
+        usersRef: (Array.isArray(users) ? users : []).map(u => ({
+          username: u.username, name: u.name, role: u.role, active: u.active !== false,
+        })),
+      });
+    }
+
+    if (path === '/restore' && method === 'POST') {
+      if (!can(me, 'users')) return json({ error:'เฉพาะแอดมินหลักเท่านั้นที่กู้คืนข้อมูลได้' }, 403);
+      const body = await req.json().catch(() => ({}));
+      if (!body || body.kind !== 'kss-backup')
+        return json({ error:'ไฟล์นี้ไม่ใช่ไฟล์สำรองของระบบนี้' }, 400);
+
+      const done = [];
+      // เขียนทับเฉพาะส่วนที่มีมาในไฟล์จริงๆ ส่วนที่ไม่มีให้คงของเดิมไว้
+      if (body.settings && typeof body.settings === 'object') { await writeJson('settings', body.settings); done.push('settings'); }
+      if (Array.isArray(body.products)) { await writeJson('products', body.products); done.push(`products(${body.products.length})`); }
+      if (Array.isArray(body.quotes))   { await writeJson('quotes',   body.quotes);   done.push(`quotes(${body.quotes.length})`); }
+      if (Array.isArray(body.leads))    { await writeJson('leads',    body.leads);    done.push(`leads(${body.leads.length})`); }
+      if (!done.length) return json({ error:'ไฟล์สำรองไม่มีข้อมูลที่กู้คืนได้' }, 400);
+
+      await writeAudit(me, 'restore', 'กู้คืนข้อมูล: ' + done.join(', ') + ' · จากไฟล์วันที่ ' + (body.at || '-'), req);
+      return json({ ok:true, restored: done });
+    }
 
     // ---------- ประวัติการกระทำของแอดมิน (แอดมินหลักเท่านั้น) ----------
     // จำกัดเฉพาะ super เพราะ log บอกได้ว่าใครทำอะไร ซึ่งเป็นข้อมูลอ่อนไหว

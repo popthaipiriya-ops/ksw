@@ -11874,33 +11874,33 @@ function HPSystemTools() {
     fontFamily: 'Inter, Noto Sans Thai, sans-serif'
   });
 
-  // สำรอง: ดึงการตั้งค่าปัจจุบันแล้วให้ดาวน์โหลดเป็นไฟล์ JSON
+  // สำรอง: ดึงข้อมูลทั้งระบบมาเป็นไฟล์ JSON ไฟล์เดียว
   const backup = async () => {
     setErr('');
     setMsg('');
     setBusy(true);
     try {
-      const r = await hpApi('/settings');
-      const blob = new Blob([JSON.stringify(r.settings || {}, null, 2)], {
+      const data = await hpApi('/backup');
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
         type: 'application/json'
       });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'kss-settings-' + new Date().toISOString().slice(0, 10) + '.json';
+      a.download = 'kss-backup-' + new Date().toISOString().slice(0, 10) + '.json';
       document.body.appendChild(a);
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 2000);
-      setMsg('✔ ดาวน์โหลดไฟล์สำรองแล้ว');
-      setTimeout(() => setMsg(''), 4000);
+      setMsg(`✔ ดาวน์โหลดแล้ว — สินค้า ${(data.products || []).length} · ใบเสนอราคา ${(data.quotes || []).length} · ลิสต์ลูกค้า ${(data.leads || []).length}`);
+      setTimeout(() => setMsg(''), 6000);
     } catch (e) {
       setErr('สำรองข้อมูลไม่สำเร็จ: ' + e.message);
     }
     setBusy(false);
   };
 
-  // กู้คืน: เขียนทับการตั้งค่าทั้งหมดด้วยไฟล์ที่เลือก
+  // กู้คืน: เขียนทับข้อมูลด้วยไฟล์ที่เลือก
   const restore = async (file, inputEl) => {
     if (inputEl) inputEl.value = '';
     if (!file) return;
@@ -11913,31 +11913,25 @@ function HPSystemTools() {
       setErr('ไฟล์นี้ไม่ใช่ JSON ที่อ่านได้');
       return;
     }
-    if (!data || typeof data !== 'object') {
-      setErr('ไฟล์สำรองไม่ถูกต้อง');
+    if (!data || data.kind !== 'kss-backup') {
+      setErr('ไฟล์นี้ไม่ใช่ไฟล์สำรองของระบบนี้');
       return;
     }
-    if (!window.confirm('กู้คืนการตั้งค่าจากไฟล์นี้?\nการตั้งค่าปัจจุบันทั้งหมดจะถูกเขียนทับ')) return;
+    // บอกให้ชัดก่อนว่าจะทับอะไรบ้าง เพราะกดแล้วกู้กลับไม่ได้
+    const parts = [data.settings ? 'ตั้งค่าเว็บไซต์ (รวมรูป ข้อความ บทความ)' : null, Array.isArray(data.products) ? `สินค้า ${data.products.length} รายการ` : null, Array.isArray(data.quotes) ? `ใบเสนอราคา ${data.quotes.length} ใบ` : null, Array.isArray(data.leads) ? `ลิสต์ลูกค้า ${data.leads.length} รายการ` : null].filter(Boolean);
+    if (!window.confirm(`กู้คืนจากไฟล์สำรองวันที่ ${String(data.at || '').slice(0, 10)}?\n\n` + `จะเขียนทับ:\n${parts.map(p => '  • ' + p).join('\n')}\n\n` + 'ข้อมูลปัจจุบันของส่วนเหล่านี้จะหายทั้งหมด กู้กลับไม่ได้')) return;
     setBusy(true);
     try {
-      const r = await hpApi('/settings', {
+      const r = await hpApi('/restore', {
         method: 'POST',
-        body: {
-          settings: {
-            catalog: data.catalog || {},
-            catalogFooter: data.catalogFooter || '',
-            contact: data.contact || {},
-            images: data.images || {},
-            texts: data.texts || {},
-            articles: data.articles || []
-          }
-        }
+        body: data
       });
-      const s = r.settings || {};
-      hpImgSetMap(s.images || {});
-      hpTxtSetMap(s.texts || {});
-      hpArtSetList(s.articles || []);
-      setMsg('✔ กู้คืนการตั้งค่าเรียบร้อยแล้ว');
+      // โหลดค่าที่กู้คืนมาใช้ทันที ไม่ต้องรีเฟรชหน้า
+      const st = (await hpApi('/settings')).settings || {};
+      hpImgSetMap(st.images || {});
+      hpTxtSetMap(st.texts || {});
+      hpArtSetList(st.articles || []);
+      setMsg('✔ กู้คืนเรียบร้อย: ' + (r.restored || []).join(', '));
       load();
     } catch (e) {
       setErr('กู้คืนไม่สำเร็จ: ' + e.message);
@@ -12098,14 +12092,40 @@ function HPSystemTools() {
       color: '#222',
       marginBottom: '6px'
     }
-  }, "\u0E2A\u0E33\u0E23\u0E2D\u0E07\u0E41\u0E25\u0E30\u0E01\u0E39\u0E49\u0E04\u0E37\u0E19\u0E01\u0E32\u0E23\u0E15\u0E31\u0E49\u0E07\u0E04\u0E48\u0E32"), /*#__PURE__*/React.createElement("p", {
+  }, "\u0E2A\u0E33\u0E23\u0E2D\u0E07\u0E41\u0E25\u0E30\u0E01\u0E39\u0E49\u0E04\u0E37\u0E19\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25"), /*#__PURE__*/React.createElement("p", {
     style: {
       fontSize: '13.5px',
       color: '#777',
       lineHeight: '1.8',
+      marginBottom: '10px'
+    }
+  }, /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: '#0d6b5c'
+    }
+  }, "\u0E23\u0E27\u0E21:"), " \u0E15\u0E31\u0E49\u0E07\u0E04\u0E48\u0E32\u0E40\u0E27\u0E47\u0E1A\u0E44\u0E0B\u0E15\u0E4C (\u0E25\u0E34\u0E07\u0E01\u0E4C\u0E41\u0E04\u0E15\u0E15\u0E32\u0E25\u0E47\u0E2D\u0E01 \u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E15\u0E34\u0E14\u0E15\u0E48\u0E2D \u0E23\u0E39\u0E1B\u0E17\u0E35\u0E48\u0E40\u0E1B\u0E25\u0E35\u0E48\u0E22\u0E19 \u0E02\u0E49\u0E2D\u0E04\u0E27\u0E32\u0E21\u0E17\u0E35\u0E48\u0E41\u0E01\u0E49 \u0E1A\u0E17\u0E04\u0E27\u0E32\u0E21) \xB7 \u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 \xB7 \u0E43\u0E1A\u0E40\u0E2A\u0E19\u0E2D\u0E23\u0E32\u0E04\u0E32 \xB7 \u0E25\u0E34\u0E2A\u0E15\u0E4C\u0E25\u0E39\u0E01\u0E04\u0E49\u0E32"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: '12.5px',
+      color: '#9aa8a0',
+      lineHeight: '1.85',
       marginBottom: '14px'
     }
-  }, "\u0E04\u0E23\u0E2D\u0E1A\u0E04\u0E25\u0E38\u0E21\u0E25\u0E34\u0E07\u0E01\u0E4C\u0E41\u0E04\u0E15\u0E15\u0E32\u0E25\u0E47\u0E2D\u0E01 \u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E15\u0E34\u0E14\u0E15\u0E48\u0E2D \u0E23\u0E39\u0E1B\u0E17\u0E35\u0E48\u0E40\u0E1B\u0E25\u0E35\u0E48\u0E22\u0E19 \u0E02\u0E49\u0E2D\u0E04\u0E27\u0E32\u0E21\u0E17\u0E35\u0E48\u0E41\u0E01\u0E49 \u0E41\u0E25\u0E30\u0E1A\u0E17\u0E04\u0E27\u0E32\u0E21", /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("b", null, "\u0E44\u0E21\u0E48\u0E23\u0E27\u0E21"), "\u0E2A\u0E34\u0E19\u0E04\u0E49\u0E32 \u0E1C\u0E39\u0E49\u0E43\u0E0A\u0E49 \u0E43\u0E1A\u0E40\u0E2A\u0E19\u0E2D\u0E23\u0E32\u0E04\u0E32 \u0E41\u0E25\u0E30\u0E44\u0E1F\u0E25\u0E4C\u0E23\u0E39\u0E1B\u0E17\u0E35\u0E48\u0E2D\u0E31\u0E1B\u0E42\u0E2B\u0E25\u0E14 \u2014 \u0E2A\u0E2D\u0E07\u0E2D\u0E22\u0E48\u0E32\u0E07\u0E2B\u0E25\u0E31\u0E07\u0E22\u0E31\u0E07\u0E2D\u0E22\u0E39\u0E48\u0E43\u0E19\u0E23\u0E30\u0E1A\u0E1A\u0E15\u0E32\u0E21\u0E40\u0E14\u0E34\u0E21"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: '#c2410c'
+    }
+  }, "\u0E44\u0E21\u0E48\u0E23\u0E27\u0E21"), " \u0E41\u0E25\u0E30\u0E40\u0E2B\u0E15\u0E38\u0E1C\u0E25 \u2014", /*#__PURE__*/React.createElement("b", null, " \u0E1A\u0E31\u0E0D\u0E0A\u0E35\u0E1C\u0E39\u0E49\u0E43\u0E0A\u0E49:"), " \u0E21\u0E35 hash \u0E23\u0E2B\u0E31\u0E2A\u0E1C\u0E48\u0E32\u0E19\u0E2D\u0E22\u0E39\u0E48 \u0E16\u0E49\u0E32\u0E44\u0E1F\u0E25\u0E4C\u0E2B\u0E25\u0E38\u0E14\u0E08\u0E30\u0E16\u0E39\u0E01\u0E40\u0E2D\u0E32\u0E44\u0E1B\u0E44\u0E25\u0E48\u0E40\u0E14\u0E32\u0E23\u0E2B\u0E31\u0E2A\u0E44\u0E14\u0E49 \u0E08\u0E36\u0E07\u0E43\u0E2A\u0E48\u0E21\u0E32\u0E41\u0E04\u0E48\u0E23\u0E32\u0E22\u0E0A\u0E37\u0E48\u0E2D\u0E44\u0E27\u0E49\u0E14\u0E39\u0E2D\u0E49\u0E32\u0E07\u0E2D\u0E34\u0E07 \xB7", /*#__PURE__*/React.createElement("b", null, " \u0E1B\u0E23\u0E30\u0E27\u0E31\u0E15\u0E34\u0E01\u0E32\u0E23\u0E43\u0E0A\u0E49\u0E07\u0E32\u0E19:"), " \u0E40\u0E1B\u0E47\u0E19\u0E2B\u0E25\u0E31\u0E01\u0E10\u0E32\u0E19 \u0E16\u0E49\u0E32\u0E01\u0E39\u0E49\u0E04\u0E37\u0E19\u0E17\u0E31\u0E1A\u0E44\u0E14\u0E49\u0E01\u0E47\u0E40\u0E17\u0E48\u0E32\u0E01\u0E31\u0E1A\u0E25\u0E1A\u0E23\u0E48\u0E2D\u0E07\u0E23\u0E2D\u0E22\u0E15\u0E31\u0E27\u0E40\u0E2D\u0E07\u0E44\u0E14\u0E49 \xB7", /*#__PURE__*/React.createElement("b", null, " \u0E44\u0E1F\u0E25\u0E4C\u0E23\u0E39\u0E1B\u0E17\u0E35\u0E48\u0E2D\u0E31\u0E1B\u0E42\u0E2B\u0E25\u0E14:"), " \u0E40\u0E1B\u0E47\u0E19\u0E44\u0E1F\u0E25\u0E4C\u0E44\u0E1A\u0E19\u0E32\u0E23\u0E35 \u0E43\u0E2B\u0E0D\u0E48\u0E40\u0E01\u0E34\u0E19\u0E01\u0E27\u0E48\u0E32\u0E08\u0E30\u0E43\u0E2A\u0E48\u0E43\u0E19 JSON"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#fff8e8',
+      border: '1px solid #f2e3bf',
+      borderRadius: '8px',
+      padding: '10px 14px',
+      fontSize: '12.5px',
+      color: '#8a6a10',
+      lineHeight: '1.8',
+      marginBottom: '14px'
+    }
+  }, "\u0E40\u0E01\u0E47\u0E1A\u0E44\u0E1F\u0E25\u0E4C\u0E2A\u0E33\u0E23\u0E2D\u0E07\u0E44\u0E27\u0E49\u0E43\u0E19\u0E17\u0E35\u0E48\u0E1B\u0E25\u0E2D\u0E14\u0E20\u0E31\u0E22 \u2014 \u0E43\u0E19\u0E44\u0E1F\u0E25\u0E4C\u0E21\u0E35\u0E0A\u0E37\u0E48\u0E2D\u0E41\u0E25\u0E30\u0E40\u0E1A\u0E2D\u0E23\u0E4C\u0E42\u0E17\u0E23\u0E25\u0E39\u0E01\u0E04\u0E49\u0E32\u0E08\u0E32\u0E01\u0E43\u0E1A\u0E40\u0E2A\u0E19\u0E2D\u0E23\u0E32\u0E04\u0E32\u0E41\u0E25\u0E30\u0E25\u0E34\u0E2A\u0E15\u0E4C\u0E17\u0E35\u0E48\u0E25\u0E39\u0E01\u0E04\u0E49\u0E32\u0E17\u0E31\u0E01\u0E40\u0E02\u0E49\u0E32\u0E21\u0E32"), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       gap: '10px',

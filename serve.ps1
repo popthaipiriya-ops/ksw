@@ -50,6 +50,14 @@ $LOGIN_WINDOW   = 15 * 60 * 1000    # ภายในกี่นาที
 $LOGIN_LOCK     = 15 * 60 * 1000    # แล้วล็อกนานเท่าไร
 $LoginFail      = @{}               # นับในหน่วยความจำ (รีเซ็ตเมื่อรีสตาร์ทเซิร์ฟเวอร์)
 
+# ---------- จำกัดจำนวนคำสั่งเขียนของแอดมิน ----------
+# เดิมจำกัดเฉพาะ endpoint สาธารณะ ส่วนฝั่งแอดมินยิงได้ไม่จำกัด
+# ถ้าบัญชีแอดมินถูกยึด คนร้ายจะไล่ลบ/เขียนทับข้อมูลรัวๆ ได้ทันที
+# ด่านนี้ไม่ได้กันถาวร แต่ทำให้ช้าลงมากพอที่จะเห็นร่องรอยใน log และตัดสิทธิ์ทัน
+$ADMIN_WRITE_MAX = 200                  # คำสั่งเขียนต่อคนต่อชั่วโมง
+$ADMIN_WRITE_WIN = 60 * 60 * 1000
+$AdminWrite      = @{}
+
 # ---------- ผู้ช่วย AI ตอบลูกค้า ----------
 # endpoint นี้เปิดสาธารณะและมีค่าใช้จ่ายต่อข้อความ จึงต้องจำกัดปริมาณให้รัดกุม
 $CHAT_MODEL     = 'claude-opus-5'
@@ -1003,6 +1011,61 @@ while ($listener.IsListening) {
       }
 
       $me = Current-User $req
+
+      # ทุกคำสั่งเขียนของแอดมินผ่านด่านนี้ก่อน — อ่านไม่จำกัด เขียนมีเพดาน
+      if ($me -and $method -ne 'GET') {
+        $awKey = [string]$me.id
+        $awNow = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        $awRec = $AdminWrite[$awKey]
+        if ($null -eq $awRec -or ($awNow - [int64]$awRec.start) -gt $ADMIN_WRITE_WIN) { $awRec = @{ start=$awNow; count=0 } }
+        if ([int]$awRec.count -ge $ADMIN_WRITE_MAX) {
+          Write-Audit $me 'ratelimit' ('ยิงคำสั่งเขียนเกินเพดานต่อชั่วโมง: ' + $ep) $req
+          Send-Json $res @{ error='ทำรายการถี่เกินไป กรุณารอสักครู่แล้วลองใหม่' } 429; continue
+        }
+        $awRec.count = [int]$awRec.count + 1
+        $AdminWrite[$awKey] = $awRec
+      }
+
+      # ---------- สำรองข้อมูลทั้งระบบ (แอดมินหลักเท่านั้น) ----------
+      #
+      # สิ่งที่ "ไม่" ใส่ในไฟล์สำรอง และเหตุผล
+      #   users  — มี salt กับ hash รหัสผ่านอยู่ ถ้าไฟล์หลุดจะถูกเอาไปไล่เดารหัสแบบออฟไลน์ได้
+      #            จึงใส่มาแค่รายชื่อบัญชีไว้ดูอ้างอิง ไม่มีข้อมูลลับ
+      #   audit  — เป็นหลักฐานว่าใครทำอะไร ถ้ากู้คืนทับได้ก็เท่ากับลบร่องรอยตัวเองได้
+      #   รูปที่อัปโหลด — เป็นไฟล์ไบนารี ก้อนใหญ่เกินกว่าจะยัดลง JSON
+      if ($ep -eq '/backup' -and $method -eq 'GET') {
+        if (-not (Can $me 'users')) { Send-Json $res @{ error='เฉพาะแอดมินหลักเท่านั้นที่สำรองข้อมูลได้' } 403; continue }
+        Write-Audit $me 'backup.download' 'ดาวน์โหลดไฟล์สำรองข้อมูล' $req
+        Send-Json $res @{
+          kind='kss-backup'; version=1; at=([DateTime]::UtcNow.ToString('o')); by=[string]$me.username
+          settings = (Read-Json $fSetting @{})
+          products = @(Read-Json $fProds @())
+          quotes   = @(Read-Json $fQuotes @())
+          leads    = @(Read-Json $fLeads @())
+          usersRef = @(Load-Users | ForEach-Object { @{ username=$_.username; name=$_.name; role=$_.role; active=($_.active -ne $false) } })
+        } 200
+        continue
+      }
+
+      if ($ep -eq '/restore' -and $method -eq 'POST') {
+        if (-not (Can $me 'users')) { Send-Json $res @{ error='เฉพาะแอดมินหลักเท่านั้นที่กู้คืนข้อมูลได้' } 403; continue }
+        $b = Read-Body $req
+        if ($null -eq $b -or [string]$b.kind -ne 'kss-backup') {
+          Send-Json $res @{ error='ไฟล์นี้ไม่ใช่ไฟล์สำรองของระบบนี้' } 400; continue
+        }
+        $done = @()
+        # เขียนทับเฉพาะส่วนที่มีมาในไฟล์จริงๆ ส่วนที่ไม่มีให้คงของเดิมไว้
+        $bk = @($b.PSObject.Properties.Name)
+        if ($bk -contains 'settings' -and $null -ne $b.settings) { Write-JsonObj $fSetting $b.settings; $done += 'settings' }
+        if ($bk -contains 'products') { Write-Json $fProds  @($b.products); $done += ('products({0})' -f @($b.products).Count) }
+        if ($bk -contains 'quotes')   { Write-Json $fQuotes @($b.quotes);   $done += ('quotes({0})'   -f @($b.quotes).Count) }
+        if ($bk -contains 'leads')    { Write-Json $fLeads  @($b.leads);    $done += ('leads({0})'    -f @($b.leads).Count) }
+        if ($done.Count -eq 0) { Send-Json $res @{ error='ไฟล์สำรองไม่มีข้อมูลที่กู้คืนได้' } 400; continue }
+
+        Write-Audit $me 'restore' ('กู้คืนข้อมูล: ' + ($done -join ', ') + ' · จากไฟล์วันที่ ' + [string]$b.at) $req
+        Send-Json $res @{ ok=$true; restored=$done } 200
+        continue
+      }
 
       # ---------- ประวัติการกระทำของแอดมิน (แอดมินหลักเท่านั้น) ----------
       # จำกัดเฉพาะ super เพราะ log บอกได้ว่าใครทำอะไร ซึ่งเป็นข้อมูลอ่อนไหว

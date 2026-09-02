@@ -3935,25 +3935,25 @@ function HPSystemTools() {
     borderRadius:'8px', padding:'10px 18px', fontSize:'13.5px', fontWeight:'700',
     cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.6 : 1, fontFamily:'Inter, Noto Sans Thai, sans-serif' });
 
-  // สำรอง: ดึงการตั้งค่าปัจจุบันแล้วให้ดาวน์โหลดเป็นไฟล์ JSON
+  // สำรอง: ดึงข้อมูลทั้งระบบมาเป็นไฟล์ JSON ไฟล์เดียว
   const backup = async () => {
     setErr(''); setMsg(''); setBusy(true);
     try {
-      const r = await hpApi('/settings');
-      const blob = new Blob([JSON.stringify(r.settings || {}, null, 2)], { type:'application/json' });
+      const data = await hpApi('/backup');
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'kss-settings-' + new Date().toISOString().slice(0, 10) + '.json';
+      a.download = 'kss-backup-' + new Date().toISOString().slice(0, 10) + '.json';
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 2000);
-      setMsg('✔ ดาวน์โหลดไฟล์สำรองแล้ว');
-      setTimeout(() => setMsg(''), 4000);
+      setMsg(`✔ ดาวน์โหลดแล้ว — สินค้า ${(data.products||[]).length} · ใบเสนอราคา ${(data.quotes||[]).length} · ลิสต์ลูกค้า ${(data.leads||[]).length}`);
+      setTimeout(() => setMsg(''), 6000);
     } catch (e) { setErr('สำรองข้อมูลไม่สำเร็จ: ' + e.message); }
     setBusy(false);
   };
 
-  // กู้คืน: เขียนทับการตั้งค่าทั้งหมดด้วยไฟล์ที่เลือก
+  // กู้คืน: เขียนทับข้อมูลด้วยไฟล์ที่เลือก
   const restore = async (file, inputEl) => {
     if (inputEl) inputEl.value = '';
     if (!file) return;
@@ -3961,18 +3961,25 @@ function HPSystemTools() {
     let data;
     try { data = JSON.parse(await file.text()); }
     catch (e) { setErr('ไฟล์นี้ไม่ใช่ JSON ที่อ่านได้'); return; }
-    if (!data || typeof data !== 'object') { setErr('ไฟล์สำรองไม่ถูกต้อง'); return; }
-    if (!window.confirm('กู้คืนการตั้งค่าจากไฟล์นี้?\nการตั้งค่าปัจจุบันทั้งหมดจะถูกเขียนทับ')) return;
+    if (!data || data.kind !== 'kss-backup') { setErr('ไฟล์นี้ไม่ใช่ไฟล์สำรองของระบบนี้'); return; }
+    // บอกให้ชัดก่อนว่าจะทับอะไรบ้าง เพราะกดแล้วกู้กลับไม่ได้
+    const parts = [
+      data.settings ? 'ตั้งค่าเว็บไซต์ (รวมรูป ข้อความ บทความ)' : null,
+      Array.isArray(data.products) ? `สินค้า ${data.products.length} รายการ` : null,
+      Array.isArray(data.quotes)   ? `ใบเสนอราคา ${data.quotes.length} ใบ` : null,
+      Array.isArray(data.leads)    ? `ลิสต์ลูกค้า ${data.leads.length} รายการ` : null,
+    ].filter(Boolean);
+    if (!window.confirm(
+      `กู้คืนจากไฟล์สำรองวันที่ ${String(data.at || '').slice(0, 10)}?\n\n`
+      + `จะเขียนทับ:\n${parts.map(p => '  • ' + p).join('\n')}\n\n`
+      + 'ข้อมูลปัจจุบันของส่วนเหล่านี้จะหายทั้งหมด กู้กลับไม่ได้')) return;
     setBusy(true);
     try {
-      const r = await hpApi('/settings', { method:'POST', body:{ settings: {
-        catalog: data.catalog || {}, catalogFooter: data.catalogFooter || '',
-        contact: data.contact || {}, images: data.images || {},
-        texts: data.texts || {}, articles: data.articles || [],
-      } } });
-      const s = r.settings || {};
-      hpImgSetMap(s.images || {}); hpTxtSetMap(s.texts || {}); hpArtSetList(s.articles || []);
-      setMsg('✔ กู้คืนการตั้งค่าเรียบร้อยแล้ว');
+      const r = await hpApi('/restore', { method:'POST', body: data });
+      // โหลดค่าที่กู้คืนมาใช้ทันที ไม่ต้องรีเฟรชหน้า
+      const st = (await hpApi('/settings')).settings || {};
+      hpImgSetMap(st.images || {}); hpTxtSetMap(st.texts || {}); hpArtSetList(st.articles || []);
+      setMsg('✔ กู้คืนเรียบร้อย: ' + (r.restored || []).join(', '));
       load();
     } catch (e) { setErr('กู้คืนไม่สำเร็จ: ' + e.message); }
     setBusy(false);
@@ -4039,11 +4046,21 @@ function HPSystemTools() {
         </div>
 
         <div style={card}>
-          <div style={{ fontSize:'16px', fontWeight:'800', color:'#222', marginBottom:'6px' }}>สำรองและกู้คืนการตั้งค่า</div>
-          <p style={{ fontSize:'13.5px', color:'#777', lineHeight:'1.8', marginBottom:'14px' }}>
-            ครอบคลุมลิงก์แคตตาล็อก ข้อมูลติดต่อ รูปที่เปลี่ยน ข้อความที่แก้ และบทความ<br/>
-            <b>ไม่รวม</b>สินค้า ผู้ใช้ ใบเสนอราคา และไฟล์รูปที่อัปโหลด — สองอย่างหลังยังอยู่ในระบบตามเดิม
+          <div style={{ fontSize:'16px', fontWeight:'800', color:'#222', marginBottom:'6px' }}>สำรองและกู้คืนข้อมูล</div>
+          <p style={{ fontSize:'13.5px', color:'#777', lineHeight:'1.8', marginBottom:'10px' }}>
+            <b style={{ color:'#0d6b5c' }}>รวม:</b> ตั้งค่าเว็บไซต์ (ลิงก์แคตตาล็อก ข้อมูลติดต่อ รูปที่เปลี่ยน ข้อความที่แก้ บทความ)
+            · สินค้า · ใบเสนอราคา · ลิสต์ลูกค้า
           </p>
+          <p style={{ fontSize:'12.5px', color:'#9aa8a0', lineHeight:'1.85', marginBottom:'14px' }}>
+            <b style={{ color:'#c2410c' }}>ไม่รวม</b> และเหตุผล —
+            <b> บัญชีผู้ใช้:</b> มี hash รหัสผ่านอยู่ ถ้าไฟล์หลุดจะถูกเอาไปไล่เดารหัสได้ จึงใส่มาแค่รายชื่อไว้ดูอ้างอิง ·
+            <b> ประวัติการใช้งาน:</b> เป็นหลักฐาน ถ้ากู้คืนทับได้ก็เท่ากับลบร่องรอยตัวเองได้ ·
+            <b> ไฟล์รูปที่อัปโหลด:</b> เป็นไฟล์ไบนารี ใหญ่เกินกว่าจะใส่ใน JSON
+          </p>
+          <div style={{ background:'#fff8e8', border:'1px solid #f2e3bf', borderRadius:'8px', padding:'10px 14px',
+                        fontSize:'12.5px', color:'#8a6a10', lineHeight:'1.8', marginBottom:'14px' }}>
+            เก็บไฟล์สำรองไว้ในที่ปลอดภัย — ในไฟล์มีชื่อและเบอร์โทรลูกค้าจากใบเสนอราคาและลิสต์ที่ลูกค้าทักเข้ามา
+          </div>
           <div style={{ display:'flex', gap:'10px', flexWrap:'wrap' }}>
             <button disabled={busy} onClick={backup} style={btn('#0d6b5c', '#fff')}>ดาวน์โหลดไฟล์สำรอง</button>
             <button disabled={busy} onClick={() => fileRef.current && fileRef.current.click()} style={btn('#fff', '#b3261e')}>
