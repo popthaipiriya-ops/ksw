@@ -1026,6 +1026,42 @@ while ($listener.IsListening) {
         $AdminWrite[$awKey] = $awRec
       }
 
+      # ---------- เขียนทับไฟล์รูปใน assets (เฉพาะตอนรันบนเครื่อง) ----------
+      # ใช้กับงานล้างลายน้ำออกจากรูปสินค้า ซึ่งต้องแก้ไฟล์ต้นฉบับแล้ว commit ขึ้น git
+      # endpoint นี้มีเฉพาะ serve.ps1 ไม่มีบน Netlify (ที่นั่นไฟล์เป็น static แก้ไม่ได้อยู่แล้ว)
+      #
+      # กันไว้หลายชั้นเพราะเป็นการเขียนไฟล์: ต้องล็อกอิน · พาธต้องอยู่ใต้ assets/ เท่านั้น
+      # · ห้ามมี .. · ต้องเป็นไฟล์ที่ "มีอยู่แล้ว" เท่านั้น (เขียนทับได้ สร้างใหม่ไม่ได้)
+      # · สำรองไฟล์เดิมไว้ที่ .data\assetbak ก่อนเขียนทับเสมอ
+      if ($ep -eq '/asset-write' -and $method -eq 'POST') {
+        if (-not (Can $me 'editProduct')) { Send-Json $res @{ error='ไม่มีสิทธิ์แก้ไฟล์รูป' } 403; continue }
+        $b = Read-Body $req
+        $rel = Trim-Max $b.path 200
+        if (-not $rel -or $rel -notmatch '^assets/[A-Za-z0-9._/-]+$' -or $rel.Contains('..')) {
+          Send-Json $res @{ error='พาธไฟล์ไม่ถูกต้อง' } 400; continue
+        }
+        $dst = Join-Path $root ($rel -replace '/', '\')
+        if (-not (Test-Path -LiteralPath $dst -PathType Leaf)) {
+          Send-Json $res @{ error='ไม่พบไฟล์เดิม (endpoint นี้เขียนทับได้อย่างเดียว สร้างไฟล์ใหม่ไม่ได้)' } 400; continue
+        }
+        $m = [regex]::Match([string]$b.dataUrl, '^data:image/(webp|png|jpeg);base64,([A-Za-z0-9+/=]+)$')
+        if (-not $m.Success) { Send-Json $res @{ error='รองรับเฉพาะ WEBP / PNG / JPEG' } 400; continue }
+        $bytes = [Convert]::FromBase64String($m.Groups[2].Value)
+        if ($bytes.Length -lt 100) { Send-Json $res @{ error='ไฟล์เล็กผิดปกติ ไม่เขียนทับ' } 400; continue }
+
+        # สำรองของเดิมครั้งแรกครั้งเดียว ถ้าเคยสำรองแล้วไม่ต้องทับซ้ำ
+        # (ไม่งั้นรันสองรอบแล้วไฟล์สำรองจะกลายเป็นไฟล์ที่ล้างแล้ว กู้กลับไม่ได้)
+        $bakRoot = Join-Path $data 'assetbak'
+        $bak = Join-Path $bakRoot ($rel -replace '/', '\')
+        if (-not (Test-Path -LiteralPath $bak)) {
+          New-Item -ItemType Directory -Force (Split-Path -Parent $bak) | Out-Null
+          Copy-Item -LiteralPath $dst -Destination $bak -Force
+        }
+        [System.IO.File]::WriteAllBytes($dst, $bytes)
+        Write-Audit $me 'asset.write' ('เขียนทับรูป ' + $rel) $req
+        Send-Json $res @{ ok=$true; path=$rel; bytes=$bytes.Length } 200; continue
+      }
+
       # ---------- สำรองข้อมูลทั้งระบบ (แอดมินหลักเท่านั้น) ----------
       #
       # สิ่งที่ "ไม่" ใส่ในไฟล์สำรอง และเหตุผล
