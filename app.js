@@ -147,6 +147,37 @@ try {
   HP_TXT_MAP = hpTxtClean(JSON.parse(localStorage.getItem(HP_TXT_LS_KEY) || '{}'));
 } catch (e) {}
 
+// ── บทความที่แอดมินเขียนเอง ──
+// แสดงบนหน้าเกร็ดความรู้ต่อจากบทความที่มากับเว็บ
+const HP_ART_LS_KEY = 'kss_articles';
+let HP_ARTICLES = [];
+const HP_ART_SUBS = new Set();
+function hpArtClean(list) {
+  if (!Array.isArray(list)) return [];
+  return list.filter(a => a && typeof a === 'object' && a.title).slice(0, 50).map(a => ({
+    id: String(a.id || ''),
+    title: String(a.title || ''),
+    excerpt: String(a.excerpt || ''),
+    img: String(a.img || ''),
+    body: Array.isArray(a.body) ? a.body.map(String) : [],
+    at: Number(a.at) || 0
+  }));
+}
+function hpArtSetList(list) {
+  HP_ARTICLES = hpArtClean(list);
+  try {
+    localStorage.setItem(HP_ART_LS_KEY, JSON.stringify(HP_ARTICLES));
+  } catch (e) {}
+  HP_ART_SUBS.forEach(fn => {
+    try {
+      fn();
+    } catch (e) {}
+  });
+}
+try {
+  HP_ARTICLES = hpArtClean(JSON.parse(localStorage.getItem(HP_ART_LS_KEY) || '[]'));
+} catch (e) {}
+
 // ── ดักจุดสร้าง element ──
 // JSX ทุกบรรทัดในไฟล์นี้ถูกคอมไพล์เป็น React.createElement(...) จึงผ่านตรงนี้หมด
 // เจอ <img> เมื่อไร ก็สลับ src เป็นรูปที่แอดมินอัปไว้ (ถ้ามี) แล้วติดป้าย data-hpimg
@@ -4870,6 +4901,22 @@ function HPKnowledgePage({
     title: 'การบำรุงรักษาอุปกรณ์เดินระบบไฟฟ้า',
     desc: 'ตรวจเช็คและบำรุงรักษาอุปกรณ์ไฟฟ้าเป็นประจำ เช่น ทำความสะอาด ตรวจจุดต่อสายไฟ และเช็คความร้อนผิดปกติ จะช่วยยืดอายุการใช้งานและลดความเสี่ยงในการเกิดปัญหา'
   }];
+  // บทความที่มากับเว็บ + บทความที่แอดมินเขียนเองจากหลังบ้าน (ใหม่สุดขึ้นก่อน)
+  const [, artBump] = useReducer(x => x + 1, 0);
+  useEffect(() => {
+    HP_ART_SUBS.add(artBump);
+    return () => HP_ART_SUBS.delete(artBump);
+  }, []);
+  const custom = [...HP_ARTICLES].sort((a, b) => b.at - a.at).map(a => ({
+    title: a.title,
+    excerpt: a.excerpt,
+    img: a.img,
+    c1: '#0d9488',
+    c2: '#0b7c72',
+    icon: 'panel',
+    article: 'article:' + a.id,
+    cta: 'อ่านบทความ'
+  }));
   const more = [{
     title: 'ตู้ MDB คืออะไร ?',
     excerpt: 'ตู้ MDB (Main Distribution Board) คือตู้จ่ายไฟหลักของอาคาร ทำหน้าที่รับไฟจากการไฟฟ้าแล้วกระจายไปยังตู้ย่อยต่างๆ อย่างปลอดภัย เกิดแสงสว่างรับผลิตและจำหน่ายตู้ MDB ตามสเปกงาน',
@@ -4888,7 +4935,7 @@ function HPKnowledgePage({
     img: 'assets/kjl-more/kjl-elecservice-1.webp',
     article: 'loadcenter3p-article',
     cta: 'อ่านบทความ'
-  }];
+  }, ...custom];
   return /*#__PURE__*/React.createElement("section", {
     style: {
       background: '#fff',
@@ -5207,6 +5254,133 @@ function HPKnowledgePage({
       }
     }, a.cta || 'ดูเพิ่มเติม', " \u2192")));
   }))));
+}
+
+// หน้าอ่านบทความที่แอดมินเขียนเองจากหลังบ้าน
+// ทุกฟิลด์แสดงเป็นข้อความล้วน ไม่ได้แปลงเป็น HTML จึงยัดสคริปต์เข้ามาไม่ได้
+function HPCustomArticlePage({
+  id,
+  onNavigate
+}) {
+  const [, artBump] = useReducer(x => x + 1, 0);
+  useEffect(() => {
+    HP_ART_SUBS.add(artBump);
+    return () => HP_ART_SUBS.delete(artBump);
+  }, []);
+  const a = HP_ARTICLES.find(x => x.id === id);
+  if (!a) return /*#__PURE__*/React.createElement("section", {
+    style: {
+      background: '#f7faf9',
+      minHeight: '60vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '60px 24px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: 'center',
+      color: '#7d918a'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '18px',
+      fontWeight: '700',
+      color: '#3a4a42',
+      marginBottom: '10px'
+    }
+  }, "\u0E44\u0E21\u0E48\u0E1E\u0E1A\u0E1A\u0E17\u0E04\u0E27\u0E32\u0E21\u0E19\u0E35\u0E49"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '14px',
+      marginBottom: '18px'
+    }
+  }, "\u0E1A\u0E17\u0E04\u0E27\u0E32\u0E21\u0E2D\u0E32\u0E08\u0E16\u0E39\u0E01\u0E25\u0E1A\u0E44\u0E1B\u0E41\u0E25\u0E49\u0E27"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => onNavigate('เกร็ดความรู้'),
+    style: {
+      background: '#0d6b5c',
+      color: '#fff',
+      border: 'none',
+      borderRadius: '8px',
+      padding: '10px 22px',
+      fontSize: '14px',
+      fontWeight: '700',
+      cursor: 'pointer',
+      fontFamily: 'Inter, Noto Sans Thai, sans-serif'
+    }
+  }, "\u0E01\u0E25\u0E31\u0E1A\u0E44\u0E1B\u0E2B\u0E19\u0E49\u0E32\u0E40\u0E01\u0E23\u0E47\u0E14\u0E04\u0E27\u0E32\u0E21\u0E23\u0E39\u0E49")));
+  return /*#__PURE__*/React.createElement("section", {
+    style: {
+      background: '#f7faf9',
+      padding: '40px 24px 70px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxWidth: '820px',
+      margin: '0 auto'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: () => onNavigate('เกร็ดความรู้'),
+    style: {
+      fontSize: '14px',
+      color: '#0d6b5c',
+      fontWeight: '700',
+      cursor: 'pointer',
+      marginBottom: '18px'
+    }
+  }, "\u2190 \u0E01\u0E25\u0E31\u0E1A\u0E44\u0E1B\u0E2B\u0E19\u0E49\u0E32\u0E40\u0E01\u0E23\u0E47\u0E14\u0E04\u0E27\u0E32\u0E21\u0E23\u0E39\u0E49"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#fff',
+      borderRadius: '18px',
+      overflow: 'hidden',
+      border: '1px solid #eaf3ed'
+    }
+  }, a.img && /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: '280px',
+      background: '#f4f7f6'
+    }
+  }, /*#__PURE__*/React.createElement("img", {
+    src: a.img,
+    alt: a.title,
+    style: {
+      width: '100%',
+      height: '100%',
+      objectFit: 'cover'
+    },
+    onError: e => {
+      e.target.parentElement.style.display = 'none';
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '34px 38px 42px'
+    }
+  }, /*#__PURE__*/React.createElement("h1", {
+    style: {
+      fontSize: '28px',
+      fontWeight: '800',
+      color: '#06352e',
+      lineHeight: '1.45',
+      margin: '0 0 12px'
+    }
+  }, a.title), a.excerpt && /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: '16px',
+      color: '#5c6f67',
+      lineHeight: '1.9',
+      margin: '0 0 24px',
+      paddingBottom: '20px',
+      borderBottom: '1px solid #eef3f0'
+    }
+  }, a.excerpt), a.body.map((p, i) => /*#__PURE__*/React.createElement("p", {
+    key: i,
+    style: {
+      fontSize: '16.5px',
+      color: '#3a4a42',
+      lineHeight: '2',
+      marginBottom: '16px',
+      whiteSpace: 'pre-wrap'
+    }
+  }, p))))));
 }
 
 // บทความ "ตู้ MDB คืออะไร ?" — เนื้อหาของเกิดแสงสว่างเอง
@@ -11159,7 +11333,7 @@ function HPAdminPage({
     }).catch(() => {}).then(() => setUser(null));
   };
   const role = HP_ROLES[user.role] || HP_ROLES.sales;
-  const tabs = [hpCan(user, 'products') && ['products', 'จัดการสินค้า'], hpCan(user, 'sales') && ['sales', 'ระบบเซลล์'], hpCan(user, 'editProduct') && ['settings', 'ตั้งค่าเว็บไซต์'], hpCan(user, 'users') && ['users', 'จัดการผู้ใช้']].filter(Boolean);
+  const tabs = [hpCan(user, 'products') && ['products', 'จัดการสินค้า'], hpCan(user, 'sales') && ['sales', 'ระบบเซลล์'], hpCan(user, 'editProduct') && ['articles', 'บทความ'], hpCan(user, 'editProduct') && ['settings', 'ตั้งค่าเว็บไซต์'], hpCan(user, 'users') && ['users', 'จัดการผู้ใช้']].filter(Boolean);
   return /*#__PURE__*/React.createElement("section", {
     style: {
       background: '#f6f6f6',
@@ -11260,9 +11434,451 @@ function HPAdminPage({
     embedded: true
   }), tab === 'sales' && hpCan(user, 'sales') && /*#__PURE__*/React.createElement(HPSalesModule, {
     me: user
-  }), tab === 'settings' && hpCan(user, 'editProduct') && /*#__PURE__*/React.createElement(HPSiteSettings, null), tab === 'users' && hpCan(user, 'users') && /*#__PURE__*/React.createElement(HPUsersManager, {
+  }), tab === 'articles' && hpCan(user, 'editProduct') && /*#__PURE__*/React.createElement(HPArticlesManager, null), tab === 'settings' && hpCan(user, 'editProduct') && /*#__PURE__*/React.createElement(HPSiteSettings, null), tab === 'users' && hpCan(user, 'users') && /*#__PURE__*/React.createElement(HPUsersManager, {
     me: user
   })));
+}
+
+// จัดการบทความเกร็ดความรู้ — เขียน/แก้/ลบเองจากหลังบ้าน โดยไม่ต้องแก้โค้ด
+function HPArticlesManager() {
+  const [, artBump] = useReducer(x => x + 1, 0);
+  useEffect(() => {
+    HP_ART_SUBS.add(artBump);
+    return () => HP_ART_SUBS.delete(artBump);
+  }, []);
+  const [edit, setEdit] = useState(null); // บทความที่กำลังแก้ (null = ไม่ได้แก้อะไร)
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const [msg, setMsg] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const list = [...HP_ARTICLES].sort((a, b) => b.at - a.at);
+  const inputCss = {
+    width: '100%',
+    padding: '10px 13px',
+    fontSize: '14px',
+    border: '1px solid #e2e6e3',
+    borderRadius: '8px',
+    outline: 'none',
+    fontFamily: 'Inter, Noto Sans Thai, sans-serif'
+  };
+  const btn = (bg, color) => ({
+    background: bg,
+    color,
+    border: color === '#b3261e' ? '1px solid #f0c8c4' : 'none',
+    borderRadius: '8px',
+    padding: '10px 18px',
+    fontSize: '13.5px',
+    fontWeight: '700',
+    cursor: busy ? 'default' : 'pointer',
+    opacity: busy ? 0.6 : 1,
+    fontFamily: 'Inter, Noto Sans Thai, sans-serif'
+  });
+
+  // ส่งทั้งชุดไปแทนที่ — เซิร์ฟเวอร์คงการตั้งค่าส่วนอื่นไว้ให้เอง
+  const save = async (next, okMsg) => {
+    setErr('');
+    setMsg('');
+    setBusy(true);
+    try {
+      const r = await hpApi('/settings', {
+        method: 'POST',
+        body: {
+          settings: {
+            articles: next
+          }
+        }
+      });
+      hpArtSetList((r.settings || {}).articles || []);
+      setMsg(okMsg);
+      setTimeout(() => setMsg(''), 3500);
+      setEdit(null);
+    } catch (e) {
+      setErr('บันทึกไม่สำเร็จ: ' + e.message);
+    }
+    setBusy(false);
+  };
+  const blank = () => ({
+    id: '',
+    title: '',
+    excerpt: '',
+    img: '',
+    bodyText: '',
+    at: Date.now()
+  });
+  const openEdit = a => setEdit(a ? {
+    ...a,
+    bodyText: (a.body || []).join('\n\n')
+  } : blank());
+  const commit = () => {
+    if (!edit.title.trim()) {
+      setErr('ต้องมีหัวข้อบทความ');
+      return;
+    }
+    const item = {
+      id: edit.id || undefined,
+      title: edit.title.trim(),
+      excerpt: edit.excerpt.trim(),
+      img: edit.img.trim(),
+      // เว้นบรรทัดว่างคั่น = ย่อหน้าใหม่ เขียนง่ายกว่าให้กดเพิ่มทีละย่อหน้า
+      body: edit.bodyText.split(/\n\s*\n/).map(s => s.trim()).filter(Boolean),
+      at: edit.at || Date.now()
+    };
+    const next = edit.id ? HP_ARTICLES.map(a => a.id === edit.id ? {
+      ...item,
+      id: edit.id
+    } : a) : [...HP_ARTICLES, item];
+    save(next, edit.id ? '✔ บันทึกบทความแล้ว' : '✔ เพิ่มบทความแล้ว');
+  };
+  const remove = a => {
+    if (!window.confirm(`ลบบทความ "${a.title}" ใช่หรือไม่?\nลบแล้วกู้คืนไม่ได้`)) return;
+    save(HP_ARTICLES.filter(x => x.id !== a.id), '✔ ลบบทความแล้ว');
+  };
+  const uploadCover = async (file, inputEl) => {
+    if (inputEl) inputEl.value = '';
+    if (!file) return;
+    setErr('');
+    if (!/^image\//.test(file.type)) {
+      setErr('ต้องเป็นไฟล์รูปเท่านั้น');
+      return;
+    }
+    if (file.size > 12 * 1024 * 1024) {
+      setErr('ไฟล์ใหญ่เกิน 12MB');
+      return;
+    }
+    setUploading(true);
+    try {
+      const dataUrl = await hpShrinkImageFile(file, 1600);
+      const key = 'art' + Math.random().toString(36).slice(2, 10);
+      const r = await hpApi('/catalog-image', {
+        method: 'POST',
+        body: {
+          key,
+          dataUrl
+        }
+      });
+      setEdit(e => ({
+        ...e,
+        img: r.url
+      }));
+    } catch (e) {
+      setErr('อัปโหลดรูปไม่สำเร็จ: ' + (e.message || e));
+    }
+    setUploading(false);
+  };
+  return /*#__PURE__*/React.createElement("div", null, err && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#fdecea',
+      border: '1px solid #f5c6cb',
+      color: '#b3261e',
+      borderRadius: '8px',
+      padding: '12px 16px',
+      marginBottom: '14px',
+      fontSize: '14px'
+    }
+  }, err), msg && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#e8f7ee',
+      border: '1px solid #b7e4c7',
+      color: '#0d6b3f',
+      borderRadius: '8px',
+      padding: '12px 16px',
+      marginBottom: '14px',
+      fontSize: '14px'
+    }
+  }, msg), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#fff',
+      borderRadius: '10px',
+      border: '1px solid #eee',
+      padding: '22px 24px',
+      marginBottom: '16px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '18px',
+      fontWeight: '800',
+      color: '#222',
+      marginBottom: '6px'
+    }
+  }, "\u0E1A\u0E17\u0E04\u0E27\u0E32\u0E21\u0E40\u0E01\u0E23\u0E47\u0E14\u0E04\u0E27\u0E32\u0E21\u0E23\u0E39\u0E49"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: '13.5px',
+      color: '#777',
+      lineHeight: '1.8',
+      marginBottom: '14px'
+    }
+  }, "\u0E1A\u0E17\u0E04\u0E27\u0E32\u0E21\u0E17\u0E35\u0E48\u0E40\u0E02\u0E35\u0E22\u0E19\u0E17\u0E35\u0E48\u0E19\u0E35\u0E48\u0E08\u0E30\u0E44\u0E1B\u0E41\u0E2A\u0E14\u0E07\u0E43\u0E19\u0E2B\u0E19\u0E49\u0E32 \u201C\u0E40\u0E01\u0E23\u0E47\u0E14\u0E04\u0E27\u0E32\u0E21\u0E23\u0E39\u0E49\u201D \u0E15\u0E48\u0E2D\u0E08\u0E32\u0E01\u0E1A\u0E17\u0E04\u0E27\u0E32\u0E21\u0E17\u0E35\u0E48\u0E21\u0E32\u0E01\u0E31\u0E1A\u0E40\u0E27\u0E47\u0E1A \u0E43\u0E2B\u0E21\u0E48\u0E2A\u0E38\u0E14\u0E02\u0E36\u0E49\u0E19\u0E01\u0E48\u0E2D\u0E19", /*#__PURE__*/React.createElement("br", null), "\u0E2A\u0E48\u0E27\u0E19\u0E40\u0E04\u0E25\u0E47\u0E14\u0E25\u0E31\u0E1A 5 \u0E02\u0E49\u0E2D\u0E41\u0E25\u0E30\u0E1A\u0E17\u0E04\u0E27\u0E32\u0E21\u0E40\u0E14\u0E34\u0E21\u0E17\u0E35\u0E48\u0E21\u0E32\u0E01\u0E31\u0E1A\u0E40\u0E27\u0E47\u0E1A \u0E41\u0E01\u0E49\u0E02\u0E49\u0E2D\u0E04\u0E27\u0E32\u0E21\u0E44\u0E14\u0E49\u0E08\u0E32\u0E01\u0E42\u0E2B\u0E21\u0E14 \u201C\u0E41\u0E01\u0E49\u0E02\u0E49\u0E2D\u0E04\u0E27\u0E32\u0E21\u201D \u0E1A\u0E19\u0E2B\u0E19\u0E49\u0E32\u0E40\u0E27\u0E47\u0E1A\u0E08\u0E23\u0E34\u0E07"), !edit && /*#__PURE__*/React.createElement("button", {
+    onClick: () => openEdit(null),
+    style: btn('#0d6b5c', '#fff')
+  }, "+ \u0E40\u0E02\u0E35\u0E22\u0E19\u0E1A\u0E17\u0E04\u0E27\u0E32\u0E21\u0E43\u0E2B\u0E21\u0E48")), edit && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#fff',
+      borderRadius: '10px',
+      border: '1px solid #eee',
+      padding: '22px 24px',
+      marginBottom: '16px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '16px',
+      fontWeight: '800',
+      color: '#222',
+      marginBottom: '16px'
+    }
+  }, edit.id ? 'แก้ไขบทความ' : 'เขียนบทความใหม่'), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: '14px'
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: '12.5px',
+      fontWeight: '700',
+      color: '#667',
+      marginBottom: '5px',
+      display: 'block'
+    }
+  }, "\u0E2B\u0E31\u0E27\u0E02\u0E49\u0E2D\u0E1A\u0E17\u0E04\u0E27\u0E32\u0E21 *"), /*#__PURE__*/React.createElement("input", {
+    value: edit.title,
+    onChange: e => setEdit({
+      ...edit,
+      title: e.target.value
+    }),
+    maxLength: 120,
+    style: inputCss
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: '14px'
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: '12.5px',
+      fontWeight: '700',
+      color: '#667',
+      marginBottom: '5px',
+      display: 'block'
+    }
+  }, "\u0E04\u0E33\u0E42\u0E1B\u0E23\u0E22 (\u0E02\u0E49\u0E2D\u0E04\u0E27\u0E32\u0E21\u0E2A\u0E31\u0E49\u0E19\u0E46 \u0E1A\u0E19\u0E01\u0E32\u0E23\u0E4C\u0E14)"), /*#__PURE__*/React.createElement("textarea", {
+    value: edit.excerpt,
+    onChange: e => setEdit({
+      ...edit,
+      excerpt: e.target.value
+    }),
+    rows: 2,
+    maxLength: 300,
+    style: {
+      ...inputCss,
+      resize: 'vertical',
+      lineHeight: '1.7'
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: '14px'
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: '12.5px',
+      fontWeight: '700',
+      color: '#667',
+      marginBottom: '5px',
+      display: 'block'
+    }
+  }, "\u0E23\u0E39\u0E1B\u0E1B\u0E01\u0E1A\u0E17\u0E04\u0E27\u0E32\u0E21"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: '14px',
+      alignItems: 'flex-start'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: '120px',
+      height: '80px',
+      flexShrink: 0,
+      border: '1px solid #e2e6e3',
+      borderRadius: '8px',
+      background: '#fafbfa',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden'
+    }
+  }, edit.img ? /*#__PURE__*/React.createElement("img", {
+    src: edit.img,
+    alt: "",
+    "data-hpraw": "1",
+    style: {
+      maxWidth: '100%',
+      maxHeight: '100%',
+      objectFit: 'cover'
+    },
+    onError: e => e.target.style.display = 'none'
+  }) : /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: '11.5px',
+      color: '#9aa8a0'
+    }
+  }, "\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E23\u0E39\u0E1B")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    style: {
+      display: 'inline-block',
+      background: '#0d6b5c',
+      color: '#fff',
+      borderRadius: '8px',
+      padding: '9px 18px',
+      fontSize: '13.5px',
+      fontWeight: '700',
+      cursor: uploading ? 'default' : 'pointer',
+      opacity: uploading ? 0.6 : 1
+    }
+  }, uploading ? 'กำลังอัปโหลด…' : 'เลือกรูปจากเครื่อง', /*#__PURE__*/React.createElement("input", {
+    type: "file",
+    accept: "image/*",
+    disabled: uploading,
+    style: {
+      display: 'none'
+    },
+    onChange: e => uploadCover(e.target.files && e.target.files[0], e.target)
+  })), edit.img && /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => setEdit({
+      ...edit,
+      img: ''
+    }),
+    style: {
+      ...btn('#fff', '#b3261e'),
+      marginLeft: '10px',
+      padding: '9px 16px'
+    }
+  }, "\u0E40\u0E2D\u0E32\u0E23\u0E39\u0E1B\u0E2D\u0E2D\u0E01")))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: '18px'
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    style: {
+      fontSize: '12.5px',
+      fontWeight: '700',
+      color: '#667',
+      marginBottom: '5px',
+      display: 'block'
+    }
+  }, "\u0E40\u0E19\u0E37\u0E49\u0E2D\u0E2B\u0E32\u0E1A\u0E17\u0E04\u0E27\u0E32\u0E21"), /*#__PURE__*/React.createElement("textarea", {
+    value: edit.bodyText,
+    onChange: e => setEdit({
+      ...edit,
+      bodyText: e.target.value
+    }),
+    rows: 12,
+    placeholder: 'พิมพ์เนื้อหาได้เลย\n\nเว้นบรรทัดว่างหนึ่งบรรทัดเพื่อขึ้นย่อหน้าใหม่',
+    style: {
+      ...inputCss,
+      resize: 'vertical',
+      lineHeight: '1.9',
+      fontSize: '14.5px'
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '11.5px',
+      color: '#9aa8a0',
+      marginTop: '5px'
+    }
+  }, "\u0E40\u0E27\u0E49\u0E19\u0E1A\u0E23\u0E23\u0E17\u0E31\u0E14\u0E27\u0E48\u0E32\u0E07 1 \u0E1A\u0E23\u0E23\u0E17\u0E31\u0E14 = \u0E02\u0E36\u0E49\u0E19\u0E22\u0E48\u0E2D\u0E2B\u0E19\u0E49\u0E32\u0E43\u0E2B\u0E21\u0E48 \xB7 \u0E2A\u0E39\u0E07\u0E2A\u0E38\u0E14 30 \u0E22\u0E48\u0E2D\u0E2B\u0E19\u0E49\u0E32")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: '10px'
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    disabled: busy,
+    onClick: commit,
+    style: btn('#0d6b5c', '#fff')
+  }, busy ? 'กำลังบันทึก…' : edit.id ? 'บันทึกการแก้ไข' : 'เผยแพร่บทความ'), /*#__PURE__*/React.createElement("button", {
+    disabled: busy,
+    onClick: () => {
+      setEdit(null);
+      setErr('');
+    },
+    style: btn('#f2f5f3', '#556')
+  }, "\u0E22\u0E01\u0E40\u0E25\u0E34\u0E01"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#fff',
+      borderRadius: '10px',
+      border: '1px solid #eee',
+      overflow: 'hidden'
+    }
+  }, list.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '40px 24px',
+      textAlign: 'center',
+      color: '#9aa8a0',
+      fontSize: '14px'
+    }
+  }, "\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E1A\u0E17\u0E04\u0E27\u0E32\u0E21\u0E17\u0E35\u0E48\u0E40\u0E02\u0E35\u0E22\u0E19\u0E40\u0E2D\u0E07 \u2014 \u0E01\u0E14 \u201C\u0E40\u0E02\u0E35\u0E22\u0E19\u0E1A\u0E17\u0E04\u0E27\u0E32\u0E21\u0E43\u0E2B\u0E21\u0E48\u201D \u0E14\u0E49\u0E32\u0E19\u0E1A\u0E19\u0E44\u0E14\u0E49\u0E40\u0E25\u0E22") : list.map((a, i) => /*#__PURE__*/React.createElement("div", {
+    key: a.id,
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '14px',
+      padding: '14px 20px',
+      borderTop: i ? '1px solid #f2f2f2' : 'none'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: '64px',
+      height: '44px',
+      flexShrink: 0,
+      borderRadius: '7px',
+      overflow: 'hidden',
+      background: '#f4f7f6',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
+  }, a.img ? /*#__PURE__*/React.createElement("img", {
+    src: a.img,
+    alt: "",
+    "data-hpraw": "1",
+    style: {
+      width: '100%',
+      height: '100%',
+      objectFit: 'cover'
+    },
+    onError: e => e.target.style.display = 'none'
+  }) : /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: '10px',
+      color: '#b3c0ba'
+    }
+  }, "\u0E44\u0E21\u0E48\u0E21\u0E35\u0E23\u0E39\u0E1B")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '14.5px',
+      fontWeight: '700',
+      color: '#333',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap'
+    }
+  }, a.title), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '12px',
+      color: '#9aa8a0'
+    }
+  }, a.body.length, " \u0E22\u0E48\u0E2D\u0E2B\u0E19\u0E49\u0E32 \xB7 ", new Date(a.at).toLocaleDateString('th-TH'))), /*#__PURE__*/React.createElement("button", {
+    disabled: busy,
+    onClick: () => openEdit(a),
+    style: {
+      ...btn('#f2f5f3', '#0d6b5c'),
+      padding: '8px 14px'
+    }
+  }, "\u0E41\u0E01\u0E49\u0E44\u0E02"), /*#__PURE__*/React.createElement("button", {
+    disabled: busy,
+    onClick: () => remove(a),
+    style: {
+      ...btn('#fff', '#b3261e'),
+      padding: '8px 14px'
+    }
+  }, "\u0E25\u0E1A")))));
 }
 
 // ตั้งค่าเว็บไซต์ — แก้แคตตาล็อกและข้อมูลติดต่อได้เองจากหลังบ้าน โดยไม่ต้องแก้โค้ด
@@ -16079,14 +16695,17 @@ function HPApp() {
   useEffect(() => {
     HP_IMG_SUBS.add(hpImgBump);
     HP_TXT_SUBS.add(hpImgBump);
+    HP_ART_SUBS.add(hpImgBump);
     hpApi('/settings').then(r => {
       const s = r.settings || {};
       hpImgSetMap(s.images || {});
       hpTxtSetMap(s.texts || {});
+      hpArtSetList(s.articles || []);
     }).catch(() => {});
     return () => {
       HP_IMG_SUBS.delete(hpImgBump);
       HP_TXT_SUBS.delete(hpImgBump);
+      HP_ART_SUBS.delete(hpImgBump);
     };
   }, []);
   const zoomIn = () => setZoom(z => Math.min(1.5, Math.round((z + 0.1) * 10) / 10));
@@ -16220,6 +16839,14 @@ function HPApp() {
     if (p === 'เกร็ดความรู้') {
       goTo({
         page: 'knowledge'
+      });
+      window.scrollTo(0, 0);
+      return;
+    }
+    // บทความที่แอดมินเขียนเอง — ส่งมาเป็น 'article:<id>'
+    if (typeof p === 'string' && p.indexOf('article:') === 0) {
+      goTo({
+        page: p
       });
       window.scrollTo(0, 0);
       return;
@@ -16359,6 +16986,9 @@ function HPApp() {
     onSelectProduct: onSelectProduct
   }), page === 'wholesale' && /*#__PURE__*/React.createElement(HPWholesalePage, null), page === 'contact' && /*#__PURE__*/React.createElement(HPContactPage, null), page === 'knowledge' && /*#__PURE__*/React.createElement(HPKnowledgePage, {
     onCategoryChange: onCategoryChange,
+    onNavigate: onNavigate
+  }), typeof page === 'string' && page.indexOf('article:') === 0 && /*#__PURE__*/React.createElement(HPCustomArticlePage, {
+    id: page.slice('article:'.length),
     onNavigate: onNavigate
   }), page === 'mdb-article' && /*#__PURE__*/React.createElement(HPMdbArticlePage, {
     onNavigate: onNavigate,

@@ -1190,6 +1190,35 @@ while ($listener.IsListening) {
           }
         } elseif ($null -ne $prev['texts']) { $texts = $prev['texts'] }
 
+        # ---- บทความเกร็ดความรู้ที่แอดมินเขียนเอง ----
+        # เก็บเป็นข้อความล้วนทุกฟิลด์ หน้าเว็บแสดงเป็น text node ไม่ใช่ HTML
+        # จึงยัดสคริปต์เข้ามาไม่ได้แม้แอดมินจะพิมพ์แท็กลงไป
+        $articles = @()
+        if ($sk -contains 'articles') {
+          $badArt = $null
+          foreach ($raw in @($b.settings.articles)) {
+            if ($null -eq $raw) { continue }
+            $title = Trim-Max $raw.title 120
+            if (-not $title) { continue }             # ไม่มีหัวข้อ = ไม่เก็บ
+            $img = Trim-Max $raw.img 300
+            if ($img -and $img -notmatch '^/api/catalog-image/[A-Za-z0-9_-]+(\?v=\d+)?$' -and $img -notmatch '^assets/[A-Za-z0-9._/ -]{1,200}$') {
+              $badArt = $title; break
+            }
+            $id = Trim-Max $raw.id 40
+            if (-not $id) { $id = 'a' + [Guid]::NewGuid().ToString('N').Substring(0, 10) }
+            $body = @()
+            foreach ($p in @($raw.body) | Select-Object -First 30) {
+              $t = Trim-Max $p 2000
+              if ($t) { $body += $t }
+            }
+            $at = 0; [void][int64]::TryParse([string]$raw.at, [ref]$at)
+            if ($at -le 0) { $at = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() }
+            $articles += @{ id=$id; title=$title; excerpt=(Trim-Max $raw.excerpt 300); img=$img; body=$body; at=$at }
+            if ($articles.Count -ge 50) { break }
+          }
+          if ($badArt) { Send-Json $res @{ error=("รูปของบทความ ""{0}"" ไม่ถูกต้อง" -f $badArt) } 400; continue }
+        } elseif ($null -ne $prev['articles']) { $articles = @($prev['articles']) }
+
         # ---- ข้อมูลติดต่อ (ใช้ร่วมกันหลายหน้า) ----
         $contact = @{}
         if ($sk -contains 'contact') {
@@ -1215,6 +1244,7 @@ while ($listener.IsListening) {
           contact       = $contact
           images        = $images
           texts         = $texts
+          articles      = @($articles)
           catalogUrls   = $urlMap   # เก็บรูปแบบเดิมไว้ เผื่อหน้าเว็บเวอร์ชันเก่ายังอ่านอยู่
         }
         Write-JsonObj $fSetting $out

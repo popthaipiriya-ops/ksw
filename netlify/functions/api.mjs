@@ -992,6 +992,32 @@ export default async (req) => {
         }
       }
 
+      // ---- บทความเกร็ดความรู้ที่แอดมินเขียนเอง ----
+      // เก็บเป็นข้อความล้วนทุกฟิลด์ หน้าเว็บแสดงเป็น text node ไม่ใช่ HTML
+      // จึงยัดสคริปต์เข้ามาไม่ได้แม้แอดมินจะพิมพ์แท็กลงไป
+      let articles = Array.isArray(prev.articles) ? prev.articles : [];
+      if ('articles' in s) {
+        articles = [];
+        for (const raw of (Array.isArray(s.articles) ? s.articles : [])) {
+          if (!raw || typeof raw !== 'object') continue;
+          const title = str(raw.title, 120);
+          if (!title) continue;                       // ไม่มีหัวข้อ = ไม่เก็บ
+          const img = str(raw.img, 300);
+          // รูปรับได้ทั้งที่อัปเองผ่านระบบ และพาธ assets ที่มากับเว็บ
+          if (img && !okImg(img) && !/^assets\/[A-Za-z0-9._/ -]{1,200}$/.test(img))
+            return json({ error:`รูปของบทความ "${title}" ไม่ถูกต้อง` }, 400);
+          articles.push({
+            id:      str(raw.id, 40) || 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+            title,
+            excerpt: str(raw.excerpt, 300),
+            img,
+            body:    (Array.isArray(raw.body) ? raw.body : []).slice(0, 30).map(p => str(p, 2000)).filter(Boolean),
+            at:      Number(raw.at) || Date.now(),
+          });
+          if (articles.length >= 50) break;
+        }
+      }
+
       // ---- ข้อมูลติดต่อ (ใช้ร่วมกันหลายหน้า) ----
       let contact = prev.contact || {};
       if ('contact' in s) {
@@ -1013,6 +1039,7 @@ export default async (req) => {
         contact,
         images,
         texts,
+        articles,
         // เก็บรูปแบบเดิมไว้ด้วย เผื่อหน้าเว็บเวอร์ชันเก่ายังอ่านอยู่
         catalogUrls: Object.fromEntries(Object.entries(catalog).filter(([, v]) => v.url).map(([k, v]) => [k, v.url])),
       };
