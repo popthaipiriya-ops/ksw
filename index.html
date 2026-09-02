@@ -175,6 +175,17 @@
       body.hp-imgedit img[data-hpimg] { animation:none !important; }
     }
 
+    /* ── โหมดแก้ข้อความ ──
+       ใช้สีน้ำเงินแยกจากโหมดแก้รูป (ส้ม) จะได้รู้ทันทีว่ากำลังอยู่โหมดไหน
+       ตีกรอบเฉพาะตัวที่อยู่ในสุดที่มีข้อความ ไม่งั้นกล่องแม่ทุกชั้นขึ้นกรอบซ้อนกันจนลายตา */
+    body.hp-txtedit [data-hptxt] {
+      outline:1px dashed rgba(29,78,216,0.55) !important; outline-offset:1px; cursor:pointer !important;
+    }
+    body.hp-txtedit [data-hptxt]:hover {
+      outline:2px solid #1d4ed8 !important;
+      background:rgba(29,78,216,0.08) !important;
+    }
+
     /* ══ รองรับจอมือถือ/แท็บเล็ต ══
        เมนูบนสุดเดิมเรียงแถวเดียวเสมอ พอจอแคบกว่าความกว้างเมนูจะดันจนเว็บเลื่อนซ้าย-ขวาได้
        จึงสลับเป็นปุ่มเมนู (☰) เมื่อจอแคบ */

@@ -976,6 +976,22 @@ export default async (req) => {
         }
       }
 
+      // ---- ข้อความบนเว็บที่แอดมินแก้เอง ----
+      // คีย์ = ข้อความเดิมที่ฝังอยู่ในโค้ด · ค่า = ข้อความใหม่
+      // เป็นข้อความล้วน ไม่ใช่ HTML ฝั่งหน้าเว็บแสดงผลเป็น text node จึงยัดสคริปต์ไม่ได้
+      let texts = prev.texts || {};
+      if ('texts' in s) {
+        texts = {};
+        for (const [k, raw] of Object.entries(s.texts || {})) {
+          const key = String(k).trim();
+          if (!key || key.length > 400) continue;
+          const v = String(raw == null ? '' : raw).slice(0, 400);
+          if (!v || v === key) continue;   // เท่าเดิม = ไม่ต้องเก็บ
+          texts[key] = v;
+          if (Object.keys(texts).length >= 800) break;
+        }
+      }
+
       // ---- ข้อมูลติดต่อ (ใช้ร่วมกันหลายหน้า) ----
       let contact = prev.contact || {};
       if ('contact' in s) {
@@ -996,6 +1012,7 @@ export default async (req) => {
         catalogFooter: 'catalogFooter' in s ? str(s.catalogFooter, 80) : str(prev.catalogFooter, 80),
         contact,
         images,
+        texts,
         // เก็บรูปแบบเดิมไว้ด้วย เผื่อหน้าเว็บเวอร์ชันเก่ายังอ่านอยู่
         catalogUrls: Object.fromEntries(Object.entries(catalog).filter(([, v]) => v.url).map(([k, v]) => [k, v.url])),
       };

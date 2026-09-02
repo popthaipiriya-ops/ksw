@@ -99,11 +99,60 @@ try {
   HP_IMG_MAP = hpImgClean(JSON.parse(localStorage.getItem(HP_IMG_LS_KEY) || '{}'));
 } catch (e) {}
 
+// ══════════════════════════════════════════════════════════════════════════
+//  ข้อความบนเว็บ — แอดมินแก้เองได้จากหน้าเว็บจริง
+//  ────────────────────────────────────────────────────────────────────────
+//  ใช้หลักการเดียวกับระบบแก้รูป: ดักที่จุดสร้าง element ที่เดียว
+//  แล้วสลับข้อความให้ จึงแก้ได้ทุกข้อความบนเว็บโดยไม่ต้องลงทะเบียนทีละจุด
+//
+//  คีย์ = ข้อความเดิม (เหมือนที่รูปใช้พาธเดิมเป็นคีย์)
+//  ผลข้างเคียงที่ต้องรู้: ถ้าข้อความเดียวกันถูกใช้หลายที่ แก้ทีเดียวเปลี่ยนหมดทุกที่
+// ══════════════════════════════════════════════════════════════════════════
+const HP_TXT_LS_KEY = 'kss_txt_overrides';
+let HP_TXT_MAP = {};
+const HP_TXT_SUBS = new Set();
+
+// ข้อความที่ควรให้แก้ได้ — ต้องมีตัวอักษรจริง ไม่ใช่ตัวเลข/สัญลักษณ์/ช่องว่างล้วน
+// และไม่ยาวเกินไปจนกลายเป็นเนื้อหาก้อนใหญ่ที่ควรไปจัดการที่อื่น
+function hpTxtKey(v) {
+  if (typeof v !== 'string') return '';
+  const s = v.trim();
+  if (s.length < 2 || s.length > 400) return '';
+  if (!/[A-Za-zก-๙]/.test(s)) return '';
+  return s;
+}
+function hpTxtNotify() {
+  HP_TXT_SUBS.forEach(fn => {
+    try {
+      fn();
+    } catch (e) {}
+  });
+}
+function hpTxtClean(map) {
+  const out = {};
+  if (!map || typeof map !== 'object') return out;
+  for (const [k, v] of Object.entries(map)) {
+    if (hpTxtKey(k) === k && typeof v === 'string' && v.length <= 400) out[k] = v;
+  }
+  return out;
+}
+function hpTxtSetMap(map) {
+  HP_TXT_MAP = hpTxtClean(map);
+  try {
+    localStorage.setItem(HP_TXT_LS_KEY, JSON.stringify(HP_TXT_MAP));
+  } catch (e) {}
+  hpTxtNotify();
+}
+try {
+  HP_TXT_MAP = hpTxtClean(JSON.parse(localStorage.getItem(HP_TXT_LS_KEY) || '{}'));
+} catch (e) {}
+
 // ── ดักจุดสร้าง element ──
 // JSX ทุกบรรทัดในไฟล์นี้ถูกคอมไพล์เป็น React.createElement(...) จึงผ่านตรงนี้หมด
 // เจอ <img> เมื่อไร ก็สลับ src เป็นรูปที่แอดมินอัปไว้ (ถ้ามี) แล้วติดป้าย data-hpimg
 // บอกว่ารูปเดิมคือไฟล์ไหน โหมดแก้รูปจะได้รู้ว่ากดแล้วต้องเปลี่ยนช่องไหน
 // data-hpraw = ขอรูปตามพาธจริงๆ ไม่ต้องสลับให้ (กล่องแก้รูปใช้โชว์ "รูปเดิม" เทียบกับรูปใหม่)
+// ส่วนข้อความ: ลูกที่เป็นสตริงจะถูกสลับเป็นข้อความที่แอดมินแก้ไว้ แล้วติดป้าย data-hptxt
 const hpCreateElement = React.createElement;
 React.createElement = function (type, props) {
   if (type === 'img' && props && typeof props.src === 'string' && !props['data-hpraw']) {
@@ -116,7 +165,32 @@ React.createElement = function (type, props) {
       if (HP_IMG_MAP[path]) props.src = HP_IMG_MAP[path];
     }
   }
-  return hpCreateElement.apply(React, arguments.length > 2 ? [type, props].concat(Array.prototype.slice.call(arguments, 2)) : [type, props]);
+  const n = arguments.length;
+  if (n <= 2) return hpCreateElement.call(React, type, props);
+
+  // แตะเฉพาะแท็ก html ธรรมดา (div/span/h2…) ไม่ยุ่งกับคอมโพเนนต์ เพราะสตริงที่ส่งเข้า
+  // คอมโพเนนต์อาจเป็นค่าตั้งค่าไม่ใช่ข้อความที่ผู้ใช้เห็น
+  const kids = Array.prototype.slice.call(arguments, 2);
+  if (typeof type === 'string' && !(props && props['data-hpraw'])) {
+    let label = '';
+    for (let i = 0; i < kids.length; i++) {
+      const k = hpTxtKey(kids[i]);
+      if (!k) continue;
+      if (!label) label = k;
+      if (HP_TXT_MAP[k] !== undefined) {
+        // คงช่องว่างหัวท้ายของเดิมไว้ ไม่งั้นคำที่เว้นวรรคติดกันจะเบียดกัน
+        const raw = kids[i];
+        const pre = raw.slice(0, raw.indexOf(k[0]));
+        const post = raw.slice(pre.length + k.length);
+        kids[i] = pre + HP_TXT_MAP[k] + post;
+      }
+    }
+    if (label) props = {
+      ...props,
+      'data-hptxt': label
+    };
+  }
+  return hpCreateElement.apply(React, [type, props].concat(kids));
 };
 
 // ── Google Sign-In config ──
@@ -11372,9 +11446,36 @@ function HPSiteSettings() {
   const [, imgBump] = useReducer(x => x + 1, 0);
   useEffect(() => {
     HP_IMG_SUBS.add(imgBump);
-    return () => HP_IMG_SUBS.delete(imgBump);
+    HP_TXT_SUBS.add(imgBump);
+    return () => {
+      HP_IMG_SUBS.delete(imgBump);
+      HP_TXT_SUBS.delete(imgBump);
+    };
   }, []);
   const imgCount = Object.keys(HP_IMG_MAP).length;
+  const txtCount = Object.keys(HP_TXT_MAP).length;
+  const resetTexts = async () => {
+    if (!window.confirm(`คืนข้อความเดิมทั้งหมด ${txtCount} จุด ใช่หรือไม่?\nข้อความที่เคยแก้ไว้จะกลับไปเป็นของเดิมทั้งหมด`)) return;
+    setErr('');
+    setMsg('');
+    setImgBusy(true);
+    try {
+      const r = await hpApi('/settings', {
+        method: 'POST',
+        body: {
+          settings: {
+            texts: {}
+          }
+        }
+      });
+      hpTxtSetMap((r.settings || {}).texts || {});
+      setMsg('✔ คืนข้อความเดิมทั้งหมดแล้ว');
+      setTimeout(() => setMsg(''), 4000);
+    } catch (e) {
+      setErr('คืนข้อความเดิมไม่สำเร็จ: ' + e.message);
+    }
+    setImgBusy(false);
+  };
   const resetImages = async () => {
     if (!window.confirm(`คืนรูปเดิมทั้งหมด ${imgCount} รูป ใช่หรือไม่?\nรูปที่เคยอัปโหลดทับจะเลิกใช้ทั้งหมด`)) return;
     setErr('');
@@ -11810,22 +11911,26 @@ function HPSiteSettings() {
       color: '#222',
       marginBottom: '6px'
     }
-  }, "\u0E23\u0E39\u0E1B\u0E20\u0E32\u0E1E\u0E17\u0E31\u0E49\u0E07\u0E40\u0E27\u0E47\u0E1A"), /*#__PURE__*/React.createElement("p", {
+  }, "\u0E23\u0E39\u0E1B\u0E20\u0E32\u0E1E\u0E41\u0E25\u0E30\u0E02\u0E49\u0E2D\u0E04\u0E27\u0E32\u0E21\u0E17\u0E31\u0E49\u0E07\u0E40\u0E27\u0E47\u0E1A"), /*#__PURE__*/React.createElement("p", {
     style: {
       fontSize: '13.5px',
       color: '#777',
       lineHeight: '1.8'
     }
-  }, "\u0E23\u0E39\u0E1B\u0E17\u0E38\u0E01\u0E43\u0E1A\u0E1A\u0E19\u0E40\u0E27\u0E47\u0E1A\u0E40\u0E1B\u0E25\u0E35\u0E48\u0E22\u0E19\u0E44\u0E14\u0E49\u0E08\u0E32\u0E01\u0E2B\u0E19\u0E49\u0E32\u0E40\u0E27\u0E47\u0E1A\u0E08\u0E23\u0E34\u0E07 \u2014 \u0E01\u0E25\u0E31\u0E1A\u0E44\u0E1B\u0E2B\u0E19\u0E49\u0E32\u0E41\u0E23\u0E01 \u0E41\u0E25\u0E49\u0E27\u0E01\u0E14\u0E1B\u0E38\u0E48\u0E21", /*#__PURE__*/React.createElement("b", {
+  }, "\u0E41\u0E01\u0E49\u0E44\u0E14\u0E49\u0E08\u0E32\u0E01\u0E2B\u0E19\u0E49\u0E32\u0E40\u0E27\u0E47\u0E1A\u0E08\u0E23\u0E34\u0E07\u0E40\u0E25\u0E22 \u2014 \u0E01\u0E25\u0E31\u0E1A\u0E44\u0E1B\u0E2B\u0E19\u0E49\u0E32\u0E41\u0E23\u0E01 \u0E08\u0E30\u0E40\u0E2B\u0E47\u0E19\u0E1B\u0E38\u0E48\u0E21\u0E2A\u0E2D\u0E07\u0E1B\u0E38\u0E48\u0E21\u0E17\u0E35\u0E48\u0E21\u0E38\u0E21\u0E1A\u0E19\u0E0B\u0E49\u0E32\u0E22", /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("b", {
     style: {
-      color: '#0d6b5c'
+      color: '#f05a20'
     }
-  }, " \u201C\u0E41\u0E01\u0E49\u0E23\u0E39\u0E1B\u0E20\u0E32\u0E1E\u201D "), " \u0E17\u0E35\u0E48\u0E21\u0E38\u0E21\u0E1A\u0E19\u0E0B\u0E49\u0E32\u0E22 \u0E23\u0E39\u0E1B\u0E08\u0E30\u0E02\u0E36\u0E49\u0E19\u0E01\u0E23\u0E2D\u0E1A\u0E2A\u0E49\u0E21 \u0E01\u0E14\u0E43\u0E1A\u0E44\u0E2B\u0E19\u0E01\u0E47\u0E40\u0E1B\u0E25\u0E35\u0E48\u0E22\u0E19\u0E43\u0E1A\u0E19\u0E31\u0E49\u0E19\u0E44\u0E14\u0E49\u0E40\u0E25\u0E22"), /*#__PURE__*/React.createElement("div", {
+  }, "\u201C\u0E41\u0E01\u0E49\u0E23\u0E39\u0E1B\u0E20\u0E32\u0E1E\u201D"), " \u0E23\u0E39\u0E1B\u0E08\u0E30\u0E02\u0E36\u0E49\u0E19\u0E01\u0E23\u0E2D\u0E1A\u0E2A\u0E49\u0E21 \u0E01\u0E14\u0E43\u0E1A\u0E44\u0E2B\u0E19\u0E01\u0E47\u0E40\u0E1B\u0E25\u0E35\u0E48\u0E22\u0E19\u0E43\u0E1A\u0E19\u0E31\u0E49\u0E19 \xB7", /*#__PURE__*/React.createElement("b", {
     style: {
-      marginTop: '12px',
+      color: '#1d4ed8'
+    }
+  }, " \u201C\u0E41\u0E01\u0E49\u0E02\u0E49\u0E2D\u0E04\u0E27\u0E32\u0E21\u201D"), " \u0E02\u0E49\u0E2D\u0E04\u0E27\u0E32\u0E21\u0E08\u0E30\u0E02\u0E36\u0E49\u0E19\u0E01\u0E23\u0E2D\u0E1A\u0E19\u0E49\u0E33\u0E40\u0E07\u0E34\u0E19 \u0E01\u0E14\u0E15\u0E23\u0E07\u0E44\u0E2B\u0E19\u0E01\u0E47\u0E41\u0E01\u0E49\u0E15\u0E23\u0E07\u0E19\u0E31\u0E49\u0E19"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: '14px',
       display: 'flex',
       alignItems: 'center',
-      gap: '14px',
+      gap: '12px',
       flexWrap: 'wrap'
     }
   }, /*#__PURE__*/React.createElement("span", {
@@ -11834,7 +11939,7 @@ function HPSiteSettings() {
       color: '#0d6b5c',
       fontWeight: '700'
     }
-  }, "\u0E15\u0E2D\u0E19\u0E19\u0E35\u0E49\u0E40\u0E1B\u0E25\u0E35\u0E48\u0E22\u0E19\u0E23\u0E39\u0E1B\u0E44\u0E1B\u0E41\u0E25\u0E49\u0E27 ", imgCount, " \u0E23\u0E39\u0E1B"), imgCount > 0 && /*#__PURE__*/React.createElement("button", {
+  }, "\u0E40\u0E1B\u0E25\u0E35\u0E48\u0E22\u0E19\u0E23\u0E39\u0E1B\u0E44\u0E1B\u0E41\u0E25\u0E49\u0E27 ", imgCount, " \u0E23\u0E39\u0E1B"), imgCount > 0 && /*#__PURE__*/React.createElement("button", {
     type: "button",
     disabled: imgBusy,
     onClick: resetImages,
@@ -11850,7 +11955,37 @@ function HPSiteSettings() {
       opacity: imgBusy ? 0.6 : 1,
       fontFamily: 'Inter, Noto Sans Thai, sans-serif'
     }
-  }, imgBusy ? 'กำลังคืนค่า…' : 'คืนรูปเดิมทั้งหมด'))), /*#__PURE__*/React.createElement("button", {
+  }, imgBusy ? 'กำลังคืนค่า…' : 'คืนรูปเดิมทั้งหมด')), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: '10px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+      flexWrap: 'wrap'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: '13.5px',
+      color: '#0d6b5c',
+      fontWeight: '700'
+    }
+  }, "\u0E41\u0E01\u0E49\u0E02\u0E49\u0E2D\u0E04\u0E27\u0E32\u0E21\u0E44\u0E1B\u0E41\u0E25\u0E49\u0E27 ", txtCount, " \u0E08\u0E38\u0E14"), txtCount > 0 && /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    disabled: imgBusy,
+    onClick: resetTexts,
+    style: {
+      background: '#fff',
+      color: '#b3261e',
+      border: '1px solid #f0c8c4',
+      borderRadius: '8px',
+      padding: '9px 16px',
+      fontSize: '13px',
+      fontWeight: '700',
+      cursor: imgBusy ? 'default' : 'pointer',
+      opacity: imgBusy ? 0.6 : 1,
+      fontFamily: 'Inter, Noto Sans Thai, sans-serif'
+    }
+  }, imgBusy ? 'กำลังคืนค่า…' : 'คืนข้อความเดิมทั้งหมด'))), /*#__PURE__*/React.createElement("button", {
     onClick: save,
     disabled: saving,
     style: {
@@ -15385,43 +15520,86 @@ function HPImageEditor() {
     hpApi('/auth/me').then(r => setCanEdit(!!(r.can && r.can.editProduct))).catch(() => {});
   }, []);
 
-  // เปิดโหมด: ใส่คลาสให้ body (CSS ตีกรอบรูปให้เห็นว่ากดได้)
+  // เปิดโหมด: ใส่คลาสให้ body (CSS ตีกรอบให้เห็นว่ากดได้)
   // แล้วดักคลิกแบบ capture เพื่อชิงก่อนปุ่ม/ลิงก์ของเว็บ ไม่งั้นกดรูปสินค้าแล้วเด้งไปหน้าอื่น
   useEffect(() => {
-    if (!on) {
-      document.body.classList.remove('hp-imgedit');
-      return;
-    }
-    document.body.classList.add('hp-imgedit');
+    document.body.classList.remove('hp-imgedit', 'hp-txtedit');
+    if (!on) return;
+    document.body.classList.add(on === 'img' ? 'hp-imgedit' : 'hp-txtedit');
     const onClick = e => {
-      const img = e.target && e.target.closest && e.target.closest('img[data-hpimg]');
-      if (!img) return;
+      const t = e.target;
+      if (!t || !t.closest) return;
+      const hit = on === 'img' ? t.closest('img[data-hpimg]') : t.closest('[data-hptxt]');
+      if (!hit) return;
       e.preventDefault();
       e.stopPropagation();
       setErr('');
       setNote('');
-      setTarget({
-        path: img.getAttribute('data-hpimg')
+      setTarget(on === 'img' ? {
+        kind: 'img',
+        path: hit.getAttribute('data-hpimg')
+      } : {
+        kind: 'txt',
+        path: hit.getAttribute('data-hptxt')
       });
     };
     document.addEventListener('click', onClick, true);
-    // นับรูปที่เปลี่ยนได้ในหน้านี้ ให้แอดมินรู้ว่าโหมดทำงานอยู่จริง
-    const tick = () => setCount(document.querySelectorAll('img[data-hpimg]').length);
+    // นับของที่แก้ได้ในหน้านี้ ให้แอดมินรู้ว่าโหมดทำงานอยู่จริง
+    const tick = () => setCount(document.querySelectorAll(on === 'img' ? 'img[data-hpimg]' : '[data-hptxt]').length);
     tick();
     const timer = setInterval(tick, 1200);
     return () => {
       document.removeEventListener('click', onClick, true);
-      document.body.classList.remove('hp-imgedit');
+      document.body.classList.remove('hp-imgedit', 'hp-txtedit');
       clearInterval(timer);
     };
   }, [on]);
 
-  // ให้เรนเดอร์ใหม่เมื่อแผนที่รูปเปลี่ยน จะได้เห็นผลทันทีโดยไม่ต้องรีเฟรช
+  // ให้เรนเดอร์ใหม่เมื่อรูปหรือข้อความเปลี่ยน จะได้เห็นผลทันทีโดยไม่ต้องรีเฟรช
   const [, bump] = useReducer(x => x + 1, 0);
   useEffect(() => {
     HP_IMG_SUBS.add(bump);
-    return () => HP_IMG_SUBS.delete(bump);
+    HP_TXT_SUBS.add(bump);
+    return () => {
+      HP_IMG_SUBS.delete(bump);
+      HP_TXT_SUBS.delete(bump);
+    };
   }, []);
+
+  // ── บันทึกข้อความ ──
+  const [draft, setDraft] = useState('');
+  useEffect(() => {
+    if (target && target.kind === 'txt') setDraft(HP_TXT_MAP[target.path] || target.path);
+  }, [target]);
+  const saveText = async value => {
+    setErr('');
+    setNote('');
+    setBusy(true);
+    try {
+      const next = {
+        ...HP_TXT_MAP
+      };
+      // ตั้งให้เท่าข้อความเดิม = เลิกแก้ กลับไปใช้ของเดิม
+      if (!value.trim() || value.trim() === target.path) delete next[target.path];else next[target.path] = value.trim();
+      const r = await hpApi('/settings', {
+        method: 'POST',
+        body: {
+          settings: {
+            texts: next
+          }
+        }
+      });
+      hpTxtSetMap((r.settings || {}).texts || {});
+      setNote('✔ บันทึกข้อความแล้ว');
+      setTimeout(() => {
+        setTarget(null);
+        setNote('');
+      }, 800);
+    } catch (e) {
+      setErr('บันทึกไม่สำเร็จ: ' + (e.message || e));
+    }
+    setBusy(false);
+  };
 
   // ส่งเฉพาะ images ไปอย่างเดียว — เซิร์ฟเวอร์จะคงการตั้งค่าส่วนอื่นไว้ให้เอง
   const saveMap = async next => {
@@ -15495,7 +15673,8 @@ function HPImageEditor() {
   };
   if (!canEdit) return null;
   const changed = Object.keys(HP_IMG_MAP).length;
-  const override = target ? HP_IMG_MAP[target.path] : '';
+  const txtChanged = Object.keys(HP_TXT_MAP).length;
+  const override = target && target.kind === 'img' ? HP_IMG_MAP[target.path] : '';
   const btnCss = {
     border: 'none',
     borderRadius: '9px',
@@ -15506,6 +15685,20 @@ function HPImageEditor() {
     cursor: busy ? 'default' : 'pointer',
     opacity: busy ? 0.6 : 1
   };
+  const tabCss = (active, color) => ({
+    ...btnCss,
+    opacity: 1,
+    cursor: 'pointer',
+    pointerEvents: 'auto',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '10px 16px',
+    fontSize: '13.5px',
+    background: active ? color : '#0d6b5c',
+    color: '#fff',
+    boxShadow: '0 6px 20px rgba(0,0,0,0.25)'
+  });
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'fixed',
@@ -15518,23 +15711,18 @@ function HPImageEditor() {
       gap: '8px',
       pointerEvents: 'none'
     }
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => setOn(v => !v),
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
-      ...btnCss,
-      opacity: 1,
-      cursor: 'pointer',
-      pointerEvents: 'auto',
       display: 'flex',
-      alignItems: 'center',
       gap: '8px',
-      background: on ? '#f05a20' : '#0d6b5c',
-      color: '#fff',
-      boxShadow: '0 6px 20px rgba(0,0,0,0.25)'
+      pointerEvents: 'none'
     }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setOn(v => v === 'img' ? false : 'img'),
+    style: tabCss(on === 'img', '#f05a20')
   }, /*#__PURE__*/React.createElement("svg", {
-    width: "17",
-    height: "17",
+    width: "16",
+    height: "16",
     viewBox: "0 0 24 24",
     fill: "none",
     stroke: "#fff",
@@ -15553,7 +15741,25 @@ function HPImageEditor() {
     r: "1.6"
   }), /*#__PURE__*/React.createElement("path", {
     d: "M21 15l-5-5L5 21"
-  })), on ? 'ปิดโหมดแก้รูป' : 'แก้รูปภาพ'), on && /*#__PURE__*/React.createElement("div", {
+  })), on === 'img' ? 'ปิดโหมดแก้รูป' : 'แก้รูปภาพ'), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setOn(v => v === 'txt' ? false : 'txt'),
+    style: tabCss(on === 'txt', '#1d4ed8')
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "16",
+    height: "16",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "#fff",
+    strokeWidth: "2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M4 7V5h16v2"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M12 5v14"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M9 19h6"
+  })), on === 'txt' ? 'ปิดโหมดแก้ข้อความ' : 'แก้ข้อความ')), on && /*#__PURE__*/React.createElement("div", {
     style: {
       pointerEvents: 'auto',
       background: 'rgba(17,24,22,0.92)',
@@ -15562,14 +15768,150 @@ function HPImageEditor() {
       padding: '9px 13px',
       fontSize: '12.5px',
       lineHeight: '1.75',
-      maxWidth: '230px',
+      maxWidth: '260px',
       boxShadow: '0 6px 20px rgba(0,0,0,0.25)'
     }
-  }, "\u0E01\u0E14\u0E17\u0E35\u0E48\u0E23\u0E39\u0E1B\u0E43\u0E1A\u0E44\u0E2B\u0E19\u0E01\u0E47\u0E44\u0E14\u0E49\u0E40\u0E1E\u0E37\u0E48\u0E2D\u0E40\u0E1B\u0E25\u0E35\u0E48\u0E22\u0E19\u0E23\u0E39\u0E1B\u0E19\u0E31\u0E49\u0E19", /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("span", {
+  }, on === 'img' ? 'กดที่รูปใบไหนก็ได้เพื่อเปลี่ยนรูปนั้น' : 'กดที่ข้อความไหนก็ได้เพื่อแก้ข้อความนั้น', /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("span", {
     style: {
       color: '#9fe6d4'
     }
-  }, "\u0E2B\u0E19\u0E49\u0E32\u0E19\u0E35\u0E49\u0E40\u0E1B\u0E25\u0E35\u0E48\u0E22\u0E19\u0E44\u0E14\u0E49 ", count, " \u0E23\u0E39\u0E1B \xB7 \u0E40\u0E1B\u0E25\u0E35\u0E48\u0E22\u0E19\u0E44\u0E1B\u0E41\u0E25\u0E49\u0E27\u0E17\u0E31\u0E49\u0E07\u0E40\u0E27\u0E47\u0E1A ", changed, " \u0E23\u0E39\u0E1B"))), target && /*#__PURE__*/React.createElement("div", {
+  }, on === 'img' ? `หน้านี้เปลี่ยนได้ ${count} รูป · แก้ไปแล้วทั้งเว็บ ${changed} รูป` : `หน้านี้แก้ได้ ${count} จุด · แก้ไปแล้วทั้งเว็บ ${txtChanged} ข้อความ`))), target && target.kind === 'txt' && /*#__PURE__*/React.createElement("div", {
+    onClick: () => !busy && setTarget(null),
+    style: {
+      position: 'fixed',
+      inset: 0,
+      zIndex: 100001,
+      background: 'rgba(0,0,0,0.62)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '20px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: e => e.stopPropagation(),
+    style: {
+      background: '#fff',
+      borderRadius: '15px',
+      width: '100%',
+      maxWidth: '560px',
+      padding: '24px',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '17px',
+      fontWeight: '800',
+      color: '#222',
+      marginBottom: '14px'
+    }
+  }, "\u0E41\u0E01\u0E49\u0E02\u0E49\u0E2D\u0E04\u0E27\u0E32\u0E21\u0E19\u0E35\u0E49"), err && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#fdecea',
+      border: '1px solid #f5c6cb',
+      color: '#b3261e',
+      borderRadius: '8px',
+      padding: '10px 14px',
+      marginBottom: '12px',
+      fontSize: '13.5px'
+    }
+  }, err), note && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#e8f7ee',
+      border: '1px solid #b7e4c7',
+      color: '#0d6b3f',
+      borderRadius: '8px',
+      padding: '10px 14px',
+      marginBottom: '12px',
+      fontSize: '13.5px'
+    }
+  }, note), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '11.5px',
+      fontWeight: '700',
+      color: '#667',
+      marginBottom: '5px'
+    }
+  }, "\u0E02\u0E49\u0E2D\u0E04\u0E27\u0E32\u0E21\u0E40\u0E14\u0E34\u0E21"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#f4f7f5',
+      border: '1px solid #e2e6e3',
+      borderRadius: '8px',
+      padding: '10px 13px',
+      fontSize: '13.5px',
+      color: '#5c6f67',
+      lineHeight: '1.7',
+      marginBottom: '14px',
+      whiteSpace: 'pre-wrap'
+    }
+  }, target.path), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '11.5px',
+      fontWeight: '700',
+      color: '#667',
+      marginBottom: '5px'
+    }
+  }, "\u0E02\u0E49\u0E2D\u0E04\u0E27\u0E32\u0E21\u0E43\u0E2B\u0E21\u0E48"), /*#__PURE__*/React.createElement("textarea", {
+    value: draft,
+    onChange: e => setDraft(e.target.value),
+    rows: 4,
+    maxLength: 400,
+    autoFocus: true,
+    style: {
+      width: '100%',
+      padding: '11px 13px',
+      fontSize: '14.5px',
+      border: '1px solid #dde7e2',
+      borderRadius: '9px',
+      outline: 'none',
+      lineHeight: '1.7',
+      resize: 'vertical',
+      fontFamily: 'Inter, Noto Sans Thai, sans-serif'
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '11.5px',
+      color: '#9aa8a0',
+      margin: '6px 0 16px'
+    }
+  }, draft.length, " / 400 \u0E15\u0E31\u0E27\u0E2D\u0E31\u0E01\u0E29\u0E23"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: '10px',
+      flexWrap: 'wrap'
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    disabled: busy,
+    onClick: () => saveText(draft),
+    style: {
+      ...btnCss,
+      background: '#1d4ed8',
+      color: '#fff'
+    }
+  }, busy ? 'กำลังบันทึก…' : 'บันทึกข้อความ'), HP_TXT_MAP[target.path] !== undefined && /*#__PURE__*/React.createElement("button", {
+    disabled: busy,
+    onClick: () => saveText(''),
+    style: {
+      ...btnCss,
+      background: '#fff',
+      color: '#b3261e',
+      border: '1px solid #f0c8c4'
+    }
+  }, "\u0E04\u0E37\u0E19\u0E02\u0E49\u0E2D\u0E04\u0E27\u0E32\u0E21\u0E40\u0E14\u0E34\u0E21"), /*#__PURE__*/React.createElement("button", {
+    disabled: busy,
+    onClick: () => setTarget(null),
+    style: {
+      ...btnCss,
+      background: '#f2f5f3',
+      color: '#556'
+    }
+  }, "\u0E1B\u0E34\u0E14")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: '11.5px',
+      color: '#9aa8a0',
+      marginTop: '14px',
+      lineHeight: '1.8'
+    }
+  }, "\u0E02\u0E49\u0E2D\u0E04\u0E27\u0E32\u0E21\u0E40\u0E14\u0E34\u0E21\u0E19\u0E35\u0E49\u0E16\u0E39\u0E01\u0E43\u0E0A\u0E49\u0E15\u0E23\u0E07\u0E44\u0E2B\u0E19\u0E02\u0E2D\u0E07\u0E40\u0E27\u0E47\u0E1A\u0E1A\u0E49\u0E32\u0E07 \u0E08\u0E30\u0E40\u0E1B\u0E25\u0E35\u0E48\u0E22\u0E19\u0E15\u0E32\u0E21\u0E01\u0E31\u0E19\u0E17\u0E38\u0E01\u0E08\u0E38\u0E14"))), target && target.kind === 'img' && /*#__PURE__*/React.createElement("div", {
     onClick: () => !busy && setTarget(null),
     style: {
       position: 'fixed',
@@ -15736,8 +16078,16 @@ function HPApp() {
   const [, hpImgBump] = useReducer(x => x + 1, 0);
   useEffect(() => {
     HP_IMG_SUBS.add(hpImgBump);
-    hpApi('/settings').then(r => hpImgSetMap((r.settings || {}).images || {})).catch(() => {});
-    return () => HP_IMG_SUBS.delete(hpImgBump);
+    HP_TXT_SUBS.add(hpImgBump);
+    hpApi('/settings').then(r => {
+      const s = r.settings || {};
+      hpImgSetMap(s.images || {});
+      hpTxtSetMap(s.texts || {});
+    }).catch(() => {});
+    return () => {
+      HP_IMG_SUBS.delete(hpImgBump);
+      HP_TXT_SUBS.delete(hpImgBump);
+    };
   }, []);
   const zoomIn = () => setZoom(z => Math.min(1.5, Math.round((z + 0.1) * 10) / 10));
   const zoomOut = () => setZoom(z => Math.max(0.7, Math.round((z - 0.1) * 10) / 10));

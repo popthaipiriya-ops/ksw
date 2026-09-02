@@ -80,11 +80,50 @@ function hpImgSetMap(map) {
 // ไม่ต้องรอ /api/settings ตอบก่อนแล้วค่อยกระพริบสลับรูปให้ลูกค้าเห็น
 try { HP_IMG_MAP = hpImgClean(JSON.parse(localStorage.getItem(HP_IMG_LS_KEY) || '{}')); } catch (e) {}
 
+// ══════════════════════════════════════════════════════════════════════════
+//  ข้อความบนเว็บ — แอดมินแก้เองได้จากหน้าเว็บจริง
+//  ────────────────────────────────────────────────────────────────────────
+//  ใช้หลักการเดียวกับระบบแก้รูป: ดักที่จุดสร้าง element ที่เดียว
+//  แล้วสลับข้อความให้ จึงแก้ได้ทุกข้อความบนเว็บโดยไม่ต้องลงทะเบียนทีละจุด
+//
+//  คีย์ = ข้อความเดิม (เหมือนที่รูปใช้พาธเดิมเป็นคีย์)
+//  ผลข้างเคียงที่ต้องรู้: ถ้าข้อความเดียวกันถูกใช้หลายที่ แก้ทีเดียวเปลี่ยนหมดทุกที่
+// ══════════════════════════════════════════════════════════════════════════
+const HP_TXT_LS_KEY = 'kss_txt_overrides';
+let   HP_TXT_MAP  = {};
+const HP_TXT_SUBS = new Set();
+
+// ข้อความที่ควรให้แก้ได้ — ต้องมีตัวอักษรจริง ไม่ใช่ตัวเลข/สัญลักษณ์/ช่องว่างล้วน
+// และไม่ยาวเกินไปจนกลายเป็นเนื้อหาก้อนใหญ่ที่ควรไปจัดการที่อื่น
+function hpTxtKey(v) {
+  if (typeof v !== 'string') return '';
+  const s = v.trim();
+  if (s.length < 2 || s.length > 400) return '';
+  if (!/[A-Za-zก-๙]/.test(s)) return '';
+  return s;
+}
+function hpTxtNotify() { HP_TXT_SUBS.forEach(fn => { try { fn(); } catch (e) {} }); }
+function hpTxtClean(map) {
+  const out = {};
+  if (!map || typeof map !== 'object') return out;
+  for (const [k, v] of Object.entries(map)) {
+    if (hpTxtKey(k) === k && typeof v === 'string' && v.length <= 400) out[k] = v;
+  }
+  return out;
+}
+function hpTxtSetMap(map) {
+  HP_TXT_MAP = hpTxtClean(map);
+  try { localStorage.setItem(HP_TXT_LS_KEY, JSON.stringify(HP_TXT_MAP)); } catch (e) {}
+  hpTxtNotify();
+}
+try { HP_TXT_MAP = hpTxtClean(JSON.parse(localStorage.getItem(HP_TXT_LS_KEY) || '{}')); } catch (e) {}
+
 // ── ดักจุดสร้าง element ──
 // JSX ทุกบรรทัดในไฟล์นี้ถูกคอมไพล์เป็น React.createElement(...) จึงผ่านตรงนี้หมด
 // เจอ <img> เมื่อไร ก็สลับ src เป็นรูปที่แอดมินอัปไว้ (ถ้ามี) แล้วติดป้าย data-hpimg
 // บอกว่ารูปเดิมคือไฟล์ไหน โหมดแก้รูปจะได้รู้ว่ากดแล้วต้องเปลี่ยนช่องไหน
 // data-hpraw = ขอรูปตามพาธจริงๆ ไม่ต้องสลับให้ (กล่องแก้รูปใช้โชว์ "รูปเดิม" เทียบกับรูปใหม่)
+// ส่วนข้อความ: ลูกที่เป็นสตริงจะถูกสลับเป็นข้อความที่แอดมินแก้ไว้ แล้วติดป้าย data-hptxt
 const hpCreateElement = React.createElement;
 React.createElement = function (type, props) {
   if (type === 'img' && props && typeof props.src === 'string' && !props['data-hpraw']) {
@@ -94,9 +133,29 @@ React.createElement = function (type, props) {
       if (HP_IMG_MAP[path]) props.src = HP_IMG_MAP[path];
     }
   }
-  return hpCreateElement.apply(React, arguments.length > 2
-    ? [type, props].concat(Array.prototype.slice.call(arguments, 2))
-    : [type, props]);
+  const n = arguments.length;
+  if (n <= 2) return hpCreateElement.call(React, type, props);
+
+  // แตะเฉพาะแท็ก html ธรรมดา (div/span/h2…) ไม่ยุ่งกับคอมโพเนนต์ เพราะสตริงที่ส่งเข้า
+  // คอมโพเนนต์อาจเป็นค่าตั้งค่าไม่ใช่ข้อความที่ผู้ใช้เห็น
+  const kids = Array.prototype.slice.call(arguments, 2);
+  if (typeof type === 'string' && !(props && props['data-hpraw'])) {
+    let label = '';
+    for (let i = 0; i < kids.length; i++) {
+      const k = hpTxtKey(kids[i]);
+      if (!k) continue;
+      if (!label) label = k;
+      if (HP_TXT_MAP[k] !== undefined) {
+        // คงช่องว่างหัวท้ายของเดิมไว้ ไม่งั้นคำที่เว้นวรรคติดกันจะเบียดกัน
+        const raw = kids[i];
+        const pre = raw.slice(0, raw.indexOf(k[0]));
+        const post = raw.slice(pre.length + k.length);
+        kids[i] = pre + HP_TXT_MAP[k] + post;
+      }
+    }
+    if (label) props = { ...props, 'data-hptxt': label };
+  }
+  return hpCreateElement.apply(React, [type, props].concat(kids));
 };
 
 // ── Google Sign-In config ──
@@ -3702,8 +3761,23 @@ function HPSiteSettings() {
   // ── รูปภาพทั้งเว็บที่เปลี่ยนไว้จากโหมดแก้รูป ──
   const [imgBusy, setImgBusy] = useState(false);
   const [, imgBump] = useReducer(x => x + 1, 0);
-  useEffect(() => { HP_IMG_SUBS.add(imgBump); return () => HP_IMG_SUBS.delete(imgBump); }, []);
+  useEffect(() => {
+    HP_IMG_SUBS.add(imgBump); HP_TXT_SUBS.add(imgBump);
+    return () => { HP_IMG_SUBS.delete(imgBump); HP_TXT_SUBS.delete(imgBump); };
+  }, []);
   const imgCount = Object.keys(HP_IMG_MAP).length;
+  const txtCount = Object.keys(HP_TXT_MAP).length;
+  const resetTexts = async () => {
+    if (!window.confirm(`คืนข้อความเดิมทั้งหมด ${txtCount} จุด ใช่หรือไม่?\nข้อความที่เคยแก้ไว้จะกลับไปเป็นของเดิมทั้งหมด`)) return;
+    setErr(''); setMsg(''); setImgBusy(true);
+    try {
+      const r = await hpApi('/settings', { method:'POST', body:{ settings:{ texts:{} } } });
+      hpTxtSetMap((r.settings || {}).texts || {});
+      setMsg('✔ คืนข้อความเดิมทั้งหมดแล้ว');
+      setTimeout(() => setMsg(''), 4000);
+    } catch (e) { setErr('คืนข้อความเดิมไม่สำเร็จ: ' + e.message); }
+    setImgBusy(false);
+  };
   const resetImages = async () => {
     if (!window.confirm(`คืนรูปเดิมทั้งหมด ${imgCount} รูป ใช่หรือไม่?\nรูปที่เคยอัปโหลดทับจะเลิกใช้ทั้งหมด`)) return;
     setErr(''); setMsg(''); setImgBusy(true);
@@ -3868,23 +3942,33 @@ function HPSiteSettings() {
         </Field>
       </div>
 
-      {/* ── รูปภาพทั้งเว็บ ── */}
+      {/* ── แก้รูปและข้อความจากหน้าเว็บจริง ── */}
       <div style={cardCss}>
-        <div style={{ fontSize:'16px', fontWeight:'800', color:'#222', marginBottom:'6px' }}>รูปภาพทั้งเว็บ</div>
+        <div style={{ fontSize:'16px', fontWeight:'800', color:'#222', marginBottom:'6px' }}>รูปภาพและข้อความทั้งเว็บ</div>
         <p style={{ fontSize:'13.5px', color:'#777', lineHeight:'1.8' }}>
-          รูปทุกใบบนเว็บเปลี่ยนได้จากหน้าเว็บจริง — กลับไปหน้าแรก แล้วกดปุ่ม
-          <b style={{ color:'#0d6b5c' }}> “แก้รูปภาพ” </b> ที่มุมบนซ้าย รูปจะขึ้นกรอบส้ม กดใบไหนก็เปลี่ยนใบนั้นได้เลย
+          แก้ได้จากหน้าเว็บจริงเลย — กลับไปหน้าแรก จะเห็นปุ่มสองปุ่มที่มุมบนซ้าย<br/>
+          <b style={{ color:'#f05a20' }}>“แก้รูปภาพ”</b> รูปจะขึ้นกรอบส้ม กดใบไหนก็เปลี่ยนใบนั้น ·
+          <b style={{ color:'#1d4ed8' }}> “แก้ข้อความ”</b> ข้อความจะขึ้นกรอบน้ำเงิน กดตรงไหนก็แก้ตรงนั้น
         </p>
-        <div style={{ marginTop:'12px', display:'flex', alignItems:'center', gap:'14px', flexWrap:'wrap' }}>
-          <span style={{ fontSize:'13.5px', color:'#0d6b5c', fontWeight:'700' }}>
-            ตอนนี้เปลี่ยนรูปไปแล้ว {imgCount} รูป
-          </span>
+        <div style={{ marginTop:'14px', display:'flex', alignItems:'center', gap:'12px', flexWrap:'wrap' }}>
+          <span style={{ fontSize:'13.5px', color:'#0d6b5c', fontWeight:'700' }}>เปลี่ยนรูปไปแล้ว {imgCount} รูป</span>
           {imgCount > 0 && (
             <button type="button" disabled={imgBusy} onClick={resetImages}
               style={{ background:'#fff', color:'#b3261e', border:'1px solid #f0c8c4', borderRadius:'8px',
                        padding:'9px 16px', fontSize:'13px', fontWeight:'700', cursor: imgBusy ? 'default' : 'pointer',
                        opacity: imgBusy ? 0.6 : 1, fontFamily:'Inter, Noto Sans Thai, sans-serif' }}>
               {imgBusy ? 'กำลังคืนค่า…' : 'คืนรูปเดิมทั้งหมด'}
+            </button>
+          )}
+        </div>
+        <div style={{ marginTop:'10px', display:'flex', alignItems:'center', gap:'12px', flexWrap:'wrap' }}>
+          <span style={{ fontSize:'13.5px', color:'#0d6b5c', fontWeight:'700' }}>แก้ข้อความไปแล้ว {txtCount} จุด</span>
+          {txtCount > 0 && (
+            <button type="button" disabled={imgBusy} onClick={resetTexts}
+              style={{ background:'#fff', color:'#b3261e', border:'1px solid #f0c8c4', borderRadius:'8px',
+                       padding:'9px 16px', fontSize:'13px', fontWeight:'700', cursor: imgBusy ? 'default' : 'pointer',
+                       opacity: imgBusy ? 0.6 : 1, fontFamily:'Inter, Noto Sans Thai, sans-serif' }}>
+              {imgBusy ? 'กำลังคืนค่า…' : 'คืนข้อความเดิมทั้งหมด'}
             </button>
           )}
         </div>
@@ -5645,34 +5729,61 @@ function HPImageEditor() {
       .catch(() => {});
   }, []);
 
-  // เปิดโหมด: ใส่คลาสให้ body (CSS ตีกรอบรูปให้เห็นว่ากดได้)
+  // เปิดโหมด: ใส่คลาสให้ body (CSS ตีกรอบให้เห็นว่ากดได้)
   // แล้วดักคลิกแบบ capture เพื่อชิงก่อนปุ่ม/ลิงก์ของเว็บ ไม่งั้นกดรูปสินค้าแล้วเด้งไปหน้าอื่น
   useEffect(() => {
-    if (!on) { document.body.classList.remove('hp-imgedit'); return; }
-    document.body.classList.add('hp-imgedit');
+    document.body.classList.remove('hp-imgedit', 'hp-txtedit');
+    if (!on) return;
+    document.body.classList.add(on === 'img' ? 'hp-imgedit' : 'hp-txtedit');
     const onClick = (e) => {
-      const img = e.target && e.target.closest && e.target.closest('img[data-hpimg]');
-      if (!img) return;
+      const t = e.target;
+      if (!t || !t.closest) return;
+      const hit = on === 'img' ? t.closest('img[data-hpimg]') : t.closest('[data-hptxt]');
+      if (!hit) return;
       e.preventDefault();
       e.stopPropagation();
       setErr(''); setNote('');
-      setTarget({ path: img.getAttribute('data-hpimg') });
+      setTarget(on === 'img'
+        ? { kind:'img', path: hit.getAttribute('data-hpimg') }
+        : { kind:'txt', path: hit.getAttribute('data-hptxt') });
     };
     document.addEventListener('click', onClick, true);
-    // นับรูปที่เปลี่ยนได้ในหน้านี้ ให้แอดมินรู้ว่าโหมดทำงานอยู่จริง
-    const tick = () => setCount(document.querySelectorAll('img[data-hpimg]').length);
+    // นับของที่แก้ได้ในหน้านี้ ให้แอดมินรู้ว่าโหมดทำงานอยู่จริง
+    const tick = () => setCount(document.querySelectorAll(
+      on === 'img' ? 'img[data-hpimg]' : '[data-hptxt]').length);
     tick();
     const timer = setInterval(tick, 1200);
     return () => {
       document.removeEventListener('click', onClick, true);
-      document.body.classList.remove('hp-imgedit');
+      document.body.classList.remove('hp-imgedit', 'hp-txtedit');
       clearInterval(timer);
     };
   }, [on]);
 
-  // ให้เรนเดอร์ใหม่เมื่อแผนที่รูปเปลี่ยน จะได้เห็นผลทันทีโดยไม่ต้องรีเฟรช
+  // ให้เรนเดอร์ใหม่เมื่อรูปหรือข้อความเปลี่ยน จะได้เห็นผลทันทีโดยไม่ต้องรีเฟรช
   const [, bump] = useReducer(x => x + 1, 0);
-  useEffect(() => { HP_IMG_SUBS.add(bump); return () => HP_IMG_SUBS.delete(bump); }, []);
+  useEffect(() => {
+    HP_IMG_SUBS.add(bump); HP_TXT_SUBS.add(bump);
+    return () => { HP_IMG_SUBS.delete(bump); HP_TXT_SUBS.delete(bump); };
+  }, []);
+
+  // ── บันทึกข้อความ ──
+  const [draft, setDraft] = useState('');
+  useEffect(() => { if (target && target.kind === 'txt') setDraft(HP_TXT_MAP[target.path] || target.path); }, [target]);
+  const saveText = async (value) => {
+    setErr(''); setNote(''); setBusy(true);
+    try {
+      const next = { ...HP_TXT_MAP };
+      // ตั้งให้เท่าข้อความเดิม = เลิกแก้ กลับไปใช้ของเดิม
+      if (!value.trim() || value.trim() === target.path) delete next[target.path];
+      else next[target.path] = value.trim();
+      const r = await hpApi('/settings', { method:'POST', body:{ settings:{ texts: next } } });
+      hpTxtSetMap((r.settings || {}).texts || {});
+      setNote('✔ บันทึกข้อความแล้ว');
+      setTimeout(() => { setTarget(null); setNote(''); }, 800);
+    } catch (e) { setErr('บันทึกไม่สำเร็จ: ' + (e.message || e)); }
+    setBusy(false);
+  };
 
   // ส่งเฉพาะ images ไปอย่างเดียว — เซิร์ฟเวอร์จะคงการตั้งค่าส่วนอื่นไว้ให้เอง
   const saveMap = async (next) => {
@@ -5712,35 +5823,90 @@ function HPImageEditor() {
 
   if (!canEdit) return null;
 
-  const changed  = Object.keys(HP_IMG_MAP).length;
-  const override = target ? HP_IMG_MAP[target.path] : '';
+  const changed    = Object.keys(HP_IMG_MAP).length;
+  const txtChanged = Object.keys(HP_TXT_MAP).length;
+  const override   = target && target.kind === 'img' ? HP_IMG_MAP[target.path] : '';
   const btnCss   = { border:'none', borderRadius:'9px', padding:'11px 20px', fontSize:'14px', fontWeight:'700',
                      fontFamily:'Inter, Noto Sans Thai, sans-serif', cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.6 : 1 };
+  const tabCss = (active, color) => ({ ...btnCss, opacity:1, cursor:'pointer', pointerEvents:'auto',
+    display:'flex', alignItems:'center', gap:'8px', padding:'10px 16px', fontSize:'13.5px',
+    background: active ? color : '#0d6b5c', color:'#fff', boxShadow:'0 6px 20px rgba(0,0,0,0.25)' });
 
   return (
     <>
       {/* แถบควบคุมลอย — วางบนซ้าย ไม่ไปทับปุ่มแชท (ล่างซ้าย) และปุ่มซูม (ล่างขวา) */}
       <div style={{ position:'fixed', left:'14px', top:'88px', zIndex:100000, display:'flex', flexDirection:'column',
                     alignItems:'flex-start', gap:'8px', pointerEvents:'none' }}>
-        <button onClick={() => setOn(v => !v)}
-          style={{ ...btnCss, opacity:1, cursor:'pointer', pointerEvents:'auto', display:'flex', alignItems:'center', gap:'8px',
-                   background: on ? '#f05a20' : '#0d6b5c', color:'#fff', boxShadow:'0 6px 20px rgba(0,0,0,0.25)' }}>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/>
-          </svg>
-          {on ? 'ปิดโหมดแก้รูป' : 'แก้รูปภาพ'}
-        </button>
+        <div style={{ display:'flex', gap:'8px', pointerEvents:'none' }}>
+          <button onClick={() => setOn(v => v === 'img' ? false : 'img')} style={tabCss(on === 'img', '#f05a20')}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/>
+            </svg>
+            {on === 'img' ? 'ปิดโหมดแก้รูป' : 'แก้รูปภาพ'}
+          </button>
+          <button onClick={() => setOn(v => v === 'txt' ? false : 'txt')} style={tabCss(on === 'txt', '#1d4ed8')}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 7V5h16v2"/><path d="M12 5v14"/><path d="M9 19h6"/>
+            </svg>
+            {on === 'txt' ? 'ปิดโหมดแก้ข้อความ' : 'แก้ข้อความ'}
+          </button>
+        </div>
         {on && (
           <div style={{ pointerEvents:'auto', background:'rgba(17,24,22,0.92)', color:'#fff', borderRadius:'9px',
-                        padding:'9px 13px', fontSize:'12.5px', lineHeight:'1.75', maxWidth:'230px', boxShadow:'0 6px 20px rgba(0,0,0,0.25)' }}>
-            กดที่รูปใบไหนก็ได้เพื่อเปลี่ยนรูปนั้น<br/>
-            <span style={{ color:'#9fe6d4' }}>หน้านี้เปลี่ยนได้ {count} รูป · เปลี่ยนไปแล้วทั้งเว็บ {changed} รูป</span>
+                        padding:'9px 13px', fontSize:'12.5px', lineHeight:'1.75', maxWidth:'260px', boxShadow:'0 6px 20px rgba(0,0,0,0.25)' }}>
+            {on === 'img' ? 'กดที่รูปใบไหนก็ได้เพื่อเปลี่ยนรูปนั้น' : 'กดที่ข้อความไหนก็ได้เพื่อแก้ข้อความนั้น'}<br/>
+            <span style={{ color:'#9fe6d4' }}>
+              {on === 'img'
+                ? `หน้านี้เปลี่ยนได้ ${count} รูป · แก้ไปแล้วทั้งเว็บ ${changed} รูป`
+                : `หน้านี้แก้ได้ ${count} จุด · แก้ไปแล้วทั้งเว็บ ${txtChanged} ข้อความ`}
+            </span>
           </div>
         )}
       </div>
 
+      {/* กล่องแก้ข้อความ */}
+      {target && target.kind === 'txt' && (
+        <div onClick={() => !busy && setTarget(null)}
+          style={{ position:'fixed', inset:0, zIndex:100001, background:'rgba(0,0,0,0.62)',
+                   display:'flex', alignItems:'center', justifyContent:'center', padding:'20px' }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ background:'#fff', borderRadius:'15px', width:'100%', maxWidth:'560px',
+                     padding:'24px', boxShadow:'0 20px 60px rgba(0,0,0,0.3)' }}>
+            <div style={{ fontSize:'17px', fontWeight:'800', color:'#222', marginBottom:'14px' }}>แก้ข้อความนี้</div>
+
+            {err  && <div style={{ background:'#fdecea', border:'1px solid #f5c6cb', color:'#b3261e', borderRadius:'8px', padding:'10px 14px', marginBottom:'12px', fontSize:'13.5px' }}>{err}</div>}
+            {note && <div style={{ background:'#e8f7ee', border:'1px solid #b7e4c7', color:'#0d6b3f', borderRadius:'8px', padding:'10px 14px', marginBottom:'12px', fontSize:'13.5px' }}>{note}</div>}
+
+            <div style={{ fontSize:'11.5px', fontWeight:'700', color:'#667', marginBottom:'5px' }}>ข้อความเดิม</div>
+            <div style={{ background:'#f4f7f5', border:'1px solid #e2e6e3', borderRadius:'8px', padding:'10px 13px',
+                          fontSize:'13.5px', color:'#5c6f67', lineHeight:'1.7', marginBottom:'14px', whiteSpace:'pre-wrap' }}>{target.path}</div>
+
+            <div style={{ fontSize:'11.5px', fontWeight:'700', color:'#667', marginBottom:'5px' }}>ข้อความใหม่</div>
+            <textarea value={draft} onChange={e => setDraft(e.target.value)} rows={4} maxLength={400} autoFocus
+              style={{ width:'100%', padding:'11px 13px', fontSize:'14.5px', border:'1px solid #dde7e2', borderRadius:'9px',
+                       outline:'none', lineHeight:'1.7', resize:'vertical', fontFamily:'Inter, Noto Sans Thai, sans-serif' }}/>
+            <div style={{ fontSize:'11.5px', color:'#9aa8a0', margin:'6px 0 16px' }}>{draft.length} / 400 ตัวอักษร</div>
+
+            <div style={{ display:'flex', gap:'10px', flexWrap:'wrap' }}>
+              <button disabled={busy} onClick={() => saveText(draft)} style={{ ...btnCss, background:'#1d4ed8', color:'#fff' }}>
+                {busy ? 'กำลังบันทึก…' : 'บันทึกข้อความ'}
+              </button>
+              {HP_TXT_MAP[target.path] !== undefined && (
+                <button disabled={busy} onClick={() => saveText('')}
+                  style={{ ...btnCss, background:'#fff', color:'#b3261e', border:'1px solid #f0c8c4' }}>คืนข้อความเดิม</button>
+              )}
+              <button disabled={busy} onClick={() => setTarget(null)} style={{ ...btnCss, background:'#f2f5f3', color:'#556' }}>ปิด</button>
+            </div>
+
+            <div style={{ fontSize:'11.5px', color:'#9aa8a0', marginTop:'14px', lineHeight:'1.8' }}>
+              ข้อความเดิมนี้ถูกใช้ตรงไหนของเว็บบ้าง จะเปลี่ยนตามกันทุกจุด
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* กล่องเปลี่ยนรูป */}
-      {target && (
+      {target && target.kind === 'img' && (
         <div onClick={() => !busy && setTarget(null)}
           style={{ position:'fixed', inset:0, zIndex:100001, background:'rgba(0,0,0,0.62)',
                    display:'flex', alignItems:'center', justifyContent:'center', padding:'20px' }}>
@@ -5815,9 +5981,13 @@ function HPApp() {
   // (ค่าที่เคยโหลดถูกอ่านจาก localStorage ไปแล้วตั้งแต่เฟรมแรก ตรงนี้แค่ตามให้ตรงกับเซิร์ฟเวอร์)
   const [, hpImgBump] = useReducer(x => x + 1, 0);
   useEffect(() => {
-    HP_IMG_SUBS.add(hpImgBump);
-    hpApi('/settings').then(r => hpImgSetMap((r.settings || {}).images || {})).catch(() => {});
-    return () => HP_IMG_SUBS.delete(hpImgBump);
+    HP_IMG_SUBS.add(hpImgBump); HP_TXT_SUBS.add(hpImgBump);
+    hpApi('/settings').then(r => {
+      const s = r.settings || {};
+      hpImgSetMap(s.images || {});
+      hpTxtSetMap(s.texts || {});
+    }).catch(() => {});
+    return () => { HP_IMG_SUBS.delete(hpImgBump); HP_TXT_SUBS.delete(hpImgBump); };
   }, []);
 
   const zoomIn    = () => setZoom(z => Math.min(1.5, Math.round((z + 0.1) * 10) / 10));

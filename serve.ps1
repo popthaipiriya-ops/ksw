@@ -1174,6 +1174,22 @@ while ($listener.IsListening) {
           if ($null -ne $prev['images']) { $images = $prev['images'] }
         }
 
+        # ---- ข้อความบนเว็บที่แอดมินแก้เอง ----
+        # คีย์ = ข้อความเดิมที่ฝังอยู่ในโค้ด · ค่า = ข้อความใหม่
+        # เป็นข้อความล้วน หน้าเว็บแสดงเป็น text node จึงยัดสคริปต์เข้ามาไม่ได้
+        $texts = @{}
+        if ($sk -contains 'texts') {
+          $inTxt = To-Hashtable $b.settings.texts
+          foreach ($k in @($inTxt.Keys)) {
+            $key = ([string]$k).Trim()
+            if (-not $key -or $key.Length -gt 400) { continue }
+            $v = Trim-Max $inTxt[$k] 400
+            if (-not $v -or $v -eq $key) { continue }   # เท่าเดิม = ไม่ต้องเก็บ
+            $texts[$key] = $v
+            if ($texts.Count -ge 800) { break }
+          }
+        } elseif ($null -ne $prev['texts']) { $texts = $prev['texts'] }
+
         # ---- ข้อมูลติดต่อ (ใช้ร่วมกันหลายหน้า) ----
         $contact = @{}
         if ($sk -contains 'contact') {
@@ -1198,6 +1214,7 @@ while ($listener.IsListening) {
           catalogFooter = $cfoot
           contact       = $contact
           images        = $images
+          texts         = $texts
           catalogUrls   = $urlMap   # เก็บรูปแบบเดิมไว้ เผื่อหน้าเว็บเวอร์ชันเก่ายังอ่านอยู่
         }
         Write-JsonObj $fSetting $out
