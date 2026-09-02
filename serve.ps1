@@ -58,6 +58,20 @@ $ADMIN_WRITE_MAX = 200                  # คำสั่งเขียนต�
 $ADMIN_WRITE_WIN = 60 * 60 * 1000
 $AdminWrite      = @{}
 
+# นับผู้เข้าชมได้ไม่เกินกี่ครั้งต่อ IP ต่อชั่วโมง
+# เผื่อคนเดียวเปิดหลายแท็บ/หลายอุปกรณ์หลังเราเตอร์เดียวกัน แต่ไม่ให้ยิงรัวได้
+$HIT_RATE_MAX = 60
+$HIT_RATE_WIN = 60 * 60 * 1000
+$HitRate      = @{}
+
+function Hash-Ip($ip) {
+  $sha = [System.Security.Cryptography.SHA256]::Create()
+  try {
+    $h = $sha.ComputeHash([Text.Encoding]::UTF8.GetBytes([string]$ip))
+    return -join ($h[0..7] | ForEach-Object { $_.ToString("x2") })
+  } finally { $sha.Dispose() }
+}
+
 # ---------- ผู้ช่วย AI ตอบลูกค้า ----------
 # endpoint นี้เปิดสาธารณะและมีค่าใช้จ่ายต่อข้อความ จึงต้องจำกัดปริมาณให้รัดกุม
 $CHAT_MODEL     = 'claude-opus-5'
@@ -683,6 +697,152 @@ if ($EXPOSE_DATA) {
 }
 Load-Users | Out-Null
 
+# ตัวตรวจการตั้งค่า ใช้ร่วมกันระหว่าง POST /settings กับ /restore
+# ต้องผ่านด่านเดียวกันเสมอ ไม่งั้นไฟล์สำรองที่ถูกแก้มาก่อนจะยัดค่าที่ไม่ผ่านการตรวจเข้าระบบได้
+# (เช่น images ชี้ไปรูปเว็บนอก ซึ่งหน้าเว็บจะเอาไปใส่ src ให้ลูกค้าโหลด)
+# คืน @{ error = ... } ถ้าไม่ผ่าน · คืน @{ out = ...; keys = ... } ถ้าผ่าน
+function Sanitize-Settings($inSettings) {
+
+  # หลังบ้านมีหลายที่ที่บันทึกการตั้งค่าคนละส่วนกัน (ฟอร์ม "ตั้งค่าเว็บไซต์" กับ "โหมดแก้รูป")
+  # ส่วนไหนไม่ได้ส่งมาในคำขอนี้ ต้องคงค่าเดิมไว้ ไม่ใช่ล้างทิ้ง
+  # ไม่งั้นบันทึกฟอร์มหนึ่งแล้วอีกส่วนหายเกลี้ยง
+  $prev = To-Hashtable (Read-Json $fSetting @{})
+  $sk   = @($inSettings.PSObject.Properties.Name)
+
+  # ---- แคตตาล็อก: ต่อแบรนด์มี ลิงก์ / ชื่อที่แสดง / ข้อความปุ่ม / ซ่อน ----
+  # ยอมรับเฉพาะ http/https เพื่อกัน javascript: และลิงก์แปลกปลอม
+  $catalog = @{}
+  $urlMap  = @{}
+  if ($sk -contains 'catalog') {
+    $inCat   = To-Hashtable $inSettings.catalog
+    $badKey  = $null
+    $badImg  = $null
+    foreach ($k in @($inCat.Keys)) {
+      $raw = $inCat[$k]
+      if ($null -eq $raw) { continue }
+      $url = Trim-Max $raw.url 500
+      if ($url -and $url -notmatch '^https?://') { $badKey = $k; break }
+      $rec = @{}
+      if ($url)                  { $rec['url']    = $url; $urlMap[[string]$k] = $url }
+      if ($raw.label)            { $rec['label']  = Trim-Max $raw.label 60 }
+      if ($raw.cta)              { $rec['cta']    = Trim-Max $raw.cta 40 }
+      if ($raw.hidden -eq $true) { $rec['hidden'] = $true }
+      # รูปที่อัปโหลดเอง — รับเฉพาะพาธของ endpoint เราเท่านั้น
+      $img = Trim-Max $raw.img 300
+      if ($img) {
+        if ($img -notmatch '^/api/catalog-image/[A-Za-z0-9_-]+(\?v=\d+)?$') { $badImg = $k; break }
+        $rec['img'] = $img
+      }
+      if ($rec.Count -gt 0)      { $catalog[[string]$k] = $rec }
+    }
+    if ($badKey) { return @{ error=("ลิงก์ของ {0} ต้องขึ้นต้นด้วย http:// หรือ https://" -f $badKey) } }
+    if ($badImg) { return @{ error=("รูปของ {0} ไม่ถูกต้อง" -f $badImg) } }
+  } else {
+    if ($null -ne $prev['catalog'])     { $catalog = $prev['catalog'] }
+    if ($null -ne $prev['catalogUrls']) { $urlMap  = $prev['catalogUrls'] }
+  }
+
+  # ---- รูปภาพทั้งเว็บที่แอดมินเปลี่ยนเอง (โหมดแก้รูปบนหน้าเว็บจริง) ----
+  # คีย์ = พาธรูปเดิมที่ฝังอยู่ในเว็บ เช่น assets/banner1.png
+  # ค่า  = พาธรูปที่แอดมินอัปโหลดทับ ต้องเป็น endpoint ของเราเท่านั้น
+  #        (กันไม่ให้ยัดลิงก์ภายนอกหรือ javascript: มาเป็น src ของรูป)
+  $images = @{}
+  if ($sk -contains 'images') {
+    $inImg   = To-Hashtable $inSettings.images
+    $badSlot = $null
+    foreach ($k in @($inImg.Keys)) {
+      $slot = [string]$k
+      # ชื่อไฟล์รูปในเว็บมีทั้งเว้นวรรคและภาษาไทย จึงกันเฉพาะตัวที่อันตราย
+      # (คีย์นี้ใช้เป็นแค่ชื่อช่องสำหรับเทียบ ไม่ได้เอาไปต่อเป็นพาธไฟล์จริง
+      #  ไฟล์บนดิสก์ใช้ชื่อที่แฮชมาจากคีย์อีกที)
+      if ($slot.Length -gt 200 -or $slot.Contains('..') -or $slot -match '[\u0000-\u001f\\<>"]') { $badSlot = $slot; break }
+      $v = Trim-Max $inImg[$k] 300
+      if (-not $v) { continue }   # ค่าว่าง = คืนไปใช้รูปเดิมที่มากับเว็บ
+      if ($v -notmatch '^/api/catalog-image/[A-Za-z0-9_-]+(\?v=\d+)?$') { $badSlot = $slot; break }
+      $images[$slot] = $v
+      if ($images.Count -ge 500) { break }
+    }
+    if ($badSlot) { return @{ error=("รูปของ {0} ไม่ถูกต้อง" -f $badSlot) } }
+  } else {
+    if ($null -ne $prev['images']) { $images = $prev['images'] }
+  }
+
+  # ---- ข้อความบนเว็บที่แอดมินแก้เอง ----
+  # คีย์ = ข้อความเดิมที่ฝังอยู่ในโค้ด · ค่า = ข้อความใหม่
+  # เป็นข้อความล้วน หน้าเว็บแสดงเป็น text node จึงยัดสคริปต์เข้ามาไม่ได้
+  $texts = @{}
+  if ($sk -contains 'texts') {
+    $inTxt = To-Hashtable $inSettings.texts
+    foreach ($k in @($inTxt.Keys)) {
+      $key = ([string]$k).Trim()
+      if (-not $key -or $key.Length -gt 400) { continue }
+      $v = Trim-Max $inTxt[$k] 400
+      if (-not $v -or $v -eq $key) { continue }   # เท่าเดิม = ไม่ต้องเก็บ
+      $texts[$key] = $v
+      if ($texts.Count -ge 800) { break }
+    }
+  } elseif ($null -ne $prev['texts']) { $texts = $prev['texts'] }
+
+  # ---- บทความเกร็ดความรู้ที่แอดมินเขียนเอง ----
+  # เก็บเป็นข้อความล้วนทุกฟิลด์ หน้าเว็บแสดงเป็น text node ไม่ใช่ HTML
+  # จึงยัดสคริปต์เข้ามาไม่ได้แม้แอดมินจะพิมพ์แท็กลงไป
+  $articles = @()
+  if ($sk -contains 'articles') {
+    $badArt = $null
+    foreach ($raw in @($inSettings.articles)) {
+      if ($null -eq $raw) { continue }
+      $title = Trim-Max $raw.title 120
+      if (-not $title) { continue }             # ไม่มีหัวข้อ = ไม่เก็บ
+      $img = Trim-Max $raw.img 300
+      if ($img -and $img -notmatch '^/api/catalog-image/[A-Za-z0-9_-]+(\?v=\d+)?$' -and $img -notmatch '^assets/[A-Za-z0-9._/ -]{1,200}$') {
+        $badArt = $title; break
+      }
+      $id = Trim-Max $raw.id 40
+      if (-not $id) { $id = 'a' + [Guid]::NewGuid().ToString('N').Substring(0, 10) }
+      $body = @()
+      foreach ($p in @($raw.body) | Select-Object -First 30) {
+        $t = Trim-Max $p 2000
+        if ($t) { $body += $t }
+      }
+      $at = 0; [void][int64]::TryParse([string]$raw.at, [ref]$at)
+      if ($at -le 0) { $at = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() }
+      $articles += @{ id=$id; title=$title; excerpt=(Trim-Max $raw.excerpt 300); img=$img; body=$body; at=$at }
+      if ($articles.Count -ge 50) { break }
+    }
+    if ($badArt) { return @{ error=("รูปของบทความ ""{0}"" ไม่ถูกต้อง" -f $badArt) } }
+  } elseif ($null -ne $prev['articles']) { $articles = @($prev['articles']) }
+
+  # ---- ข้อมูลติดต่อ (ใช้ร่วมกันหลายหน้า) ----
+  $contact = @{}
+  if ($sk -contains 'contact') {
+    $c = $inSettings.contact
+    $lineUrl = Trim-Max $c.lineUrl 300
+    if ($lineUrl -and $lineUrl -notmatch '^https?://') {
+      return @{ error='ลิงก์ไลน์ต้องขึ้นต้นด้วย http:// หรือ https://' }
+    }
+    $contact = @{
+      phone   = Trim-Max $c.phone 60
+      lineId  = Trim-Max $c.lineId 60
+      lineUrl = $lineUrl
+      hours   = Trim-Max $c.hours 120
+      address = Trim-Max $c.address 300
+    }
+  } elseif ($null -ne $prev['contact']) { $contact = $prev['contact'] }
+
+  $cfoot = if ($sk -contains 'catalogFooter') { Trim-Max $inSettings.catalogFooter 80 } else { [string]$prev['catalogFooter'] }
+
+  $out = @{
+    catalog       = $catalog
+    catalogFooter = $cfoot
+    contact       = $contact
+    images        = $images
+    texts         = $texts
+    articles      = @($articles)
+    catalogUrls   = $urlMap   # เก็บรูปแบบเดิมไว้ เผื่อหน้าเว็บเวอร์ชันเก่ายังอ่านอยู่
+  }
+  return @{ out = $out; keys = $sk }
+}
+
 while ($listener.IsListening) {
   $ctx = $listener.GetContext()
   $req = $ctx.Request
@@ -750,6 +910,16 @@ while ($listener.IsListening) {
       # ---------- นับผู้เข้าชม (เปิดสาธารณะ หน้าเว็บยิงมาครั้งเดียวต่อการเข้าชม) ----------
       # เก็บแค่ตัวเลขรวมรายวัน ไม่เก็บ IP ไม่เก็บว่าใครเข้าหน้าไหน
       if ($ep -eq '/hit' -and $method -eq 'POST') {
+        # ต้องจำกัดด้วย เพราะเปิดสาธารณะและเขียนไฟล์ทุกครั้งที่เรียก
+        # ถ้าไม่กัน ใครยิงรัวก็ทำให้ยอดผู้เข้าชมเพี้ยนได้
+        # เก็บเป็นค่าแฮชสั้นๆ ไม่เก็บ IP จริง — ตัวนับผู้เข้าชมไม่ควรกลายเป็นบันทึกว่าใครเข้าเว็บบ้าง
+        $hip = Hash-Ip ([string]$req.RemoteEndPoint.Address)
+        $hnow = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        $hrec = $HitRate[$hip]
+        if ($null -eq $hrec -or ($hnow - [int64]$hrec.start) -gt $HIT_RATE_WIN) { $hrec = @{ start=$hnow; count=0 } }
+        if ([int]$hrec.count -ge $HIT_RATE_MAX) { Send-Json $res @{ ok=$true; counted=$false } 200; continue }
+        $hrec.count = [int]$hrec.count + 1
+        $HitRate[$hip] = $hrec
         try {
           $day = Get-ThaiDayKey $null
           $stats = To-Hashtable (Read-Json $fStats @{})
@@ -1092,7 +1262,12 @@ while ($listener.IsListening) {
         $done = @()
         # เขียนทับเฉพาะส่วนที่มีมาในไฟล์จริงๆ ส่วนที่ไม่มีให้คงของเดิมไว้
         $bk = @($b.PSObject.Properties.Name)
-        if ($bk -contains 'settings' -and $null -ne $b.settings) { Write-JsonObj $fSetting $b.settings; $done += 'settings' }
+        # ไฟล์สำรองมาจากนอกระบบ แก้ไขมาก่อนได้ จึงต้องผ่านตัวตรวจตัวเดียวกับ POST /settings
+        if ($bk -contains 'settings' -and $null -ne $b.settings) {
+          $chk = Sanitize-Settings $b.settings
+          if ($chk.error) { Send-Json $res @{ error=('ข้อมูลตั้งค่าในไฟล์สำรองไม่ถูกต้อง: ' + $chk.error) } 400; continue }
+          Write-JsonObj $fSetting $chk.out; $done += 'settings'
+        }
         if ($bk -contains 'products') { Write-Json $fProds  @($b.products); $done += ('products({0})' -f @($b.products).Count) }
         if ($bk -contains 'quotes')   { Write-Json $fQuotes @($b.quotes);   $done += ('quotes({0})'   -f @($b.quotes).Count) }
         if ($bk -contains 'leads')    { Write-Json $fLeads  @($b.leads);    $done += ('leads({0})'    -f @($b.leads).Count) }
@@ -1404,147 +1579,11 @@ while ($listener.IsListening) {
         if (-not (Can $me 'editProduct')) { Send-Json $res @{ error='บทบาทของคุณไม่มีสิทธิ์แก้ไขการตั้งค่าเว็บไซต์' } 403; continue }
         $b = Read-Body $req
         if ($null -eq $b -or $null -eq $b.settings) { Send-Json $res @{ error='รูปแบบข้อมูลไม่ถูกต้อง' } 400; continue }
-
-        # หลังบ้านมีหลายที่ที่บันทึกการตั้งค่าคนละส่วนกัน (ฟอร์ม "ตั้งค่าเว็บไซต์" กับ "โหมดแก้รูป")
-        # ส่วนไหนไม่ได้ส่งมาในคำขอนี้ ต้องคงค่าเดิมไว้ ไม่ใช่ล้างทิ้ง
-        # ไม่งั้นบันทึกฟอร์มหนึ่งแล้วอีกส่วนหายเกลี้ยง
-        $prev = To-Hashtable (Read-Json $fSetting @{})
-        $sk   = @($b.settings.PSObject.Properties.Name)
-
-        # ---- แคตตาล็อก: ต่อแบรนด์มี ลิงก์ / ชื่อที่แสดง / ข้อความปุ่ม / ซ่อน ----
-        # ยอมรับเฉพาะ http/https เพื่อกัน javascript: และลิงก์แปลกปลอม
-        $catalog = @{}
-        $urlMap  = @{}
-        if ($sk -contains 'catalog') {
-          $inCat   = To-Hashtable $b.settings.catalog
-          $badKey  = $null
-          $badImg  = $null
-          foreach ($k in @($inCat.Keys)) {
-            $raw = $inCat[$k]
-            if ($null -eq $raw) { continue }
-            $url = Trim-Max $raw.url 500
-            if ($url -and $url -notmatch '^https?://') { $badKey = $k; break }
-            $rec = @{}
-            if ($url)                  { $rec['url']    = $url; $urlMap[[string]$k] = $url }
-            if ($raw.label)            { $rec['label']  = Trim-Max $raw.label 60 }
-            if ($raw.cta)              { $rec['cta']    = Trim-Max $raw.cta 40 }
-            if ($raw.hidden -eq $true) { $rec['hidden'] = $true }
-            # รูปที่อัปโหลดเอง — รับเฉพาะพาธของ endpoint เราเท่านั้น
-            $img = Trim-Max $raw.img 300
-            if ($img) {
-              if ($img -notmatch '^/api/catalog-image/[A-Za-z0-9_-]+(\?v=\d+)?$') { $badImg = $k; break }
-              $rec['img'] = $img
-            }
-            if ($rec.Count -gt 0)      { $catalog[[string]$k] = $rec }
-          }
-          if ($badKey) { Send-Json $res @{ error=("ลิงก์ของ {0} ต้องขึ้นต้นด้วย http:// หรือ https://" -f $badKey) } 400; continue }
-          if ($badImg) { Send-Json $res @{ error=("รูปของ {0} ไม่ถูกต้อง" -f $badImg) } 400; continue }
-        } else {
-          if ($null -ne $prev['catalog'])     { $catalog = $prev['catalog'] }
-          if ($null -ne $prev['catalogUrls']) { $urlMap  = $prev['catalogUrls'] }
-        }
-
-        # ---- รูปภาพทั้งเว็บที่แอดมินเปลี่ยนเอง (โหมดแก้รูปบนหน้าเว็บจริง) ----
-        # คีย์ = พาธรูปเดิมที่ฝังอยู่ในเว็บ เช่น assets/banner1.png
-        # ค่า  = พาธรูปที่แอดมินอัปโหลดทับ ต้องเป็น endpoint ของเราเท่านั้น
-        #        (กันไม่ให้ยัดลิงก์ภายนอกหรือ javascript: มาเป็น src ของรูป)
-        $images = @{}
-        if ($sk -contains 'images') {
-          $inImg   = To-Hashtable $b.settings.images
-          $badSlot = $null
-          foreach ($k in @($inImg.Keys)) {
-            $slot = [string]$k
-            # ชื่อไฟล์รูปในเว็บมีทั้งเว้นวรรคและภาษาไทย จึงกันเฉพาะตัวที่อันตราย
-            # (คีย์นี้ใช้เป็นแค่ชื่อช่องสำหรับเทียบ ไม่ได้เอาไปต่อเป็นพาธไฟล์จริง
-            #  ไฟล์บนดิสก์ใช้ชื่อที่แฮชมาจากคีย์อีกที)
-            if ($slot.Length -gt 200 -or $slot.Contains('..') -or $slot -match '[\u0000-\u001f\\<>"]') { $badSlot = $slot; break }
-            $v = Trim-Max $inImg[$k] 300
-            if (-not $v) { continue }   # ค่าว่าง = คืนไปใช้รูปเดิมที่มากับเว็บ
-            if ($v -notmatch '^/api/catalog-image/[A-Za-z0-9_-]+(\?v=\d+)?$') { $badSlot = $slot; break }
-            $images[$slot] = $v
-            if ($images.Count -ge 500) { break }
-          }
-          if ($badSlot) { Send-Json $res @{ error=("รูปของ {0} ไม่ถูกต้อง" -f $badSlot) } 400; continue }
-        } else {
-          if ($null -ne $prev['images']) { $images = $prev['images'] }
-        }
-
-        # ---- ข้อความบนเว็บที่แอดมินแก้เอง ----
-        # คีย์ = ข้อความเดิมที่ฝังอยู่ในโค้ด · ค่า = ข้อความใหม่
-        # เป็นข้อความล้วน หน้าเว็บแสดงเป็น text node จึงยัดสคริปต์เข้ามาไม่ได้
-        $texts = @{}
-        if ($sk -contains 'texts') {
-          $inTxt = To-Hashtable $b.settings.texts
-          foreach ($k in @($inTxt.Keys)) {
-            $key = ([string]$k).Trim()
-            if (-not $key -or $key.Length -gt 400) { continue }
-            $v = Trim-Max $inTxt[$k] 400
-            if (-not $v -or $v -eq $key) { continue }   # เท่าเดิม = ไม่ต้องเก็บ
-            $texts[$key] = $v
-            if ($texts.Count -ge 800) { break }
-          }
-        } elseif ($null -ne $prev['texts']) { $texts = $prev['texts'] }
-
-        # ---- บทความเกร็ดความรู้ที่แอดมินเขียนเอง ----
-        # เก็บเป็นข้อความล้วนทุกฟิลด์ หน้าเว็บแสดงเป็น text node ไม่ใช่ HTML
-        # จึงยัดสคริปต์เข้ามาไม่ได้แม้แอดมินจะพิมพ์แท็กลงไป
-        $articles = @()
-        if ($sk -contains 'articles') {
-          $badArt = $null
-          foreach ($raw in @($b.settings.articles)) {
-            if ($null -eq $raw) { continue }
-            $title = Trim-Max $raw.title 120
-            if (-not $title) { continue }             # ไม่มีหัวข้อ = ไม่เก็บ
-            $img = Trim-Max $raw.img 300
-            if ($img -and $img -notmatch '^/api/catalog-image/[A-Za-z0-9_-]+(\?v=\d+)?$' -and $img -notmatch '^assets/[A-Za-z0-9._/ -]{1,200}$') {
-              $badArt = $title; break
-            }
-            $id = Trim-Max $raw.id 40
-            if (-not $id) { $id = 'a' + [Guid]::NewGuid().ToString('N').Substring(0, 10) }
-            $body = @()
-            foreach ($p in @($raw.body) | Select-Object -First 30) {
-              $t = Trim-Max $p 2000
-              if ($t) { $body += $t }
-            }
-            $at = 0; [void][int64]::TryParse([string]$raw.at, [ref]$at)
-            if ($at -le 0) { $at = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() }
-            $articles += @{ id=$id; title=$title; excerpt=(Trim-Max $raw.excerpt 300); img=$img; body=$body; at=$at }
-            if ($articles.Count -ge 50) { break }
-          }
-          if ($badArt) { Send-Json $res @{ error=("รูปของบทความ ""{0}"" ไม่ถูกต้อง" -f $badArt) } 400; continue }
-        } elseif ($null -ne $prev['articles']) { $articles = @($prev['articles']) }
-
-        # ---- ข้อมูลติดต่อ (ใช้ร่วมกันหลายหน้า) ----
-        $contact = @{}
-        if ($sk -contains 'contact') {
-          $c = $b.settings.contact
-          $lineUrl = Trim-Max $c.lineUrl 300
-          if ($lineUrl -and $lineUrl -notmatch '^https?://') {
-            Send-Json $res @{ error='ลิงก์ไลน์ต้องขึ้นต้นด้วย http:// หรือ https://' } 400; continue
-          }
-          $contact = @{
-            phone   = Trim-Max $c.phone 60
-            lineId  = Trim-Max $c.lineId 60
-            lineUrl = $lineUrl
-            hours   = Trim-Max $c.hours 120
-            address = Trim-Max $c.address 300
-          }
-        } elseif ($null -ne $prev['contact']) { $contact = $prev['contact'] }
-
-        $cfoot = if ($sk -contains 'catalogFooter') { Trim-Max $b.settings.catalogFooter 80 } else { [string]$prev['catalogFooter'] }
-
-        $out = @{
-          catalog       = $catalog
-          catalogFooter = $cfoot
-          contact       = $contact
-          images        = $images
-          texts         = $texts
-          articles      = @($articles)
-          catalogUrls   = $urlMap   # เก็บรูปแบบเดิมไว้ เผื่อหน้าเว็บเวอร์ชันเก่ายังอ่านอยู่
-        }
-        Write-JsonObj $fSetting $out
-        Write-Audit $me 'settings.save' ('บันทึกตั้งค่า: ' + ((@($sk) | Sort-Object) -join ', ')) $req
-        Send-Json $res @{ ok=$true; settings=$out } 200; continue
+        $chk = Sanitize-Settings $b.settings
+        if ($chk.error) { Send-Json $res @{ error=$chk.error } 400; continue }
+        Write-JsonObj $fSetting $chk.out
+        Write-Audit $me 'settings.save' ('บันทึกตั้งค่า: ' + ((@($chk.keys) | Sort-Object) -join ', ')) $req
+        Send-Json $res @{ ok=$true; settings=$chk.out } 200; continue
       }
 
       # ---------- ใบเสนอราคา ----------

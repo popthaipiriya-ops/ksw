@@ -352,6 +352,23 @@ async function writeAudit(user, action, detail, req) {
   }
 }
 
+// นับผู้เข้าชมได้ไม่เกินกี่ครั้งต่อ IP ต่อชั่วโมง
+// เผื่อคนเดียวเปิดหลายแท็บ/หลายอุปกรณ์หลังเราเตอร์เดียวกัน แต่ไม่ให้ยิงรัวได้
+const HIT_RATE_MAX = 60;
+const HIT_RATE_WIN = 60 * 60 * 1000;
+async function hitRateOk(ip) {
+  // เก็บเป็นค่าแฮชสั้นๆ ไม่เก็บ IP จริง — ตัวนับผู้เข้าชมไม่ควรกลายเป็นบันทึกว่าใครเข้าเว็บบ้าง
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(ip || 'unknown')));
+  const key = 'ratelimit/hit/' + [...new Uint8Array(digest)].slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join('');
+  const now = Date.now();
+  let rec = await readJson(key, null);
+  if (!rec || typeof rec.start !== 'number' || now - rec.start > HIT_RATE_WIN) rec = { start: now, count: 0 };
+  if (rec.count >= HIT_RATE_MAX) return false;
+  rec.count += 1;
+  await writeJson(key, rec);
+  return true;
+}
+
 // ---------- จำกัดจำนวนคำสั่งเขียนของแอดมิน ----------
 // เดิมจำกัดเฉพาะ endpoint สาธารณะ ส่วนฝั่งแอดมินยิงได้ไม่จำกัด
 // ถ้าบัญชีแอดมินถูกยึด คนร้ายจะไล่ลบ/เขียนทับข้อมูลรัวๆ ได้ทันที
@@ -651,6 +668,9 @@ export default async (req) => {
     // ---------- นับผู้เข้าชม (เปิดสาธารณะ หน้าเว็บยิงมาครั้งเดียวต่อการเข้าชม) ----------
     // เก็บแค่ตัวเลขรวมรายวัน ไม่เก็บ IP ไม่เก็บว่าใครเข้าหน้าไหน
     if (path === '/hit' && method === 'POST') {
+      // ต้องจำกัดด้วย เพราะเปิดสาธารณะและเขียนฐานข้อมูลทุกครั้งที่เรียก
+      // ถ้าไม่กัน ใครยิงรัวก็ทำให้ค่าใช้จ่ายบานปลายและยอดผู้เข้าชมเพี้ยนได้
+      if (!(await hitRateOk(clientIp(req)))) return json({ ok:true, counted:false });
       try {
         const day = thaiDayKey();
         const stats = await readJson('stats', {});
@@ -897,7 +917,13 @@ export default async (req) => {
 
       const done = [];
       // เขียนทับเฉพาะส่วนที่มีมาในไฟล์จริงๆ ส่วนที่ไม่มีให้คงของเดิมไว้
-      if (body.settings && typeof body.settings === 'object') { await writeJson('settings', body.settings); done.push('settings'); }
+      // ต้องผ่านตัวตรวจตัวเดียวกับ POST /settings เสมอ
+      // ไฟล์สำรองมาจากนอกระบบ แก้ไขมาก่อนได้ ถ้าเขียนตรงๆ จะข้ามด่านตรวจทั้งหมด
+      if (body.settings && typeof body.settings === 'object') {
+        const chk = await sanitizeSettings(body.settings);
+        if (chk.error) return json({ error:'ข้อมูลตั้งค่าในไฟล์สำรองไม่ถูกต้อง: ' + chk.error }, 400);
+        await writeJson('settings', chk.out); done.push('settings');
+      }
       if (Array.isArray(body.products)) { await writeJson('products', body.products); done.push(`products(${body.products.length})`); }
       if (Array.isArray(body.quotes))   { await writeJson('quotes',   body.quotes);   done.push(`quotes(${body.quotes.length})`); }
       if (Array.isArray(body.leads))    { await writeJson('leads',    body.leads);    done.push(`leads(${body.leads.length})`); }
@@ -1139,8 +1165,17 @@ export default async (req) => {
       const body = await req.json().catch(() => ({}));
       if (!body.settings || typeof body.settings !== 'object')
         return json({ error:'รูปแบบข้อมูลไม่ถูกต้อง' }, 400);
+      const chk = await sanitizeSettings(body.settings);
+      if (chk.error) return json({ error: chk.error }, 400);
+      await writeJson('settings', chk.out);
+      await writeAudit(me, 'settings.save', 'บันทึกตั้งค่า: ' + Object.keys(body.settings).sort().join(', '), req);
+      return json({ ok:true, settings: chk.out });
+    }
 
-      const s = body.settings;
+    // ตัวตรวจการตั้งค่าใช้ร่วมกันระหว่าง POST /settings กับ /restore
+    // ต้องผ่านที่เดียวกันเสมอ ไม่งั้นไฟล์สำรองที่ถูกแก้จะยัดค่าที่ไม่ผ่านการตรวจเข้าระบบได้
+    // (เช่น images ชี้ไปรูปจากเว็บนอก ซึ่งหน้าเว็บจะเอาไปใส่ src ให้ลูกค้าโหลด)
+    async function sanitizeSettings(s) {
       const str = (v, max) => String(v == null ? '' : v).trim().slice(0, max);
       // ยอมรับเฉพาะ http/https เพื่อกัน javascript: และลิงก์แปลกปลอม
       const okUrl = (v) => !v || /^https?:\/\//i.test(v);
@@ -1157,7 +1192,7 @@ export default async (req) => {
         for (const [name, raw] of Object.entries(s.catalog || {})) {
           if (!raw || typeof raw !== 'object') continue;
           const url = str(raw.url, 500);
-          if (!okUrl(url)) return json({ error:`ลิงก์ของ ${name} ต้องขึ้นต้นด้วย http:// หรือ https://` }, 400);
+          if (!okUrl(url)) return { error:`ลิงก์ของ ${name} ต้องขึ้นต้นด้วย http:// หรือ https://` };
           const rec = {};
           if (url)            rec.url    = url;
           if (raw.label)      rec.label  = str(raw.label, 60);
@@ -1167,7 +1202,7 @@ export default async (req) => {
           // กันไม่ให้ยัดลิงก์ภายนอกหรือ javascript: เข้ามาเป็น src ของรูป
           const img = str(raw.img, 300);
           if (img) {
-            if (!okImg(img)) return json({ error:`รูปของ ${name} ไม่ถูกต้อง` }, 400);
+            if (!okImg(img)) return { error:`รูปของ ${name} ไม่ถูกต้อง` };
             rec.img = img;
           }
           if (Object.keys(rec).length) catalog[name] = rec;
@@ -1184,10 +1219,10 @@ export default async (req) => {
           // ชื่อไฟล์รูปในเว็บมีทั้งเว้นวรรคและภาษาไทย จึงกันเฉพาะตัวที่อันตราย
           // (คีย์นี้เป็นแค่ชื่อช่องสำหรับเทียบ ไฟล์จริงเก็บด้วยชื่อที่แฮชมาอีกที)
           if (slot.length > 200 || slot.includes('..') || /[\u0000-\u001f\\<>"]/.test(slot))
-            return json({ error:`รูปของ ${slot} ไม่ถูกต้อง` }, 400);
+            return { error:`รูปของ ${slot} ไม่ถูกต้อง` };
           const v = str(raw, 300);
           if (!v) continue;   // ค่าว่าง = คืนไปใช้รูปเดิมที่มากับเว็บ
-          if (!okImg(v)) return json({ error:`รูปของ ${slot} ไม่ถูกต้อง` }, 400);
+          if (!okImg(v)) return { error:`รูปของ ${slot} ไม่ถูกต้อง` };
           images[slot] = v;
           if (Object.keys(images).length >= 500) break;
         }
@@ -1222,7 +1257,7 @@ export default async (req) => {
           const img = str(raw.img, 300);
           // รูปรับได้ทั้งที่อัปเองผ่านระบบ และพาธ assets ที่มากับเว็บ
           if (img && !okImg(img) && !/^assets\/[A-Za-z0-9._/ -]{1,200}$/.test(img))
-            return json({ error:`รูปของบทความ "${title}" ไม่ถูกต้อง` }, 400);
+            return { error:`รูปของบทความ "${title}" ไม่ถูกต้อง` };
           articles.push({
             id:      str(raw.id, 40) || 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
             title,
@@ -1240,7 +1275,7 @@ export default async (req) => {
       if ('contact' in s) {
         const c = s.contact || {};
         const lineUrl = str(c.lineUrl, 300);
-        if (!okUrl(lineUrl)) return json({ error:'ลิงก์ไลน์ต้องขึ้นต้นด้วย http:// หรือ https://' }, 400);
+        if (!okUrl(lineUrl)) return { error:'ลิงก์ไลน์ต้องขึ้นต้นด้วย http:// หรือ https://' };
         contact = {
           phone:   str(c.phone, 60),
           lineId:  str(c.lineId, 60),
@@ -1260,9 +1295,7 @@ export default async (req) => {
         // เก็บรูปแบบเดิมไว้ด้วย เผื่อหน้าเว็บเวอร์ชันเก่ายังอ่านอยู่
         catalogUrls: Object.fromEntries(Object.entries(catalog).filter(([, v]) => v.url).map(([k, v]) => [k, v.url])),
       };
-      await writeJson('settings', out);
-      await writeAudit(me, 'settings.save', 'บันทึกตั้งค่า: ' + Object.keys(s).sort().join(', '), req);
-      return json({ ok:true, settings: out });
+      return { out };
     }
 
     // ---------- ใบเสนอราคา ----------
